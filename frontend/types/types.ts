@@ -22,3 +22,5 @@ export type Flight = {
     isAltitudeCorrect?: boolean;
     bonusXP?: number;
   };
+
+  
