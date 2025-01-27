@@ -5,23 +5,23 @@ import type { NextAuthOptions } from 'next-auth';
 // Extend type definitions for JWT and Session
 declare module "next-auth" {
   interface User {
-    id?: string
-    role?: string
+    id: string  // Non-optional
+    role: string  // Non-optional
   }
   
   interface Session {
     user: {
-      id?: string
+      id: string
       email?: string
-      role?: string
+      role: string  // Non-optional
     }
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id?: string
-    role?: string
+    id: string
+    role: string  // Non-optional
   }
 }
 
