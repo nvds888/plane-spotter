@@ -58,7 +58,7 @@ export default function Home() {
     const fetchUserXP = async () => {
       if (!session?.user?.id) return;
       try {
-        const response = await fetch(`http://localhost:5000/api/user/${session.user.id}/xp`);
+        const response = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
         if (!response.ok) throw new Error('Failed to fetch XP');
         const data = await response.json();
         setUserXP(data);
@@ -76,7 +76,7 @@ export default function Home() {
       
       try {
         const response = await fetch(
-          `http://localhost:5000/api/spot?userId=${session.user.id}`
+          `https://plane-spotter-backend.onrender.com/api/spot?userId=${session.user.id}`
         );
         if (!response.ok) throw new Error('Failed to fetch spots');
         const data: Spot[] = await response.json();
@@ -97,7 +97,7 @@ export default function Home() {
   
     try {
       const flightsResponse = await fetch(
-        `http://localhost:5000/api/flights/nearby?lat=${coords.latitude}&lon=${coords.longitude}`
+        `https://plane-spotter-backend.onrender.com/api/flights/nearby?lat=${coords.latitude}&lon=${coords.longitude}`
       );
   
       if (!flightsResponse.ok) throw new Error('Failed to fetch flights');
@@ -132,7 +132,7 @@ export default function Home() {
         console.log('Request Body:', JSON.stringify(requestBody, null, 2)); // Log the request body
   
         // Save spot with flight data
-        const spotResponse = await fetch('http://localhost:5000/api/spot', {
+        const spotResponse = await fetch('https://plane-spotter-backend.onrender.com/api/spot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
@@ -153,7 +153,7 @@ export default function Home() {
       alert(`Spotted ${savedSpots.length} flights!`);
   
       // Refresh XP
-      const xpResponse = await fetch(`http://localhost:5000/api/user/${session.user.id}/xp`);
+      const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
       const xpData = await xpResponse.json();
       setUserXP(xpData);
   
@@ -177,7 +177,7 @@ export default function Home() {
     if (!currentGuessSpot) return;
 
     try {
-      await fetch(`http://localhost:5000/api/spot/${currentGuessSpot._id}/guess`, {
+      await fetch(`https://plane-spotter-backend.onrender.com/api/spot/${currentGuessSpot._id}/guess`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -187,7 +187,7 @@ export default function Home() {
       });
 
       // Refresh XP
-      const xpResponse = await fetch(`http://localhost:5000/api/user/${session?.user?.id}/xp`);
+      const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/xp`);
       const xpData = await xpResponse.json();
       setUserXP(xpData);
 

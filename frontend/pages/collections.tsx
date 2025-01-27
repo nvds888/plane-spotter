@@ -39,7 +39,7 @@ export default function Collection() {
       
       try {
         const response = await fetch(
-          `http://localhost:5000/api/spot/grouped?userId=${session.user.id}`
+          `https://plane-spotter-backend.onrender.com/api/spot/grouped?userId=${session.user.id}`
         );
 
         if (!response.ok) {
