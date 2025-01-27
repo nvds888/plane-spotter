@@ -1,3 +1,4 @@
+// dbConnect.ts
 import mongoose from 'mongoose';
 
 interface MongooseCache {
@@ -6,11 +7,8 @@ interface MongooseCache {
 }
 
 declare global {
-  namespace NodeJS {
-    interface Global {
-      mongoose: MongooseCache;
-    }
-  }
+  // eslint-disable-next-line no-var
+  var mongoose: MongooseCache | undefined;
 }
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
@@ -19,7 +17,11 @@ if (!MONGODB_URI) {
   throw new Error('MONGODB_URI is not defined in environment variables');
 }
 
-let cached: MongooseCache = global.mongoose ?? { conn: null, promise: null };
+const cached: MongooseCache = {
+  conn: global.mongoose?.conn || null,
+  promise: global.mongoose?.promise || null
+};
+
 if (!global.mongoose) {
   global.mongoose = cached;
 }
@@ -31,7 +33,10 @@ async function dbConnect(): Promise<typeof mongoose> {
     cached.promise = mongoose.connect(MONGODB_URI, {
       tlsAllowInvalidCertificates: true,
       serverSelectionTimeoutMS: 5000,
-    }).then(mongoose => mongoose);
+    }).then(mongoose => {
+      console.log('✅ MongoDB connection established');
+      return mongoose;
+    });
   }
 
   try {
