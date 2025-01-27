@@ -1,18 +1,27 @@
 import mongoose from 'mongoose';
 
-
-
-const MONGODB_URI = process.env.MONGODB_URI!;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define MONGODB_URI in .env.local');
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
 }
 
-// Use the extended global type
-let cached = global.mongoose;
+declare global {
+  namespace NodeJS {
+    interface Global {
+      mongoose: MongooseCache;
+    }
+  }
+}
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+const MONGODB_URI = process.env.MONGODB_URI as string;
+
+if (!MONGODB_URI) {
+  throw new Error('MONGODB_URI is not defined in environment variables');
+}
+
+let cached: MongooseCache = global.mongoose ?? { conn: null, promise: null };
+if (!global.mongoose) {
+  global.mongoose = cached;
 }
 
 async function dbConnect(): Promise<typeof mongoose> {
@@ -20,12 +29,18 @@ async function dbConnect(): Promise<typeof mongoose> {
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
-      tlsAllowInvalidCertificates: true, // Bypass SSL validation
-      serverSelectionTimeoutMS: 5000, // Fail fast if no connection
-    });
+      tlsAllowInvalidCertificates: true,
+      serverSelectionTimeoutMS: 5000,
+    }).then(mongoose => mongoose);
   }
 
-  cached.conn = await cached.promise;
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw new Error(`Database connection failed: ${(e as Error).message}`);
+  }
+
   return cached.conn;
 }
 
