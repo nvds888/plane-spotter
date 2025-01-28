@@ -1,12 +1,12 @@
 "use client"
 
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { useState, useEffect } from "react"
 import { useGeolocated } from "react-geolocated"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { motion, AnimatePresence } from "framer-motion"
-import {Trophy, House, Layers, User, LogOut } from "lucide-react"
+import { Trophy, House, BookOpen, Users, MapPin, Plane } from "lucide-react"
 
 type Flight = {
   hex: string
@@ -209,22 +209,28 @@ export default function Home() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-blue-500 to-blue-600">
-        <div className="w-full max-w-md text-center space-y-6">
-          <h1 className="text-4xl font-bold text-white">✈️ Plane Spotter</h1>
-          <p className="text-blue-100">Sign in to start your plane spotting journey</p>
-          <div className="flex gap-4 justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
+          <div className="text-center mb-8">
+            <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Plane className="text-blue-500" size={32} />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">✈️ Plane Spotter</h1>
+            <p className="text-gray-500">Join the community of aviation enthusiasts</p>
+          </div>
+          
+          <div className="space-y-4">
             <Link
               href="/auth/signin"
-              className="px-6 py-3 bg-white text-blue-600 rounded-full font-medium hover:bg-blue-50 transition-colors"
+              className="block w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium text-center transition duration-200"
             >
               Sign In
             </Link>
             <Link
               href="/auth/signup"
-              className="px-6 py-3 bg-blue-400 text-white rounded-full font-medium hover:bg-blue-300 transition-colors"
+              className="block w-full py-3 px-4 bg-white border-2 border-blue-500 text-blue-500 hover:bg-blue-50 rounded-xl font-medium text-center transition duration-200"
             >
-              Sign Up
+              Create Account
             </Link>
           </div>
         </div>
@@ -233,85 +239,97 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* iOS-style status bar */}
-      <div className="h-6 bg-blue-500" />
-
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-blue-500 text-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto flex justify-between items-center p-4">
-          <h1 className="text-2xl font-bold">✈️ Plane Spotter</h1>
-          <div className="flex gap-3">
-            <div className="bg-blue-400 px-3 py-1 rounded-full text-sm">
-              <span className="font-semibold">Weekly XP:</span> {userXP.weeklyXP}
-            </div>
-            <div className="bg-blue-400 px-3 py-1 rounded-full text-sm">
-              <span className="font-semibold">Total XP:</span> {userXP.totalXP}
+      <div className="bg-white pb-6 shadow-sm">
+        <div className="max-w-lg mx-auto px-4">
+          <div className="pt-12 pb-4">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-gray-900">✈️ Plane Spotter</h1>
+              <div className="flex gap-3">
+                <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
+                  {userXP.weeklyXP} XP
+                </div>
+                <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-sm font-medium">
+                  Total: {userXP.totalXP}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">
+      <div className="max-w-lg mx-auto px-4 py-8">
         {isClient && isGeolocationAvailable ? (
-          <motion.button
-            id="spot-button"
-            onClick={handleSpot}
-            disabled={isLoading}
-            className={`w-48 h-48 rounded-full font-bold transition-all transform hover:scale-105
-              flex items-center justify-center text-xl relative
-              ${isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 text-white hover:bg-blue-600 shadow-lg"}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            {isLoading ? (
-              <span className="animate-spin">🌀</span>
-            ) : (
-              <>
-                <span>SPOT PLANE</span>
-                {spots.length > 0 && (
-                  <motion.span
-                    className="absolute -top-2 -right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  >
-                    {spots.length}
-                  </motion.span>
-                )}
-              </>
+          <div className="flex flex-col items-center">
+            <motion.button
+              onClick={handleSpot}
+              disabled={isLoading}
+              className={`w-48 h-48 rounded-full font-bold shadow-lg flex flex-col items-center justify-center gap-3 ${
+                isLoading ? "bg-gray-100" : "bg-white hover:bg-blue-50"
+              }`}
+              whileTap={{ scale: 0.95 }}
+            >
+              <div className={`p-4 rounded-full ${isLoading ? "bg-gray-200" : "bg-blue-100"}`}>
+                <MapPin className={`${isLoading ? "text-gray-400" : "text-blue-500"}`} size={32} />
+              </div>
+              <span className={`text-lg ${isLoading ? "text-gray-400" : "text-blue-500"}`}>
+                {isLoading ? "Spotting..." : "SPOT PLANE"}
+              </span>
+            </motion.button>
+            
+            {spots.length > 0 && (
+              <div className="mt-6 text-center">
+                <span className="text-gray-500">
+                  You&apos;ve spotted {spots.length} aircraft today
+                </span>
+              </div>
             )}
-          </motion.button>
+          </div>
         ) : (
-          <div className="text-center p-6 bg-yellow-100 rounded-lg w-full max-w-md">
-            {isClient ? "Enable GPS to start spotting!" : "Loading..."}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+            <MapPin className="text-amber-500 mx-auto mb-3" size={24} />
+            <p className="text-amber-700">
+              {isClient ? "Enable GPS to start spotting!" : "Loading..."}
+            </p>
           </div>
         )}
-      </main>
+      </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg safe-area-bottom">
-        <div className="flex justify-around py-2 max-w-lg mx-auto">
-          <Link href="/" className="p-2 text-blue-500 flex flex-col items-center">
-            <House size={24} />
-            <span className="text-xs mt-1">Home</span>
-          </Link>
-          <Link href="/collections" className="p-2 text-gray-500 flex flex-col items-center">
-            <Layers size={24} />
-            <span className="text-xs mt-1">Collection</span>
-          </Link>
-          <Link href="/achievements" className="p-2 text-gray-500 flex flex-col items-center">
-  <Trophy size={24} />
-  <span className="text-xs mt-1">Achievements</span>
-</Link>
-          <Link href="/profile" className="p-2 text-gray-500 flex flex-col items-center">
-            <User size={24} />
-            <span className="text-xs mt-1">Profile</span>
-          </Link>
-          <button onClick={() => signOut()} className="p-2 text-gray-500 flex flex-col items-center">
-            <LogOut size={24} />
-            <span className="text-xs mt-1">Sign Out</span>
-          </button>
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        <div className="max-w-lg mx-auto px-4">
+          <div className="flex justify-around py-3">
+            <Link 
+              href="/" 
+              className="flex flex-col items-center text-blue-600"
+            >
+              <House size={24} />
+              <span className="text-xs mt-1">Home</span>
+            </Link>
+            <Link 
+              href="/community" 
+              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
+            >
+              <Users size={24} />
+              <span className="text-xs mt-1">Community</span>
+            </Link>
+            <Link 
+              href="/collection" 
+              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
+            >
+              <BookOpen size={24} />
+              <span className="text-xs mt-1">Collection</span>
+            </Link>
+            <Link 
+              href="/achievements" 
+              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
+            >
+              <Trophy size={24} />
+              <span className="text-xs mt-1">Achievements</span>
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -325,17 +343,24 @@ export default function Home() {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white p-6 rounded-2xl max-w-md w-full"
+              className="bg-white rounded-2xl max-w-md w-full p-6"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
             >
-              <h3 className="text-xl font-bold mb-4">✈️ What Did You Spot?</h3>
-              <p className="mb-4 text-sm text-gray-600">
-                {newSpots.length} plane{newSpots.length > 1 ? "s" : ""} left to guess
-              </p>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <Plane className="text-blue-500" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">What Did You Spot?</h3>
+                  <p className="text-sm text-gray-500">
+                    {newSpots.length} plane{newSpots.length > 1 ? "s" : ""} left to guess
+                  </p>
+                </div>
+              </div>
 
-              <div className="mb-4">
+              <div className="mb-6">
                 <Map
                   center={coords ? [coords.latitude, coords.longitude] : [0, 0]}
                   spots={newSpots}
@@ -343,13 +368,15 @@ export default function Home() {
                 />
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="block mb-2">Aircraft Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Aircraft Type
+                  </label>
                   <select
                     value={guessedType}
                     onChange={(e) => setGuessedType(e.target.value)}
-                    className="w-full p-2 border rounded-lg"
+                    className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select Type</option>
                     <option value="A320">Airbus A320</option>
@@ -376,31 +403,34 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="block mb-2">Altitude Range</label>
-                  <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Altitude Range
+                  </label>
+                  <div className="space-y-3">
                     {["0-10,000 ft", "10,000-30,000 ft", "30,000+ ft"].map((range) => (
-                      <label key={range} className="flex items-center gap-2">
+                      <label key={range} className="flex items-center gap-3">
                         <input
                           type="radio"
                           name="altRange"
                           value={range}
                           checked={guessedAltRange === range}
                           onChange={(e) => setGuessedAltRange(e.target.value)}
+                          className="w-4 h-4 text-blue-500 border-gray-300 focus:ring-blue-500"
                         />
-                        {range}
+                        <span className="text-gray-700">{range}</span>
                       </label>
                     ))}
                   </div>
                 </div>
-
-                <motion.button
-                  onClick={handleGuessSubmit}
-                  className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Submit Guess
-                </motion.button>
               </div>
+
+              <motion.button
+                onClick={handleGuessSubmit}
+                className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium mt-6"
+                whileTap={{ scale: 0.95 }}
+              >
+                Submit Guess
+              </motion.button>
             </motion.div>
           </motion.div>
         )}
@@ -416,42 +446,54 @@ export default function Home() {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white p-6 rounded-2xl max-w-md w-full space-y-4"
+              className="bg-white rounded-2xl max-w-md w-full p-6"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
             >
-              <h3 className="text-xl font-bold mb-4">🎉 Results</h3>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-green-100 rounded-xl">
+                  <Trophy className="text-green-500" size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Results</h3>
+              </div>
 
               <div className="space-y-3">
                 {guessResults.map((result, index) => (
                   <motion.div
                     key={index}
-                    className="p-3 bg-gray-50 rounded-lg"
+                    className="p-4 bg-gray-50 rounded-xl"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{result.spot.flight?.type || "Unknown"}</span>
-                      <span className="text-sm text-green-600">+{result.xpEarned} XP</span>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium text-gray-900">
+                        {result.spot.flight?.type || "Unknown"}
+                      </span>
+                      <span className="text-sm font-medium text-green-600">
+                        +{result.xpEarned} XP
+                      </span>
                     </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      Type: {result.isTypeCorrect ? "✅" : "❌"} | Altitude: {result.isAltitudeCorrect ? "✅" : "❌"}
+                    <div className="flex gap-3 text-sm">
+                      <span className={result.isTypeCorrect ? "text-green-600" : "text-red-600"}>
+                        Type {result.isTypeCorrect ? "✓" : "✗"}
+                      </span>
+                      <span className={result.isAltitudeCorrect ? "text-green-600" : "text-red-600"}>
+                        Altitude {result.isAltitudeCorrect ? "✓" : "✗"}
+                      </span>
                     </div>
                   </motion.div>
                 ))}
               </div>
 
-              <div className="pt-4 border-t">
-                <motion.button
-                  onClick={() => setShowResultsModal(false)}
-                  className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Continue
-                </motion.button>
-              </div>
+              <motion.button
+                onClick={() => setShowResultsModal(false)}
+                className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium mt-6"
+                whileTap={{ scale: 0.95 }}
+              >
+                Continue
+              </motion.button>
             </motion.div>
           </motion.div>
         )}
