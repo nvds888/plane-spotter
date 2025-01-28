@@ -1,17 +1,16 @@
 "use client";
 import { MapContainer, TileLayer, Marker, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import L, { type LatLngExpression, LatLngBounds } from "leaflet";
+import L from 'leaflet';
 import { useEffect } from "react";
 import type { Spot } from "../types/types";
 
-// Auto-fit component
-function AutoFitBounds({ positions }: { positions: LatLngExpression[] }) {
+function AutoFitBounds({ positions }: { positions: L.LatLngExpression[] }) {
   const map = useMap();
 
   useEffect(() => {
     if (positions.length > 0) {
-      const bounds = new LatLngBounds(positions);
+      const bounds = L.latLngBounds(positions);
       map.fitBounds(bounds, { padding: [50, 50] });
     }
   }, [positions, map]);
@@ -19,24 +18,20 @@ function AutoFitBounds({ positions }: { positions: LatLngExpression[] }) {
   return null;
 }
 
-// Default marker icon configuration
-const DefaultIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
+const AircraftIcon = L.icon({
+  iconUrl: '/aircraft-marker.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
 });
 
 interface MapProps {
-  center: LatLngExpression;
+  center: L.LatLngExpression;
   spots: Spot[];
   highlightedSpot: Spot | null;
 }
 
 export default function Map({ center, spots, highlightedSpot }: MapProps) {
-  // Collect all positions for bounds calculation
-  const allPositions: LatLngExpression[] = [center];
+  const allPositions: L.LatLngExpression[] = [center];
   spots.forEach(spot => {
     if (spot.flight?.lat && spot.flight?.lon) {
       allPositions.push([spot.flight.lat, spot.flight.lon]);
@@ -45,30 +40,30 @@ export default function Map({ center, spots, highlightedSpot }: MapProps) {
 
   return (
     <MapContainer
-      className="h-64 w-full rounded-lg z-0"
-      style={{ minHeight: "256px" }}
+      className="h-full w-full rounded-lg z-0"
       zoom={13}
+      attributionControl={false}
     >
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
       />
 
       <AutoFitBounds positions={allPositions} />
 
-      {/* User's position */}
+      {/* User position */}
       <CircleMarker
         center={center}
-        radius={8}
-        color="#3b82f6"
-        fillColor="#3b82f6"
+        radius={10}
+        color="#ffffff"
+        fillColor="#ffffff"
         fillOpacity={0.8}
+        weight={1}
         interactive={false}
       />
 
       {/* Aircraft markers */}
       {spots.map((spot) => {
-        const position: LatLngExpression = [
+        const position: L.LatLngExpression = [
           spot.flight?.lat || 0,
           spot.flight?.lon || 0
         ];
@@ -77,34 +72,30 @@ export default function Map({ center, spots, highlightedSpot }: MapProps) {
 
         return (
           <div key={spot._id}>
-            {/* Highlight ring */}
             {isHighlighted && (
               <CircleMarker
                 center={position}
-                radius={20}
-                color="#ef4444"
-                fillColor="#ef4444"
-                fillOpacity={0.2}
-                stroke={true}
-                weight={3}
+                radius={25}
+                color="#ffffff"
+                fillColor="transparent"
+                weight={2}
                 interactive={false}
               />
             )}
 
-            {/* Aircraft marker */}
             <Marker
               position={position}
-              icon={DefaultIcon}
+              icon={AircraftIcon}
               interactive={false}
-              keyboard={false}
             >
               {isHighlighted && (
                 <CircleMarker
                   center={position}
                   radius={12}
-                  color="#ef4444"
-                  fillColor="#ef4444"
-                  fillOpacity={0.4}
+                  color="#ffffff"
+                  fillColor="#000000"
+                  fillOpacity={1}
+                  weight={1}
                   interactive={false}
                 />
               )}
