@@ -40,19 +40,18 @@ async function initializeAchievements(userId) {
   ];
 
   user.achievements = defaultAchievements;
-  await user.save();
+  return user.save();
 }
 
 // Get user's achievements
 router.get('/:userId', async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId);
+    let user = await User.findById(req.params.userId);
     if (!user) throw new Error('User not found');
 
     // Initialize achievements if they don't exist
     if (!user.achievements || user.achievements.length === 0) {
-      await initializeAchievements(req.params.userId);
-      user = await User.findById(req.params.userId);
+      user = await initializeAchievements(req.params.userId);
     }
 
     // Reset achievements if needed
