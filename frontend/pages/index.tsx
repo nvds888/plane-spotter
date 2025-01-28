@@ -5,8 +5,6 @@ import { useState, useEffect } from 'react';
 import { useGeolocated } from 'react-geolocated';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
-import Confetti from 'react-dom-confetti';
 
 type Flight = {
   hex: string;
@@ -28,19 +26,6 @@ type Spot = {
   flight?: Flight;
 };
 
-const confettiConfig = {
-  angle: 90,
-  spread: 360,
-  startVelocity: 40,
-  elementCount: 70,
-  dragFriction: 0.12,
-  duration: 3000,
-  stagger: 3,
-  width: "10px",
-  height: "10px",
-  colors: ["#000000", "#ffffff"]
-};
-
 export default function Home() {
   const { data: session } = useSession();
   const [spots, setSpots] = useState<Spot[]>([]);
@@ -52,8 +37,6 @@ export default function Home() {
   const [guessedType, setGuessedType] = useState('');
   const [guessedAltRange, setGuessedAltRange] = useState('');
   const [userXP, setUserXP] = useState<{ totalXP: number; weeklyXP: number }>({ totalXP: 0, weeklyXP: 0 });
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [resultNotification, setResultNotification] = useState<{ correctType: boolean; correctAlt: boolean } | null>(null);
 
   const { coords, isGeolocationAvailable } = useGeolocated({
     positionOptions: { enableHighAccuracy: true },
@@ -64,7 +47,7 @@ export default function Home() {
     () => import("../components/Map"),
     { 
       ssr: false,
-      loading: () => <div className="h-64 bg-gray-900 rounded-lg animate-pulse" />
+      loading: () => <div className="h-64 bg-gray-100 rounded-lg animate-pulse" />
     }
   );
 
@@ -153,8 +136,7 @@ export default function Home() {
       }
   
       setSpots((prev) => [...prev, ...savedSpots]);
-      setShowCelebration(true);
-      setTimeout(() => setShowCelebration(false), 2000);
+      alert(`Spotted ${savedSpots.length} flights!`);
   
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
       const xpData = await xpResponse.json();
@@ -178,7 +160,7 @@ export default function Home() {
     if (!currentGuessSpot) return;
 
     try {
-      const response = await fetch(`https://plane-spotter-backend.onrender.com/api/spot/${currentGuessSpot._id}/guess`, {
+      await fetch(`https://plane-spotter-backend.onrender.com/api/spot/${currentGuessSpot._id}/guess`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -187,29 +169,18 @@ export default function Home() {
         })
       });
 
-      const result = await response.json();
-      setResultNotification({
-        correctType: result.isTypeCorrect,
-        correctAlt: result.isAltitudeCorrect
-      });
-
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/xp`);
       const xpData = await xpResponse.json();
       setUserXP(xpData);
 
-      setTimeout(() => {
-        const nextSpots = newSpots.slice(1);
-        if (nextSpots.length > 0) {
-          setNewSpots(nextSpots);
-          setCurrentGuessSpot(nextSpots[0]);
-          setResultNotification(null);
-        } else {
-          setShowGuessModal(false);
-          setNewSpots([]);
-          setResultNotification(null);
-        }
-      }, 2000);
-
+      const nextSpots = newSpots.slice(1);
+      if (nextSpots.length > 0) {
+        setNewSpots(nextSpots);
+        setCurrentGuessSpot(nextSpots[0]);
+      } else {
+        setShowGuessModal(false);
+        setNewSpots([]);
+      }
     } catch (error) {
       console.error('Guess submission failed:', error);
     }
@@ -217,23 +188,17 @@ export default function Home() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
         <div className="w-full max-w-md text-center space-y-6">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-bold"
-          >
-            ✈️ Plane Spotter
-          </motion.h1>
-          <p className="text-gray-400">Sign in to start your plane spotting journey</p>
+          <h1 className="text-4xl font-bold text-gray-800">✈️ Plane Spotter</h1>
+          <p className="text-gray-600">Sign in to start your plane spotting journey</p>
           <div className="flex gap-4 justify-center">
             <Link href="/auth/signin" 
-              className="px-6 py-3 bg-white text-black rounded-full font-medium hover:bg-gray-200 transition-colors w-32">
+              className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
               Sign In
             </Link>
             <Link href="/auth/signup" 
-              className="px-6 py-3 border border-white text-white rounded-full font-medium hover:bg-gray-900 transition-colors w-32">
+              className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors">
               Sign Up
             </Link>
           </div>
@@ -243,82 +208,59 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="p-4 border-b border-gray-800">
+      <header className="p-4 bg-white shadow-sm">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold">Plane Spotter</h1>
+          <h1 className="text-2xl font-bold text-gray-800">✈️ Plane Spotter</h1>
           <div className="flex gap-3">
-            <div className="px-3 py-1 rounded-full text-sm border border-gray-800">
-              Weekly: {userXP.weeklyXP}
+            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
+              <span className="font-semibold">Weekly:</span> {userXP.weeklyXP}
             </div>
-            <div className="px-3 py-1 rounded-full text-sm border border-gray-800">
-              Total: {userXP.totalXP}
+            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
+              <span className="font-semibold">Total:</span> {userXP.totalXP}
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 flex flex-col items-center justify-center max-w-2xl mx-auto w-full relative">
-        <AnimatePresence>
-          {showCelebration && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            >
-              <Confetti active={showCelebration} config={confettiConfig} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+      <main className="flex-1 p-4 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">
         {isClient && isGeolocationAvailable ? (
-          <motion.button
+          <button
             onClick={handleSpot}
             disabled={isLoading}
-            whileTap={{ scale: 0.95 }}
-            className={`relative w-48 h-48 rounded-full font-bold border-2 border-white ${
-              isLoading ? 'bg-gray-900' : 'hover:bg-gray-900'
+            className={`w-48 h-48 rounded-full font-bold transition-all transform hover:scale-105 ${
+              isLoading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg'
             }`}
           >
-            {isLoading ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity }}
-                className="w-6 h-6 border-2 border-white border-t-transparent rounded-full mx-auto"
-              />
-            ) : (
-              <div className="space-y-2">
-                <div className="text-2xl">✈️</div>
-                <div>SPOT PLANE</div>
-              </div>
-            )}
-          </motion.button>
+            {isLoading ? 'Spotting...' : 'SPOT PLANE!'}
+          </button>
         ) : (
-          <div className="text-center p-6 bg-gray-900 rounded-lg w-full max-w-md">
+          <div className="text-center p-6 bg-yellow-100 rounded-lg w-full max-w-md">
             {isClient ? 'Enable GPS to start spotting!' : 'Loading...'}
           </div>
         )}
         
-        <div className="mt-8 text-center text-gray-400">
-          Spotted planes: {spots.length}
+        <div className="mt-8 text-center text-gray-600">
+          You have spotted {spots.length} planes
         </div>
       </main>
 
-      {/* Footer Navigation */}
-      <footer className="fixed bottom-0 w-full bg-black border-t border-gray-800">
-        <div className="max-w-2xl mx-auto flex justify-between items-center p-4">
+      {/* Footer */}
+      <footer className="p-4 bg-white shadow-lg">
+        <div className="max-w-2xl mx-auto flex justify-between items-center">
           <Link 
             href="/collections"
-            className="px-4 py-2 hover:text-gray-300 transition-colors"
+            className="px-4 py-2 text-blue-500 hover:text-blue-600 transition-colors"
           >
-            Collection
+            My Collection
           </Link>
           <button 
             onClick={() => signOut()}
-            className="px-4 py-2 hover:text-gray-300 transition-colors"
+            className="px-4 py-2 text-red-500 hover:text-red-600 transition-colors"
           >
             Sign Out
           </button>
@@ -327,15 +269,14 @@ export default function Home() {
 
       {/* Guess Modal */}
       {showGuessModal && currentGuessSpot && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4">
-          <div className="bg-gray-900 p-6 rounded-lg max-w-md w-full border border-gray-800">
-            <h3 className="text-xl font-bold mb-4">Identify Aircraft</h3>
-            
-            <div className="mb-4 text-sm text-gray-400">
-              {newSpots.length} remaining
-            </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">✈️ What Did You Spot?</h3>
+            <p className="mb-4 text-sm text-gray-600">
+              {newSpots.length} plane{newSpots.length > 1 ? 's' : ''} left to guess
+            </p>
 
-            <div className="mb-4 h-64">
+            <div className="mb-4">
               <Map
                 center={coords ? [coords.latitude, coords.longitude] : [0, 0]}
                 spots={newSpots}
@@ -343,69 +284,63 @@ export default function Home() {
               />
             </div>
 
-            {resultNotification ? (
-              <div className="space-y-4">
-                <div className={`p-3 rounded-lg ${resultNotification.correctType ? 'bg-green-900' : 'bg-red-900'}`}>
-                  Type: {resultNotification.correctType ? 'Correct' : 'Incorrect'}
-                </div>
-                <div className={`p-3 rounded-lg ${resultNotification.correctAlt ? 'bg-green-900' : 'bg-red-900'}`}>
-                  Altitude: {resultNotification.correctAlt ? 'Correct' : 'Incorrect'}
-                </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block mb-2">Aircraft Type</label>
+                <select
+                  value={guessedType}
+                  onChange={(e) => setGuessedType(e.target.value)}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="">Select Type</option>
+                  <option value="A320">Airbus A320</option>
+                  <option value="A20N">Airbus A320neo</option>
+                  <option value="A321">Airbus A321</option>
+                  <option value="A21N">Airbus A321neo</option>
+                  <option value="A330">Airbus A330</option>
+                  <option value="A350">Airbus A350</option>
+                  <option value="A380">Airbus A380</option>
+                  <option value="737">Boeing 737</option>
+                  <option value="737M">Boeing 737 MAX</option>
+                  <option value="747">Boeing 747</option>
+                  <option value="757">Boeing 757</option>
+                  <option value="767">Boeing 767</option>
+                  <option value="777">Boeing 777</option>
+                  <option value="787">Boeing 787</option>
+                  <option value="C130">Lockheed C-130 Hercules</option>
+                  <option value="F16">F-16 Fighting Falcon</option>
+                  <option value="B2">B-2 Spirit</option>
+                  <option value="Beluga">Airbus Beluga</option>
+                  <option value="Concorde">Concorde</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <select
-                    value={guessedType}
-                    onChange={(e) => setGuessedType(e.target.value)}
-                    className="w-full p-3 bg-black border border-gray-800 rounded-lg"
-                  >
-                    <option value="">Select Type</option>
-            <option value="A320">Airbus A320</option>
-            <option value="A20N">Airbus A320neo</option>
-            <option value="A321">Airbus A321</option>
-            <option value="A21N">Airbus A321neo</option>
-            <option value="A330">Airbus A330</option>
-            <option value="A350">Airbus A350</option>
-            <option value="A380">Airbus A380</option>
-            <option value="737">Boeing 737</option>
-            <option value="737M">Boeing 737 MAX</option>
-            <option value="747">Boeing 747</option>
-            <option value="757">Boeing 757</option>
-            <option value="767">Boeing 767</option>
-            <option value="777">Boeing 777</option>
-            <option value="787">Boeing 787</option>
-            <option value="C130">Lockheed C-130 Hercules</option>
-            <option value="B2">B-2 Spirit</option>
-            <option value="Beluga">Airbus Beluga</option>
-            <option value="Other">Other</option>
-          </select>
-                </div>
 
+              <div>
+                <label className="block mb-2">Altitude Range</label>
                 <div className="space-y-2">
                   {['0-10,000 ft', '10,000-30,000 ft', '30,000+ ft'].map((range) => (
-                    <label key={range} className="flex items-center gap-2 p-2 border border-gray-800 rounded-lg">
+                    <label key={range} className="flex items-center gap-2">
                       <input
                         type="radio"
                         name="altRange"
                         value={range}
                         checked={guessedAltRange === range}
                         onChange={(e) => setGuessedAltRange(e.target.value)}
-                        className="accent-white"
                       />
                       {range}
                     </label>
                   ))}
                 </div>
-
-                <button
-                  onClick={handleGuessSubmit}
-                  className="w-full py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                >
-                  Submit
-                </button>
               </div>
-            )}
+
+              <button
+                onClick={handleGuessSubmit}
+                className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Submit Guess
+              </button>
+            </div>
           </div>
         </div>
       )}
