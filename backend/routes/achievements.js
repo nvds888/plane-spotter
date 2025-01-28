@@ -46,6 +46,15 @@ async function initializeAchievements(userId) {
         progress: 0,
         completed: false,
         resetDate: getNextResetDate('weekly')
+      },
+      {
+        type: 'weekly',
+        name: 'A321neo Hunter',
+        description: 'Spot 3 Airbus A321neo aircraft this week',
+        target: 3,
+        progress: 0,
+        completed: false,
+        resetDate: getNextResetDate('weekly')
       }
     ];
 
@@ -122,12 +131,19 @@ router.post('/:userId/update', async (req, res) => {
     const todayCount = todaySpots.length;
     console.log('Today spots count:', todayCount);
 
-    // Count Airbus planes (case insensitive check for 'a' at start)
+    // Count different types of aircraft
     const airbusCount = weeklySpots.filter(spot => 
       spot.flight?.type && 
       /^a/i.test(spot.flight.type)
     ).length;
+    
+    const a321neoCount = weeklySpots.filter(spot => 
+      spot.flight?.type && 
+      /^a21n$/i.test(spot.flight.type)
+    ).length;
+    
     console.log('Airbus spots count:', airbusCount);
+    console.log('A321neo spots count:', a321neoCount);
 
     // Update achievements
     let achievementsUpdated = false;
@@ -159,6 +175,14 @@ router.post('/:userId/update', async (req, res) => {
         achievement.progress = airbusCount;
         console.log(`Updating Airbus Expert: ${oldProgress} -> ${achievement.progress}`);
         if (airbusCount >= achievement.target && !achievement.completed) {
+          achievement.completed = true;
+          achievement.completedAt = now;
+          achievementsUpdated = true;
+        }
+      } else if (achievement.name === 'A321neo Hunter') {
+        achievement.progress = a321neoCount;
+        console.log(`Updating A321neo Hunter: ${oldProgress} -> ${achievement.progress}`);
+        if (a321neoCount >= achievement.target && !achievement.completed) {
           achievement.completed = true;
           achievement.completedAt = now;
           achievementsUpdated = true;
