@@ -10,11 +10,10 @@ function getNextResetDate(type) {
   
   if (type === 'daily') {
     const nextDay = new Date(now);
-    nextDay.setUTCHours(24, 0, 0, 0); // Next day UTC midnight
+    nextDay.setUTCHours(24, 0, 0, 0);
     return nextDay;
   } else if (type === 'weekly') {
-    // Calculate next Monday UTC
-    const currentDay = now.getUTCDay(); // 0 (Sun) to 6 (Sat)
+    const currentDay = now.getUTCDay();
     const daysUntilMonday = currentDay === 0 ? 1 : 1 + 7 - currentDay;
     const nextMonday = new Date(now);
     nextMonday.setUTCDate(now.getUTCDate() + daysUntilMonday);
@@ -61,13 +60,11 @@ async function initializeAchievements(userId) {
 // Get user's achievements
 router.get('/:userId', async (req, res) => {
   try {
-    console.log(`Fetching achievements for user ${req.params.userId}`); // Debug log
     let user = await User.findById(req.params.userId);
     if (!user) throw new Error('User not found');
 
     // Initialize achievements if they don't exist
     if (!user.achievements || user.achievements.length === 0) {
-      console.log('Initializing achievements for user'); // Debug log
       await initializeAchievements(req.params.userId);
       user = await User.findById(req.params.userId);
     }
@@ -78,7 +75,6 @@ router.get('/:userId', async (req, res) => {
 
     for (let achievement of user.achievements) {
       if (now >= new Date(achievement.resetDate)) {
-        console.log(`Resetting achievement ${achievement.name}`); // Debug log
         achievement.progress = 0;
         achievement.completed = false;
         achievement.resetDate = getNextResetDate(achievement.type);
@@ -87,13 +83,12 @@ router.get('/:userId', async (req, res) => {
     }
 
     if (achievementsUpdated) {
-      console.log('Saving updated achievements'); // Debug log
       await user.save();
     }
 
     res.json(user.achievements);
   } catch (error) {
-    console.error('Error in GET /:userId:', error); // Debug log
+    console.error('Error in GET /:userId:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -101,49 +96,44 @@ router.get('/:userId', async (req, res) => {
 // Update achievements progress
 router.post('/:userId/update', async (req, res) => {
   try {
-    console.log(`Updating achievements for user ${req.params.userId}`); // Debug log
     const user = await User.findById(req.params.userId);
     if (!user) throw new Error('User not found');
 
     const now = new Date();
-    
-    // Daily reset time (UTC)
-    const today = new Date(now);
-    today.setUTCHours(0, 0, 0, 0);
-    
-    // Weekly reset time (Monday UTC)
-    const thisWeek = new Date(now);
-    thisWeek.setUTCDate(now.getUTCDate() - ((now.getUTCDay() + 6) % 7)); // Previous Monday
-    thisWeek.setUTCHours(0, 0, 0, 0);
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
 
-    // Count today's spots (UTC)
-    const todaySpots = await Spot.countDocuments({
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    // Get all spots for today and this week
+    const todaySpots = await Spot.find({
       userId: new mongoose.Types.ObjectId(user._id),
-      timestamp: { $gte: today }
-    });
+      timestamp: { $gte: startOfToday }
+    }).lean();
 
-    console.log(`Today's spots: ${todaySpots}`); // Debug log
+    const weeklySpots = await Spot.find({
+      userId: new mongoose.Types.ObjectId(user._id),
+      timestamp: { $gte: startOfWeek }
+    }).lean();
 
-    // Count weekly Airbus spots using aggregation (optimized)
-    const weeklyAirbusSpots = await Spot.aggregate([
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(user._id),
-          timestamp: { $gte: thisWeek },
-          'flight.type': { $regex: /^A/ } // Regex to match types starting with 'A'
-        }
-      },
-      { $count: 'count' }
-    ]);
+    // Count today's spots
+    const todayCount = todaySpots.length;
+    console.log('Today spots count:', todayCount);
 
-    const airbusCount = weeklyAirbusSpots[0]?.count || 0;
-    console.log(`Weekly Airbus spots: ${airbusCount}`); // Debug log
+    // Count Airbus planes (case insensitive check for 'a' at start)
+    const airbusCount = weeklySpots.filter(spot => 
+      spot.flight?.type && 
+      /^a/i.test(spot.flight.type)
+    ).length;
+    console.log('Airbus spots count:', airbusCount);
 
     // Update achievements
     let achievementsUpdated = false;
     user.achievements.forEach(achievement => {
-      if (new Date() >= new Date(achievement.resetDate)) {
-        console.log(`Resetting achievement ${achievement.name}`); // Debug log
+      // Check for reset
+      if (now >= new Date(achievement.resetDate)) {
         achievement.progress = 0;
         achievement.completed = false;
         achievement.resetDate = getNextResetDate(achievement.type);
@@ -151,9 +141,8 @@ router.post('/:userId/update', async (req, res) => {
       }
 
       if (achievement.name === 'Daily Spotter') {
-        achievement.progress = todaySpots;
-        if (todaySpots >= achievement.target && !achievement.completed) {
-          console.log(`Completing Daily Spotter achievement`); // Debug log
+        achievement.progress = todayCount;
+        if (todayCount >= achievement.target && !achievement.completed) {
           achievement.completed = true;
           achievement.completedAt = now;
           achievementsUpdated = true;
@@ -161,7 +150,6 @@ router.post('/:userId/update', async (req, res) => {
       } else if (achievement.name === 'Airbus Expert') {
         achievement.progress = airbusCount;
         if (airbusCount >= achievement.target && !achievement.completed) {
-          console.log(`Completing Airbus Expert achievement`); // Debug log
           achievement.completed = true;
           achievement.completedAt = now;
           achievementsUpdated = true;
@@ -170,13 +158,12 @@ router.post('/:userId/update', async (req, res) => {
     });
 
     if (achievementsUpdated) {
-      console.log('Saving updated achievements'); // Debug log
       await user.save();
     }
 
     res.json(user.achievements);
   } catch (error) {
-    console.error('Error in POST /:userId/update:', error); // Debug log
+    console.error('Error in POST /:userId/update:', error);
     res.status(500).json({ error: error.message });
   }
 });
