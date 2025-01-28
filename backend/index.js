@@ -9,11 +9,16 @@ require('dotenv').config();
 const app = express();
 
 // CORS middleware
+// In your backend server.js or app.js
+const cors = require('cors');
+
 app.use(cors({
-  origin: 'https://plane-spotter-frontend.vercel.app',
+  origin: [
+    'https://plane-spotter-frontend.vercel.app',
+    'http://localhost:3000' // for local development
+  ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
 
 app.use(express.json());
