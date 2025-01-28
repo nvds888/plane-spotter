@@ -3,7 +3,8 @@
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronUp, Filter, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronDown, Filter, CheckCircle, XCircle, Home, Layers, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Flight = {
   hex: string;
@@ -111,11 +112,11 @@ export default function Collection() {
           <p className="text-gray-600">Sign in to view your collection</p>
           <div className="flex gap-4 justify-center">
             <Link href="/auth/signin" 
-              className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
+              className="btn-primary">
               Sign In
             </Link>
             <Link href="/auth/signup" 
-              className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+              className="btn-secondary">
               Sign Up
             </Link>
           </div>
@@ -125,42 +126,47 @@ export default function Collection() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto p-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">✈️ My Collection</h1>
-            <Link 
-              href="/" 
-              className="px-4 py-2 text-blue-500 hover:text-blue-600 transition-colors"
-            >
-              Back to Spotting
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* iOS-style status bar */}
+      <div className="h-6 bg-white" />
 
-          {/* Filter Section */}
-          <div className="mt-4">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="px-4 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-semibold">✈️ Collection</h1>
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <Filter size={20} />
+          </button>
+        </div>
+
+        {/* Filter Options */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden border-t border-gray-100"
             >
-              <Filter size={20} />
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </button>
-            
-            {showFilters && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium mb-3">Group By:</h3>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="px-4 py-4 bg-white">
+                <h3 className="font-medium mb-3 text-gray-700">Group planes by:</h3>
+                <div className="grid grid-cols-2 gap-2">
                   {(['type', 'date', 'airline', 'altitude'] as GroupBy[]).map((option) => (
                     <button
                       key={option}
-                      onClick={() => setGroupBy(option)}
-                      className={`px-3 py-2 rounded-lg capitalize ${
+                      onClick={() => {
+                        setGroupBy(option);
+                        setExpandedGroups(new Set());
+                        setShowFilters(false);
+                      }}
+                      className={`px-4 py-3 rounded-xl capitalize font-medium ${
                         groupBy === option
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-white text-gray-600 hover:bg-gray-100'
+                          ? 'bg-blue-500 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
                       {option}
@@ -168,106 +174,136 @@ export default function Collection() {
                   ))}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4">
-        <div className="max-w-7xl mx-auto">
-          {isLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading your collection...</p>
-            </div>
-          ) : groupedSpots.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No planes in your collection yet!</p>
-              <Link 
-                href="/"
-                className="mt-4 inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+      <main className="p-4 pb-20 max-w-lg mx-auto">
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white rounded-2xl p-4 animate-pulse">
+                <div className="h-6 bg-gray-200 rounded-lg w-3/4 mb-3" />
+                <div className="h-4 bg-gray-200 rounded-lg w-1/4" />
+              </div>
+            ))}
+          </div>
+        ) : groupedSpots.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-2xl shadow-sm p-6">
+            <p className="text-gray-500 mb-4">No planes in your collection yet!</p>
+            <Link 
+              href="/"
+              className="btn-primary"
+            >
+              Start Spotting
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {groupedSpots.map((group) => (
+              <motion.div 
+                key={group._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-2xl shadow-sm"
               >
-                Start Spotting
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {groupedSpots.map((group) => (
-                <div key={group._id} className="bg-white rounded-lg shadow-sm border">
-                  <button
-                    onClick={() => toggleGroup(group._id)}
-                    className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <h2 className="text-xl font-semibold">{formatGroupTitle(group._id)}</h2>
-                      <p className="text-gray-500 text-sm">{group.count} spots</p>
-                    </div>
-                    {expandedGroups.has(group._id) ? (
-                      <ChevronUp className="text-gray-400" />
-                    ) : (
-                      <ChevronDown className="text-gray-400" />
-                    )}
-                  </button>
+                <button
+                  onClick={() => toggleGroup(group._id)}
+                  className="w-full p-4 flex items-center justify-between"
+                >
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-800">
+                      {formatGroupTitle(group._id)}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {group.count} plane{group.count !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <ChevronDown 
+                    className={`text-gray-400 transition-transform duration-200 ${
+                      expandedGroups.has(group._id) ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
 
+                <AnimatePresence>
                   {expandedGroups.has(group._id) && (
-                    <div className="border-t p-4 space-y-4">
-                      {group.spots.map((spot) => (
-                        <div key={spot._id} className="bg-gray-50 rounded-lg p-4 shadow-sm">
-                          <div className="space-y-4">
-                            {/* Flight Info */}
-                            <div className="grid grid-cols-2 gap-4">
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: 'auto' }}
+                      exit={{ height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-4 space-y-3 border-t border-gray-100">
+                        {group.spots.map((spot, spotIndex) => (
+                          <motion.div 
+                            key={spot._id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: spotIndex * 0.05 }}
+                            className="bg-gray-50 p-4 rounded-xl"
+                          >
+                            <div className="flex justify-between items-start mb-3">
                               <div>
-                                <p className="font-medium">Flight</p>
-                                <p className="text-gray-600">{spot.flight?.flight || 'N/A'}</p>
+                                <h4 className="font-medium text-gray-800">
+                                  {spot.flight?.flight || 'Unknown Flight'}
+                                </h4>
+                                <p className="text-sm text-gray-500">
+                                  {spot.flight?.operator || 'Unknown Operator'}
+                                </p>
+                              </div>
+                              {spot.guessResult && (
+                                <span className="text-green-500 text-sm font-medium bg-green-50 px-2 py-1 rounded-lg">
+                                  +{spot.guessResult.xpEarned} XP
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                              <div>
+                                <p className="text-gray-500">Altitude</p>
+                                <p className="font-medium">
+                                  {spot.flight?.alt ? `${spot.flight.alt.toLocaleString()} ft` : 'N/A'}
+                                </p>
                               </div>
                               <div>
-                                <p className="font-medium">Operator</p>
-                                <p className="text-gray-600">{spot.flight?.operator || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium">Altitude</p>
-                                <p className="text-gray-600">{spot.flight?.alt ? `${spot.flight.alt}ft` : 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium">Speed</p>
-                                <p className="text-gray-600">{spot.flight?.speed ? `${spot.flight.speed}kt` : 'N/A'}</p>
+                                <p className="text-gray-500">Speed</p>
+                                <p className="font-medium">
+                                  {spot.flight?.speed ? `${spot.flight.speed} kts` : 'N/A'}
+                                </p>
                               </div>
                             </div>
 
-                            {/* Guess Results */}
                             {spot.guessResult && (
-                              <div className="border-t pt-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-medium">Guess Results</h4>
-                                  <span className="text-green-600 font-medium">
-                                    +{spot.guessResult.xpEarned} XP
-                                  </span>
+                              <div className="flex gap-4 text-sm">
+                                <div className={`flex items-center gap-1 ${
+                                  spot.guessResult.isTypeCorrect ? 'text-green-600' : 'text-red-500'
+                                }`}>
+                                  {spot.guessResult.isTypeCorrect ? (
+                                    <CheckCircle className="w-4 h-4" />
+                                  ) : (
+                                    <XCircle className="w-4 h-4" />
+                                  )}
+                                  <span>Type</span>
                                 </div>
-                                <div className="flex gap-4">
-                                  <div className="flex items-center gap-1">
-                                    {spot.guessResult.isTypeCorrect ? (
-                                      <CheckCircle className="text-green-500 w-4 h-4" />
-                                    ) : (
-                                      <XCircle className="text-red-500 w-4 h-4" />
-                                    )}
-                                    <span className="text-sm">Type</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    {spot.guessResult.isAltitudeCorrect ? (
-                                      <CheckCircle className="text-green-500 w-4 h-4" />
-                                    ) : (
-                                      <XCircle className="text-red-500 w-4 h-4" />
-                                    )}
-                                    <span className="text-sm">Altitude</span>
-                                  </div>
+                                <div className={`flex items-center gap-1 ${
+                                  spot.guessResult.isAltitudeCorrect ? 'text-green-600' : 'text-red-500'
+                                }`}>
+                                  {spot.guessResult.isAltitudeCorrect ? (
+                                    <CheckCircle className="w-4 h-4" />
+                                  ) : (
+                                    <XCircle className="w-4 h-4" />
+                                  )}
+                                  <span>Altitude</span>
                                 </div>
                               </div>
                             )}
 
-                            {/* Timestamp */}
-                            <div className="text-sm text-gray-500 border-t pt-3">
-                              Spotted: {new Date(spot.timestamp).toLocaleDateString('en-US', {
+                            <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500">
+                              {new Date(spot.timestamp).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'long',
                                 day: 'numeric',
@@ -275,17 +311,35 @@ export default function Collection() {
                                 minute: '2-digit'
                               })}
                             </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
                   )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </main>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg safe-area-bottom">
+        <div className="flex justify-around py-2 max-w-lg mx-auto">
+          <Link href="/" className="p-2 text-gray-500 flex flex-col items-center">
+            <Home size={24} />
+            <span className="text-xs mt-1">Home</span>
+          </Link>
+          <Link href="/collections" className="p-2 text-blue-500 flex flex-col items-center">
+            <Layers size={24} />
+            <span className="text-xs mt-1">Collection</span>
+          </Link>
+          <Link href="/profile" className="p-2 text-gray-500 flex flex-col items-center">
+            <User size={24} />
+            <span className="text-xs mt-1">Profile</span>
+          </Link>
+        </div>
+      </nav>
     </div>
   );
 }
