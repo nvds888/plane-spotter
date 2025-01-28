@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, CheckCircle, XCircle } from 'lucide-react';
 
 type Flight = {
   hex: string;
@@ -16,6 +16,12 @@ type Flight = {
   lon: number;
 };
 
+type GuessResult = {
+  isTypeCorrect: boolean;
+  isAltitudeCorrect: boolean;
+  xpEarned: number;
+};
+
 type Spot = {
   _id: string;
   userId: string;
@@ -23,6 +29,7 @@ type Spot = {
   lon: number;
   timestamp: string;
   flight?: Flight;
+  guessResult?: GuessResult;
 };
 
 type GroupedSpot = {
@@ -78,7 +85,6 @@ export default function Collection() {
     setExpandedGroups(newExpanded);
   };
 
-  // Format display value based on group type
   const formatGroupTitle = (id: string) => {
     if (!id) return 'Unknown';
     
@@ -89,7 +95,7 @@ export default function Collection() {
           month: 'long' 
         });
       case 'altitude':
-        return id; // Already formatted in backend
+        return id;
       case 'airline':
         return `${id} Airlines`;
       default:
@@ -122,7 +128,7 @@ export default function Collection() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm">
-        <div className="max-w-2xl mx-auto p-4">
+        <div className="max-w-7xl mx-auto p-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-800">✈️ My Collection</h1>
             <Link 
@@ -169,7 +175,7 @@ export default function Collection() {
 
       {/* Main Content */}
       <main className="flex-1 p-4">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {isLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
@@ -186,7 +192,7 @@ export default function Collection() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {groupedSpots.map((group) => (
                 <div key={group._id} className="bg-white rounded-lg shadow-sm border">
                   <button
@@ -205,37 +211,69 @@ export default function Collection() {
                   </button>
 
                   {expandedGroups.has(group._id) && (
-                    <div className="border-t">
+                    <div className="border-t p-4 space-y-4">
                       {group.spots.map((spot) => (
-                        <div key={spot._id} className="p-4 border-b last:border-b-0">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <p className="font-medium">Flight</p>
-                              <p className="text-gray-600">{spot.flight?.flight || 'N/A'}</p>
+                        <div key={spot._id} className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                          <div className="space-y-4">
+                            {/* Flight Info */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="font-medium">Flight</p>
+                                <p className="text-gray-600">{spot.flight?.flight || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="font-medium">Operator</p>
+                                <p className="text-gray-600">{spot.flight?.operator || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="font-medium">Altitude</p>
+                                <p className="text-gray-600">{spot.flight?.alt ? `${spot.flight.alt}ft` : 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="font-medium">Speed</p>
+                                <p className="text-gray-600">{spot.flight?.speed ? `${spot.flight.speed}kt` : 'N/A'}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium">Operator</p>
-                              <p className="text-gray-600">{spot.flight?.operator || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="font-medium">Altitude</p>
-                              <p className="text-gray-600">{spot.flight?.alt ? `${spot.flight.alt}ft` : 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="font-medium">Speed</p>
-                              <p className="text-gray-600">{spot.flight?.speed ? `${spot.flight.speed}kt` : 'N/A'}</p>
-                            </div>
-                            <div className="col-span-2">
-                              <p className="font-medium">Spotted</p>
-                              <p className="text-gray-600">
-                                {new Date(spot.timestamp).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
+
+                            {/* Guess Results */}
+                            {spot.guessResult && (
+                              <div className="border-t pt-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-medium">Guess Results</h4>
+                                  <span className="text-green-600 font-medium">
+                                    +{spot.guessResult.xpEarned} XP
+                                  </span>
+                                </div>
+                                <div className="flex gap-4">
+                                  <div className="flex items-center gap-1">
+                                    {spot.guessResult.isTypeCorrect ? (
+                                      <CheckCircle className="text-green-500 w-4 h-4" />
+                                    ) : (
+                                      <XCircle className="text-red-500 w-4 h-4" />
+                                    )}
+                                    <span className="text-sm">Type</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    {spot.guessResult.isAltitudeCorrect ? (
+                                      <CheckCircle className="text-green-500 w-4 h-4" />
+                                    ) : (
+                                      <XCircle className="text-red-500 w-4 h-4" />
+                                    )}
+                                    <span className="text-sm">Altitude</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Timestamp */}
+                            <div className="text-sm text-gray-500 border-t pt-3">
+                              Spotted: {new Date(spot.timestamp).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
                           </div>
                         </div>
