@@ -131,17 +131,25 @@ router.post('/:userId/update', async (req, res) => {
 
     // Update achievements
     let achievementsUpdated = false;
-    user.achievements.forEach(achievement => {
+    
+    // Log current state before updates
+    console.log('Current achievements state:', user.achievements);
+
+    for (let achievement of user.achievements) {
       // Check for reset
       if (now >= new Date(achievement.resetDate)) {
+        console.log(`Resetting achievement ${achievement.name}`);
         achievement.progress = 0;
         achievement.completed = false;
         achievement.resetDate = getNextResetDate(achievement.type);
         achievementsUpdated = true;
       }
 
+      const oldProgress = achievement.progress;
+
       if (achievement.name === 'Daily Spotter') {
         achievement.progress = todayCount;
+        console.log(`Updating Daily Spotter: ${oldProgress} -> ${achievement.progress}`);
         if (todayCount >= achievement.target && !achievement.completed) {
           achievement.completed = true;
           achievement.completedAt = now;
@@ -149,16 +157,27 @@ router.post('/:userId/update', async (req, res) => {
         }
       } else if (achievement.name === 'Airbus Expert') {
         achievement.progress = airbusCount;
+        console.log(`Updating Airbus Expert: ${oldProgress} -> ${achievement.progress}`);
         if (airbusCount >= achievement.target && !achievement.completed) {
           achievement.completed = true;
           achievement.completedAt = now;
           achievementsUpdated = true;
         }
       }
-    });
 
-    if (achievementsUpdated) {
-      await user.save();
+      // Force the achievement to be marked as modified
+      user.markModified(`achievements`);
+    }
+
+    if (achievementsUpdated || true) { // Always save to ensure updates are persisted
+      console.log('Saving updated achievements state:', user.achievements);
+      try {
+        await user.save();
+        console.log('Successfully saved achievements');
+      } catch (error) {
+        console.error('Error saving achievements:', error);
+        throw error;
+      }
     }
 
     res.json(user.achievements);
