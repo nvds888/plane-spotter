@@ -76,6 +76,52 @@ router.get('/:userId', async (req, res) => {
     if (!user.achievements || user.achievements.length === 0) {
       await initializeAchievements(req.params.userId);
       user = await User.findById(req.params.userId);
+    } else {
+      // Check for missing achievements and add them
+      const defaultAchievements = [
+        {
+          type: 'daily',
+          name: 'Daily Spotter',
+          description: 'Spot 2 planes today',
+          target: 2,
+          progress: 0,
+          completed: false,
+          resetDate: getNextResetDate('daily')
+        },
+        {
+          type: 'weekly',
+          name: 'Airbus Expert',
+          description: 'Spot 10 Airbus planes this week',
+          target: 10,
+          progress: 0,
+          completed: false,
+          resetDate: getNextResetDate('weekly')
+        },
+        {
+          type: 'weekly',
+          name: 'A321neo Hunter',
+          description: 'Spot 3 Airbus A321neo aircraft this week',
+          target: 3,
+          progress: 0,
+          completed: false,
+          resetDate: getNextResetDate('weekly')
+        }
+      ];
+
+      // Add any missing achievements
+      let achievementsUpdated = false;
+      defaultAchievements.forEach(defaultAchievement => {
+        if (!user.achievements.find(a => a.name === defaultAchievement.name)) {
+          console.log(`Adding missing achievement: ${defaultAchievement.name}`);
+          user.achievements.push(defaultAchievement);
+          achievementsUpdated = true;
+        }
+      });
+
+      if (achievementsUpdated) {
+        user.markModified('achievements');
+        await user.save();
+      }
     }
 
     // Reset achievements if needed
