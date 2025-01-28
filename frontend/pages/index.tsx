@@ -53,7 +53,6 @@ export default function Home() {
 
   useEffect(() => setIsClient(true), []);
 
-  // Fetch user's XP balance
   useEffect(() => {
     const fetchUserXP = async () => {
       if (!session?.user?.id) return;
@@ -69,11 +68,9 @@ export default function Home() {
     fetchUserXP();
   }, [session]);
 
-  // Fetch user's spots
   useEffect(() => {
     const fetchSpots = async () => {
       if (!session?.user?.id) return;
-      
       try {
         const response = await fetch(
           `https://plane-spotter-backend.onrender.com/api/spot?userId=${session.user.id}`
@@ -88,12 +85,9 @@ export default function Home() {
     fetchSpots();
   }, [session]);
 
-  // Handle spotting planes
   const handleSpot = async () => {
     if (!coords || isLoading || !session?.user?.id) return;
     setIsLoading(true);
-  
-    console.log('User Coordinates:', coords.latitude, coords.longitude); // Log coordinates
   
     try {
       const flightsResponse = await fetch(
@@ -103,14 +97,11 @@ export default function Home() {
       if (!flightsResponse.ok) throw new Error('Failed to fetch flights');
       const flights: Flight[] = await flightsResponse.json();
   
-      console.log('Fetched Flights:', flights); // Log fetched flights
-  
       if (!flights.length) {
         alert('No flights detected within visible range!');
         return;
       }
   
-      // Save all visible flights
       const savedSpots: Spot[] = [];
       for (const flight of flights) {
         const requestBody = {
@@ -129,9 +120,6 @@ export default function Home() {
           },
         };
   
-        console.log('Request Body:', JSON.stringify(requestBody, null, 2)); // Log the request body
-  
-        // Save spot with flight data
         const spotResponse = await fetch('https://plane-spotter-backend.onrender.com/api/spot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -139,8 +127,7 @@ export default function Home() {
         });
   
         if (!spotResponse.ok) {
-          const errorResponse = await spotResponse.json(); // Parse the error response
-          console.error('Backend Error:', errorResponse);
+          const errorResponse = await spotResponse.json();
           throw new Error(errorResponse.error || 'Failed to save spot');
         }
   
@@ -148,16 +135,13 @@ export default function Home() {
         savedSpots.push(newSpot);
       }
   
-      // Update the spots state with all newly saved spots
       setSpots((prev) => [...prev, ...savedSpots]);
       alert(`Spotted ${savedSpots.length} flights!`);
   
-      // Refresh XP
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
       const xpData = await xpResponse.json();
       setUserXP(xpData);
   
-      // Show guess modal for new spots
       if (savedSpots.length > 0) {
         setNewSpots(savedSpots);
         setCurrentGuessSpot(savedSpots[0]);
@@ -172,7 +156,6 @@ export default function Home() {
     }
   };
 
-  // Handle guess submission
   const handleGuessSubmit = async () => {
     if (!currentGuessSpot) return;
 
@@ -186,12 +169,10 @@ export default function Home() {
         })
       });
 
-      // Refresh XP
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/xp`);
       const xpData = await xpResponse.json();
       setUserXP(xpData);
 
-      // Move to next spot
       const nextSpots = newSpots.slice(1);
       if (nextSpots.length > 0) {
         setNewSpots(nextSpots);
@@ -207,149 +188,162 @@ export default function Home() {
 
   if (!session) {
     return (
-      <div className="p-4 max-w-md mx-auto text-center">
-        <p className="mb-4">Please sign in to access Plane Spotter</p>
-        <div className="flex gap-4 justify-center">
-        <Link href="/auth/signin" className="btn-primary">Sign In</Link>
-        <Link href="/auth/signup" className="btn-secondary">Sign Up</Link>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
+        <div className="w-full max-w-md text-center space-y-6">
+          <h1 className="text-4xl font-bold text-gray-800">✈️ Plane Spotter</h1>
+          <p className="text-gray-600">Sign in to start your plane spotting journey</p>
+          <div className="flex gap-4 justify-center">
+            <Link href="/auth/signin" 
+              className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
+              Sign In
+            </Link>
+            <Link href="/auth/signup" 
+              className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+              Sign Up
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">✈️ Plane Spotter</h1>
-        <div className="flex gap-2 items-center">
-          <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
-            <span className="font-semibold">Weekly:</span> {userXP.weeklyXP}
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="p-4 bg-white shadow-sm">
+        <div className="max-w-2xl mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">✈️ Plane Spotter</h1>
+          <div className="flex gap-3">
+            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
+              <span className="font-semibold">Weekly:</span> {userXP.weeklyXP}
+            </div>
+            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
+              <span className="font-semibold">Total:</span> {userXP.totalXP}
+            </div>
           </div>
-          <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
-            <span className="font-semibold">Total:</span> {userXP.totalXP}
-          </div>
-          <Link 
-            href="/collections"
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-          >
-            My Collection
-          </Link>
-          <button 
-            onClick={() => signOut()}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-          >
-            Sign Out
-          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="mb-6">
+      {/* Main Content */}
+      <main className="flex-1 p-4 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">
         {isClient && isGeolocationAvailable ? (
           <button
             onClick={handleSpot}
             disabled={isLoading}
-            className={`w-full p-4 rounded-lg font-bold transition-colors ${
+            className={`w-48 h-48 rounded-full font-bold transition-all transform hover:scale-105 ${
               isLoading 
                 ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-blue-500 text-white hover:bg-blue-600'
+                : 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg'
             }`}
           >
             {isLoading ? 'Spotting...' : 'SPOT PLANE!'}
           </button>
         ) : (
-          <div className="text-center p-4 bg-yellow-100 rounded-lg">
+          <div className="text-center p-6 bg-yellow-100 rounded-lg w-full max-w-md">
             {isClient ? 'Enable GPS to start spotting!' : 'Loading...'}
           </div>
         )}
-      </div>
-
-      <div className="mt-8 text-center">
-        <Link 
-          href="/collections"
-          className="inline-block px-6 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          View Your Collection ({spots.length})
-        </Link>
-      </div>
-
-      {showGuessModal && currentGuessSpot && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div className="bg-white p-6 rounded-lg max-w-md w-full">
-      <h3 className="text-xl font-bold mb-4">✈️ What Did You Spot?</h3>
-      <p className="mb-4 text-sm text-gray-600">
-        {newSpots.length} plane{newSpots.length > 1 ? 's' : ''} left to guess
-      </p>
-
-      {/* Map Section */}
-      <div className="mb-4">
-        <Map
-          center={coords ? [coords.latitude, coords.longitude] : [0, 0]}
-          spots={newSpots}
-          highlightedSpot={currentGuessSpot}
-        />
-      </div>
-
-      {/* Guess Form */}
-      <div className="space-y-4">
-        <div>
-          <label className="block mb-2">Aircraft Type</label>
-          <select
-            value={guessedType}
-            onChange={(e) => setGuessedType(e.target.value)}
-            className="w-full p-2 border rounded"
-          >
-            <option value="">Select Type</option>
-            <option value="A320">Airbus A320</option>
-            <option value="A20N">Airbus A320neo</option>
-            <option value="A321">Airbus A321</option>
-            <option value="A21N">Airbus A321neo</option>
-            <option value="A330">Airbus A330</option>
-            <option value="A350">Airbus A350</option>
-            <option value="A380">Airbus A380</option>
-            <option value="737">Boeing 737</option>
-            <option value="737M">Boeing 737 MAX</option>
-            <option value="747">Boeing 747</option>
-            <option value="757">Boeing 757</option>
-            <option value="767">Boeing 767</option>
-            <option value="777">Boeing 777</option>
-            <option value="787">Boeing 787</option>
-            <option value="C130">Lockheed C-130 Hercules</option>
-            <option value="F16">F-16 Fighting Falcon</option>
-            <option value="B2">B-2 Spirit</option>
-            <option value="Beluga">Airbus Beluga</option>
-            <option value="Concorde">Concorde</option>
-            <option value="Other">Other</option>
-          </select>
+        
+        <div className="mt-8 text-center text-gray-600">
+          You have spotted {spots.length} planes
         </div>
+      </main>
 
-        <div>
-          <label className="block mb-2">Altitude Range</label>
-          <div className="space-y-2">
-            {['0-10,000 ft', '10,000-30,000 ft', '30,000+ ft'].map((range) => (
-              <label key={range} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="altRange"
-                  value={range}
-                  checked={guessedAltRange === range}
-                  onChange={(e) => setGuessedAltRange(e.target.value)}
-                />
-                {range}
-              </label>
-            ))}
+      {/* Footer */}
+      <footer className="p-4 bg-white shadow-lg">
+        <div className="max-w-2xl mx-auto flex justify-between items-center">
+          <Link 
+            href="/collections"
+            className="px-4 py-2 text-blue-500 hover:text-blue-600 transition-colors"
+          >
+            My Collection
+          </Link>
+          <button 
+            onClick={() => signOut()}
+            className="px-4 py-2 text-red-500 hover:text-red-600 transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      </footer>
+
+      {/* Guess Modal */}
+      {showGuessModal && currentGuessSpot && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">✈️ What Did You Spot?</h3>
+            <p className="mb-4 text-sm text-gray-600">
+              {newSpots.length} plane{newSpots.length > 1 ? 's' : ''} left to guess
+            </p>
+
+            <div className="mb-4">
+              <Map
+                center={coords ? [coords.latitude, coords.longitude] : [0, 0]}
+                spots={newSpots}
+                highlightedSpot={currentGuessSpot}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block mb-2">Aircraft Type</label>
+                <select
+                  value={guessedType}
+                  onChange={(e) => setGuessedType(e.target.value)}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="">Select Type</option>
+                  <option value="A320">Airbus A320</option>
+                  <option value="A20N">Airbus A320neo</option>
+                  <option value="A321">Airbus A321</option>
+                  <option value="A21N">Airbus A321neo</option>
+                  <option value="A330">Airbus A330</option>
+                  <option value="A350">Airbus A350</option>
+                  <option value="A380">Airbus A380</option>
+                  <option value="737">Boeing 737</option>
+                  <option value="737M">Boeing 737 MAX</option>
+                  <option value="747">Boeing 747</option>
+                  <option value="757">Boeing 757</option>
+                  <option value="767">Boeing 767</option>
+                  <option value="777">Boeing 777</option>
+                  <option value="787">Boeing 787</option>
+                  <option value="C130">Lockheed C-130 Hercules</option>
+                  <option value="F16">F-16 Fighting Falcon</option>
+                  <option value="B2">B-2 Spirit</option>
+                  <option value="Beluga">Airbus Beluga</option>
+                  <option value="Concorde">Concorde</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-2">Altitude Range</label>
+                <div className="space-y-2">
+                  {['0-10,000 ft', '10,000-30,000 ft', '30,000+ ft'].map((range) => (
+                    <label key={range} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="altRange"
+                        value={range}
+                        checked={guessedAltRange === range}
+                        onChange={(e) => setGuessedAltRange(e.target.value)}
+                      />
+                      {range}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={handleGuessSubmit}
+                className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Submit Guess
+              </button>
+            </div>
           </div>
         </div>
-
-        <button
-          onClick={handleGuessSubmit}
-          className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Submit Guess
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 }

@@ -19,26 +19,94 @@ router.get('/', async (req, res) => {
 });
 
 // Get user's spots grouped by aircraft type
+// routes/Spot.js - Updated grouped endpoint
 router.get('/grouped', async (req, res) => {
   try {
-    const groupedSpots = await Spot.aggregate([
+    const { userId, groupBy = 'type' } = req.query;
+    let groupingField;
+    let groupingPipeline = [];
+
+    switch (groupBy) {
+      case 'type':
+        groupingField = '$flight.type';
+        break;
+      case 'date':
+        // Group by month and year
+        groupingPipeline = [
+          {
+            $addFields: {
+              monthYear: {
+                $dateToString: { 
+                  format: "%Y-%m", 
+                  date: { $toDate: "$timestamp" }
+                }
+              }
+            }
+          }
+        ];
+        groupingField = '$monthYear';
+        break;
+      case 'airline':
+        // Extract first 3 characters of flight number
+        groupingPipeline = [
+          {
+            $addFields: {
+              airline: { 
+                $substr: ['$flight.flight', 0, 3] 
+              }
+            }
+          }
+        ];
+        groupingField = '$airline';
+        break;
+      case 'altitude':
+        groupingPipeline = [
+          {
+            $addFields: {
+              altitudeRange: {
+                $switch: {
+                  branches: [
+                    { 
+                      case: { $lt: ['$flight.alt', 10000] },
+                      then: 'Low Altitude (0-10,000 ft)'
+                    },
+                    { 
+                      case: { $lt: ['$flight.alt', 30000] },
+                      then: 'Medium Altitude (10,000-30,000 ft)'
+                    }
+                  ],
+                  default: 'High Altitude (30,000+ ft)'
+                }
+              }
+            }
+          }
+        ];
+        groupingField = '$altitudeRange';
+        break;
+      default:
+        groupingField = '$flight.type';
+    }
+
+    const pipeline = [
       { 
         $match: { 
-          userId: new mongoose.Types.ObjectId(req.query.userId) // Use 'new' keyword here
+          userId: new mongoose.Types.ObjectId(userId)
         } 
       },
+      ...groupingPipeline,
       { 
         $group: {
-          _id: "$flight.type",
+          _id: groupingField,
           count: { $sum: 1 },
           spots: { $push: "$$ROOT" }
         }
       },
       { 
-        $sort: { "_id": 1 } 
+        $sort: { count: -1 } 
       }
-    ]);
+    ];
 
+    const groupedSpots = await Spot.aggregate(pipeline);
     res.json(groupedSpots);
   } catch (error) {
     console.error('Error in /grouped endpoint:', error);
