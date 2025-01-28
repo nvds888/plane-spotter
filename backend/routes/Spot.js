@@ -130,6 +130,19 @@ router.post('/', async (req, res) => {
       { $inc: { totalXP: baseXP, weeklyXP: baseXP } }
     );
 
+    // Update achievements
+    try {
+      await fetch(`${req.protocol}://${req.get('host')}/api/achievements/${spot.userId}/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (achievementError) {
+      console.error('Error updating achievements:', achievementError);
+      // Don't throw the error as the spot was still created successfully
+    }
+
     res.status(201).json(spot);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -176,9 +189,5 @@ router.patch('/:id/guess', async (req, res) => {
   }
 });
 
-// In the POST / route, after creating the spot:
-await fetch(`${process.env.API_URL}/achievements/${spot.userId}/update`, {
-  method: 'POST'
-});
 
 module.exports = router;

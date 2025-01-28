@@ -1,4 +1,3 @@
-// routes/achievements.js
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
@@ -7,40 +6,45 @@ const mongoose = require('mongoose');
 
 // Initialize achievements for a user
 async function initializeAchievements(userId) {
-  const user = await User.findById(userId);
-  if (!user) throw new Error('User not found');
+  try {
+    const user = await User.findById(userId);
+    if (!user) throw new Error('User not found');
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
 
-  const nextWeek = new Date();
-  nextWeek.setDate(nextWeek.getDate() + 7);
-  nextWeek.setHours(0, 0, 0, 0);
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(0, 0, 0, 0);
 
-  const defaultAchievements = [
-    {
-      type: 'daily',
-      name: 'Daily Spotter',
-      description: 'Spot 2 planes in a day',
-      target: 2,
-      progress: 0,
-      completed: false,
-      resetDate: tomorrow
-    },
-    {
-      type: 'weekly',
-      name: 'Airbus Expert',
-      description: 'Spot 10 Airbus planes this week',
-      target: 10,
-      progress: 0,
-      completed: false,
-      resetDate: nextWeek
-    }
-  ];
+    const defaultAchievements = [
+      {
+        type: 'daily',
+        name: 'Daily Spotter',
+        description: 'Spot 2 planes in a day',
+        target: 2,
+        progress: 0,
+        completed: false,
+        resetDate: tomorrow
+      },
+      {
+        type: 'weekly',
+        name: 'Airbus Expert',
+        description: 'Spot 10 Airbus planes this week',
+        target: 10,
+        progress: 0,
+        completed: false,
+        resetDate: nextWeek
+      }
+    ];
 
-  user.achievements = defaultAchievements;
-  return user.save();
+    user.achievements = defaultAchievements;
+    await user.save();
+  } catch (error) {
+    console.error('Error initializing achievements:', error);
+    throw error;
+  }
 }
 
 // Get user's achievements
@@ -51,7 +55,8 @@ router.get('/:userId', async (req, res) => {
 
     // Initialize achievements if they don't exist
     if (!user.achievements || user.achievements.length === 0) {
-      user = await initializeAchievements(req.params.userId);
+      await initializeAchievements(req.params.userId);
+      user = await User.findById(req.params.userId);
     }
 
     // Reset achievements if needed
@@ -102,13 +107,13 @@ router.post('/:userId/update', async (req, res) => {
 
     // Count today's spots
     const todaySpots = await Spot.countDocuments({
-      userId: user._id,
+      userId: new mongoose.Types.ObjectId(user._id),
       timestamp: { $gte: today }
     });
 
     // Count this week's Airbus spots
     const weeklyAirbusSpots = await Spot.countDocuments({
-      userId: user._id,
+      userId: new mongoose.Types.ObjectId(user._id),
       timestamp: { $gte: thisWeek },
       'flight.type': { $regex: /^A/ } // Matches Airbus types starting with 'A'
     });
