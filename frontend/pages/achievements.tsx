@@ -238,7 +238,7 @@ export default function Achievements() {
               <span className="text-xs mt-1">Community</span>
             </Link>
             <Link 
-              href="/collection" 
+              href="/collections" 
               className="flex flex-col items-center text-gray-500 hover:text-gray-700"
             >
               <BookOpen size={24} />
