@@ -4,29 +4,39 @@ const User = require('../models/User');
 const Spot = require('../models/Spot');
 const mongoose = require('mongoose');
 
+// Helper function to get next reset date
+function getNextResetDate(type) {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+
+  if (type === 'daily') {
+    return tomorrow;
+  } else if (type === 'weekly') {
+    // Get next Sunday
+    const nextSunday = new Date(now);
+    nextSunday.setDate(now.getDate() + (7 - now.getDay()));
+    nextSunday.setHours(0, 0, 0, 0);
+    return nextSunday;
+  }
+}
+
 // Initialize achievements for a user
 async function initializeAchievements(userId) {
   try {
     const user = await User.findById(userId);
     if (!user) throw new Error('User not found');
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    nextWeek.setHours(0, 0, 0, 0);
-
     const defaultAchievements = [
       {
         type: 'daily',
         name: 'Daily Spotter',
-        description: 'Spot 2 planes in a day',
+        description: 'Spot 2 planes today',
         target: 2,
         progress: 0,
         completed: false,
-        resetDate: tomorrow
+        resetDate: getNextResetDate('daily')
       },
       {
         type: 'weekly',
@@ -35,7 +45,7 @@ async function initializeAchievements(userId) {
         target: 10,
         progress: 0,
         completed: false,
-        resetDate: nextWeek
+        resetDate: getNextResetDate('weekly')
       }
     ];
 
@@ -64,20 +74,10 @@ router.get('/:userId', async (req, res) => {
     let achievementsUpdated = false;
 
     for (let achievement of user.achievements) {
-      if (now >= achievement.resetDate) {
+      if (now >= new Date(achievement.resetDate)) {
         achievement.progress = 0;
         achievement.completed = false;
-        
-        // Set next reset date
-        const nextReset = new Date();
-        if (achievement.type === 'daily') {
-          nextReset.setDate(nextReset.getDate() + 1);
-        } else if (achievement.type === 'weekly') {
-          nextReset.setDate(nextReset.getDate() + 7);
-        }
-        nextReset.setHours(0, 0, 0, 0);
-        achievement.resetDate = nextReset;
-        
+        achievement.resetDate = getNextResetDate(achievement.type);
         achievementsUpdated = true;
       }
     }
@@ -98,10 +98,12 @@ router.post('/:userId/update', async (req, res) => {
     const user = await User.findById(req.params.userId);
     if (!user) throw new Error('User not found');
 
-    const today = new Date();
+    const now = new Date();
+    const today = new Date(now);
     today.setHours(0, 0, 0, 0);
 
-    const thisWeek = new Date();
+    // Get start of current week (Sunday)
+    const thisWeek = new Date(now);
     thisWeek.setDate(thisWeek.getDate() - thisWeek.getDay());
     thisWeek.setHours(0, 0, 0, 0);
 
@@ -115,27 +117,41 @@ router.post('/:userId/update', async (req, res) => {
     const weeklyAirbusSpots = await Spot.countDocuments({
       userId: new mongoose.Types.ObjectId(user._id),
       timestamp: { $gte: thisWeek },
-      'flight.type': { $regex: /^A/ } // Matches Airbus types starting with 'A'
+      'flight.type': { $regex: /^A/ }
     });
 
     // Update achievements
+    let achievementsUpdated = false;
     user.achievements.forEach(achievement => {
+      // Check if achievement needs reset
+      if (now >= new Date(achievement.resetDate)) {
+        achievement.progress = 0;
+        achievement.completed = false;
+        achievement.resetDate = getNextResetDate(achievement.type);
+        achievementsUpdated = true;
+      }
+
       if (achievement.name === 'Daily Spotter') {
         achievement.progress = todaySpots;
         if (todaySpots >= achievement.target && !achievement.completed) {
           achievement.completed = true;
-          achievement.completedAt = new Date();
+          achievement.completedAt = now;
+          achievementsUpdated = true;
         }
       } else if (achievement.name === 'Airbus Expert') {
         achievement.progress = weeklyAirbusSpots;
         if (weeklyAirbusSpots >= achievement.target && !achievement.completed) {
           achievement.completed = true;
-          achievement.completedAt = new Date();
+          achievement.completedAt = now;
+          achievementsUpdated = true;
         }
       }
     });
 
-    await user.save();
+    if (achievementsUpdated) {
+      await user.save();
+    }
+
     res.json(user.achievements);
   } catch (error) {
     res.status(500).json({ error: error.message });

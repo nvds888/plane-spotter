@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Trophy, Medal, Calendar } from "lucide-react";
+import { Trophy, Medal, Calendar, Clock } from "lucide-react";
 
 type Achievement = {
   _id: string;
@@ -16,7 +16,25 @@ type Achievement = {
 };
 
 const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
-  const progress = Math.min((achievement.progress / achievement.target) * 100, 100);
+  const timeUntilReset = () => {
+    const now = new Date();
+    const resetDate = new Date(achievement.resetDate);
+    const diff = resetDate.getTime() - now.getTime();
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `${days} day${days !== 1 ? 's' : ''} left`;
+    }
+    
+    if (hours < 1) {
+      return `${minutes} min left`;
+    }
+    
+    return `${hours}h ${minutes}m left`;
+  };
   
   return (
     <motion.div 
@@ -24,31 +42,40 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="flex items-center gap-3 mb-2">
-        {achievement.type === 'daily' ? (
-          <Calendar className="text-blue-500" size={24} />
-        ) : (
-          <Trophy className="text-yellow-500" size={24} />
-        )}
-        <div>
+      <div className="flex items-start gap-3">
+        <div className={`p-2 rounded-lg ${achievement.type === 'daily' ? 'bg-blue-100' : 'bg-yellow-100'}`}>
+          {achievement.type === 'daily' ? (
+            <Calendar className="text-blue-500" size={24} />
+          ) : (
+            <Trophy className="text-yellow-500" size={24} />
+          )}
+        </div>
+        <div className="flex-1">
           <h3 className="font-semibold text-lg">{achievement.name}</h3>
           <p className="text-sm text-gray-600">{achievement.description}</p>
+          
+          <div className="mt-3 flex items-center gap-2">
+            <Clock size={14} className="text-gray-400" />
+            <span className="text-sm text-gray-500">{timeUntilReset()}</span>
+          </div>
         </div>
-        {achievement.completed && (
-          <Medal className="ml-auto text-green-500" size={24} />
+        {achievement.completed ? (
+          <div className="bg-green-100 p-2 rounded-lg">
+            <Medal className="text-green-500" size={24} />
+          </div>
+        ) : (
+          <div className="text-lg font-semibold text-right">
+            {achievement.progress}/{achievement.target}
+          </div>
         )}
       </div>
       
       <div className="mt-4">
-        <div className="flex justify-between text-sm mb-1">
-          <span>{achievement.progress} / {achievement.target}</span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <motion.div 
-            className="h-full bg-blue-500"
+            className={`h-full ${achievement.completed ? 'bg-green-500' : 'bg-blue-500'}`}
             initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
+            animate={{ width: `${(achievement.progress / achievement.target) * 100}%` }}
             transition={{ duration: 0.5 }}
           />
         </div>
@@ -86,6 +113,10 @@ export default function Achievements() {
     };
 
     fetchAchievements();
+
+    // Set up an interval to refresh the achievements every minute
+    const interval = setInterval(fetchAchievements, 60000);
+    return () => clearInterval(interval);
   }, [session]);
 
   const dailyAchievements = achievements.filter(a => a.type === 'daily');
