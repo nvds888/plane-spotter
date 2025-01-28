@@ -6,16 +6,43 @@ import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('ServiceWorker registered successfully', registration);
-          })
-          .catch((err) => {
-            console.log('ServiceWorker registration failed: ', err);
-          });
-      });
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      // Only register in production
+      if (process.env.NODE_ENV === 'production') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered:', registration);
+              
+              // Handle updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (newWorker) {
+                  newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      // New content is available, show refresh prompt if needed
+                      if (confirm('New version available! Would you like to update?')) {
+                        window.location.reload();
+                      }
+                    }
+                  });
+                }
+              });
+            })
+            .catch((error) => {
+              console.error('SW registration failed:', error);
+            });
+        });
+
+        // Handle communication between SW and the page
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'CACHE_UPDATED') {
+            // Handle cache updates if needed
+            console.log('Cache updated:', event.data);
+          }
+        });
+      }
     }
   }, []);
 
