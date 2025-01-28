@@ -50,25 +50,21 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
   
   return (
     <motion.div 
-      className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-gray-200 transition-all duration-200"
+      className="bg-white p-4 rounded-xl shadow-sm"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="flex items-start gap-4">
-        <div className={`p-3 rounded-xl ${
-          achievement.type === 'daily' 
-            ? 'bg-violet-50 text-violet-500' 
-            : 'bg-amber-50 text-amber-500'
-        }`}>
+      <div className="flex items-start gap-3">
+        <div className={`p-2 rounded-lg ${achievement.type === 'daily' ? 'bg-blue-100' : 'bg-yellow-100'}`}>
           {achievement.type === 'daily' ? (
-            <Calendar size={24} />
+            <Calendar className="text-blue-500" size={24} />
           ) : (
-            <Trophy size={24} />
+            <Trophy className="text-yellow-500" size={24} />
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg text-gray-900 truncate">{achievement.name}</h3>
-          <p className="text-sm text-gray-600 mt-1">{achievement.description}</p>
+        <div className="flex-1">
+          <h3 className="font-semibold text-lg">{achievement.name}</h3>
+          <p className="text-sm text-gray-600">{achievement.description}</p>
           
           <div className="mt-3 flex items-center gap-2">
             <Clock size={14} className="text-gray-400" />
@@ -76,11 +72,11 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
           </div>
         </div>
         {achievement.completed ? (
-          <div className="bg-emerald-50 p-3 rounded-xl">
-            <Medal className="text-emerald-500" size={24} />
+          <div className="bg-green-100 p-2 rounded-lg">
+            <Medal className="text-green-500" size={24} />
           </div>
         ) : (
-          <div className="text-lg font-semibold text-right text-gray-900">
+          <div className="text-lg font-semibold text-right">
             {achievement.progress}/{achievement.target}
           </div>
         )}
@@ -89,7 +85,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
       <div className="mt-4">
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <motion.div 
-            className={`h-full ${achievement.completed ? 'bg-emerald-500' : 'bg-violet-500'}`}
+            className={`h-full ${achievement.completed ? 'bg-green-500' : 'bg-blue-500'}`}
             initial={{ width: 0 }}
             animate={{ width: `${(achievement.progress / achievement.target) * 100}%` }}
             transition={{ duration: 0.5 }}
@@ -151,30 +147,33 @@ export default function Achievements() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-4 border-gray-200 border-t-violet-500 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin text-blue-500">🌀</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* iOS-style status bar */}
+      <div className="h-6 bg-blue-500" />
+      
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-2xl mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold text-gray-900">Achievements</h1>
+      <header className="bg-blue-500 text-white shadow-sm">
+        <div className="max-w-2xl mx-auto p-4">
+          <h1 className="text-2xl font-bold">🏆 Achievements</h1>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-8 mb-24">
+      <main className="max-w-2xl mx-auto p-4 space-y-6">
         {/* Daily Achievements */}
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Calendar size={20} className="text-violet-500" />
+          <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+            <Calendar size={20} />
             Daily Achievements
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {dailyAchievements.map(achievement => (
               <AchievementCard key={achievement._id} achievement={achievement} />
             ))}
@@ -183,11 +182,11 @@ export default function Achievements() {
 
         {/* Weekly Achievements */}
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Trophy size={20} className="text-amber-500" />
+          <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+            <Trophy size={20} />
             Weekly Achievements
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {weeklyAchievements.map(achievement => (
               <AchievementCard key={achievement._id} achievement={achievement} />
             ))}
@@ -196,17 +195,17 @@ export default function Achievements() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg safe-area-bottom">
-        <div className="flex justify-around py-3 max-w-lg mx-auto">
-          <Link href="/" className="p-2 text-gray-400 hover:text-gray-600 flex flex-col items-center transition-colors">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg safe-area-bottom">
+        <div className="flex justify-around py-2 max-w-lg mx-auto">
+          <Link href="/" className="p-2 text-gray-500 flex flex-col items-center">
             <Home size={24} />
             <span className="text-xs mt-1">Home</span>
           </Link>
-          <Link href="/collections" className="p-2 text-gray-400 hover:text-gray-600 flex flex-col items-center transition-colors">
+          <Link href="/collections" className="p-2 text-gray-500 flex flex-col items-center">
             <Layers size={24} />
             <span className="text-xs mt-1">Collection</span>
           </Link>
-          <Link href="/achievements" className="p-2 text-violet-500 flex flex-col items-center">
+          <Link href="/achievements" className="p-2 text-blue-500 flex flex-col items-center">
             <Trophy size={24} />
             <span className="text-xs mt-1">Achievements</span>
           </Link>
