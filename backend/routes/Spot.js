@@ -176,4 +176,9 @@ router.patch('/:id/guess', async (req, res) => {
   }
 });
 
+// In the POST / route, after creating the spot:
+await fetch(`${process.env.API_URL}/achievements/${spot.userId}/update`, {
+  method: 'POST'
+});
+
 module.exports = router;

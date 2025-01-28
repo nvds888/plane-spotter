@@ -6,7 +6,7 @@ import { useGeolocated } from "react-geolocated"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { motion, AnimatePresence } from "framer-motion"
-import {House, Layers, User, LogOut } from "lucide-react"
+import {Trophy, House, Layers, User, LogOut } from "lucide-react"
 
 type Flight = {
   hex: string
@@ -300,6 +300,10 @@ export default function Home() {
             <Layers size={24} />
             <span className="text-xs mt-1">Collection</span>
           </Link>
+          <Link href="/achievements" className="p-2 text-gray-500 flex flex-col items-center">
+  <Trophy size={24} />
+  <span className="text-xs mt-1">Achievements</span>
+</Link>
           <Link href="/profile" className="p-2 text-gray-500 flex flex-col items-center">
             <User size={24} />
             <span className="text-xs mt-1">Profile</span>
