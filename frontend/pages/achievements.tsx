@@ -27,6 +27,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
       });
     }
   }, [achievement.completed]);
+
   const timeUntilReset = () => {
     const now = new Date();
     const resetDate = new Date(achievement.resetDate);
@@ -150,7 +151,7 @@ export default function Achievements() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* iOS-style status bar */}
       <div className="h-6 bg-blue-500" />
       

@@ -113,35 +113,18 @@ router.post('/:userId/update', async (req, res) => {
       timestamp: { $gte: today }
     });
 
-    // Count this week's Airbus spots
-    const airbusPipeline = [
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(user._id),
-          timestamp: { $gte: thisWeek }
-        }
-      },
-      {
-        $addFields: {
-          isAirbus: {
-            $cond: {
-              if: { $eq: [{ $substr: ["$flight.type", 0, 1] }, "A"] },
-              then: true,
-              else: false
-            }
-          }
-        }
-      },
-      {
-        $match: { isAirbus: true }
-      },
-      {
-        $count: "total"
-      }
-    ];
+    // Count Airbus spots using aggregation
+    const spots = await Spot.find({
+      userId: new mongoose.Types.ObjectId(user._id),
+      timestamp: { $gte: thisWeek }
+    });
 
-    const airbusResult = await Spot.aggregate(airbusPipeline);
-    const weeklyAirbusSpots = airbusResult.length > 0 ? airbusResult[0].total : 0;
+    // Count Airbus planes (any type starting with 'A')
+    const weeklyAirbusSpots = spots.filter(spot => 
+      spot.flight && spot.flight.type && spot.flight.type.startsWith('A')
+    ).length;
+
+    console.log('Weekly Airbus spots found:', weeklyAirbusSpots); // Debug log
 
     // Update achievements
     let achievementsUpdated = false;
