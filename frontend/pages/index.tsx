@@ -184,7 +184,7 @@ export default function Home() {
         spot: currentGuessSpot,
         isTypeCorrect: result.isTypeCorrect,
         isAltitudeCorrect: result.isAltitudeCorrect,
-        xpEarned: result.xpEarned
+        xpEarned: result.bonusXP + 5 // Base XP (5) + Bonus XP
       }]);
 
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
@@ -231,15 +231,13 @@ export default function Home() {
       {/* Header */}
       <header className="p-4 bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            ✈️ <span className="hidden sm:inline">Plane Spotter</span>
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-800">✈️ Plane Spotter</h1>
           <div className="flex gap-3">
-            <div className="bg-blue-100 px-3 py-1 rounded-lg text-sm flex items-center gap-2">
-              <span className="text-blue-600">⭐ {userXP.weeklyXP}</span>
+            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
+              <span className="font-semibold">Weekly XP:</span> {userXP.weeklyXP}
             </div>
-            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm flex items-center gap-2">
-              <span className="font-medium">🏆 {userXP.totalXP}</span>
+            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
+              <span className="font-semibold">Total XP:</span> {userXP.totalXP}
             </div>
           </div>
         </div>
@@ -278,27 +276,24 @@ export default function Home() {
         )}
       </main>
 
-      {/* Enhanced Navigation Footer */}
+      {/* Footer with Navigation Buttons */}
       <footer className="sticky bottom-0 bg-white border-t shadow-lg">
-        <nav className="max-w-2xl mx-auto p-2">
+        <div className="max-w-2xl mx-auto p-2">
           <div className="flex justify-around items-center">
-            <Link href="/" className="p-2 text-gray-600 hover:text-blue-500 transition-colors">
-              <span className="text-2xl">✈️</span>
-              <span className="sr-only">Home</span>
+            <Link href="/" className="px-4 py-2 text-gray-600 hover:text-blue-500 transition-colors">
+              Home
             </Link>
-            <Link href="/collections" className="p-2 text-gray-600 hover:text-blue-500 transition-colors">
-              <span className="text-2xl">📚</span>
-              <span className="sr-only">Collection</span>
+            <Link href="/collections" className="px-4 py-2 text-gray-600 hover:text-blue-500 transition-colors">
+              Collection
             </Link>
             <button 
               onClick={() => signOut()}
-              className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+              className="px-4 py-2 text-gray-600 hover:text-red-500 transition-colors"
             >
-              <span className="text-2xl">🚪</span>
-              <span className="sr-only">Sign Out</span>
+              Sign Out
             </button>
           </div>
-        </nav>
+        </div>
       </footer>
 
       {/* Guess Modal */}
@@ -383,9 +378,7 @@ export default function Home() {
       {showResultsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-20">
           <div className="bg-white p-6 rounded-lg max-w-md w-full space-y-4">
-            <h3 className="text-xl font-bold flex items-center gap-2">
-              🎉 Results
-            </h3>
+            <h3 className="text-xl font-bold mb-4">🎉 Results</h3>
             
             <div className="space-y-3">
               {guessResults.map((result, index) => (
