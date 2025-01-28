@@ -106,26 +106,29 @@ export default function Achievements() {
       if (!session?.user?.id) return;
       
       try {
+        console.log('Updating achievements...'); // Debug log
         // First update the achievements
         await fetch(`https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}/update`, {
           method: 'POST'
         });
         
+        console.log('Fetching achievements...'); // Debug log
         // Then fetch the latest state
         const response = await fetch(`https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}`);
         if (!response.ok) throw new Error('Failed to fetch achievements');
         
         const data = await response.json();
+        console.log('Achievements fetched:', data); // Debug log
         setAchievements(data);
       } catch (error) {
-        console.error('Failed to fetch achievements:', error);
+        console.error('Failed to fetch achievements:', error); // Debug log
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     fetchAchievements();
-
+  
     // Set up an interval to refresh the achievements every minute
     const interval = setInterval(fetchAchievements, 60000);
     return () => clearInterval(interval);
