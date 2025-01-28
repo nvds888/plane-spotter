@@ -3,7 +3,8 @@
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronUp, Filter, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronDown, Filter, CheckCircle, XCircle, Home, Layers, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Flight = {
   hex: string;
@@ -47,6 +48,14 @@ export default function Collection() {
   const [groupBy, setGroupBy] = useState<GroupBy>('type');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+
+  const tabs = [
+    { id: 'all', label: 'All' },
+    { id: 'civil', label: 'Civil' },
+    { id: 'military', label: 'Military' },
+    { id: 'special', label: 'Special' }
+  ];
 
   useEffect(() => {
     const fetchGroupedSpots = async () => {
@@ -125,32 +134,34 @@ export default function Collection() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto p-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">✈️ My Collection</h1>
-            <Link 
-              href="/" 
-              className="px-4 py-2 text-blue-500 hover:text-blue-600 transition-colors"
-            >
-              Back to Spotting
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* iOS-style status bar */}
+      <div className="h-6 bg-white" />
 
-          {/* Filter Section */}
-          <div className="mt-4">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+      {/* Native-like header */}
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-semibold">✈️ Collection</h1>
+          </div>
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <Filter size={20} />
+          </button>
+        </div>
+
+        {/* Filter Options */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
             >
-              <Filter size={20} />
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </button>
-            
-            {showFilters && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div className="px-4 py-3 bg-gray-50 border-t border-b">
                 <h3 className="font-medium mb-3">Group By:</h3>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {(['type', 'date', 'airline', 'altitude'] as GroupBy[]).map((option) => (
@@ -168,106 +179,141 @@ export default function Collection() {
                   ))}
                 </div>
               </div>
-            )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Horizontal scrollable tabs */}
+        <div className="border-b border-gray-200">
+          <div className="flex overflow-x-auto no-scrollbar px-4">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-3 px-4 whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === tab.id 
+                    ? 'border-blue-500 text-blue-500 font-medium'
+                    : 'border-transparent text-gray-500'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4">
-        <div className="max-w-7xl mx-auto">
-          {isLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading your collection...</p>
-            </div>
-          ) : groupedSpots.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No planes in your collection yet!</p>
-              <Link 
-                href="/"
-                className="mt-4 inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+      <main className="p-4 pb-20">
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white rounded-2xl p-4 animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-3" />
+                <div className="h-4 bg-gray-200 rounded w-1/4" />
+              </div>
+            ))}
+          </div>
+        ) : groupedSpots.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No planes in your collection yet!</p>
+            <Link 
+              href="/"
+              className="mt-4 inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Start Spotting
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {groupedSpots.map((group) => (
+              <div 
+                key={group._id}
+                className="bg-white rounded-2xl shadow-sm overflow-hidden"
               >
-                Start Spotting
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {groupedSpots.map((group) => (
-                <div key={group._id} className="bg-white rounded-lg shadow-sm border">
-                  <button
-                    onClick={() => toggleGroup(group._id)}
-                    className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <h2 className="text-xl font-semibold">{formatGroupTitle(group._id)}</h2>
-                      <p className="text-gray-500 text-sm">{group.count} spots</p>
-                    </div>
-                    {expandedGroups.has(group._id) ? (
-                      <ChevronUp className="text-gray-400" />
-                    ) : (
-                      <ChevronDown className="text-gray-400" />
-                    )}
-                  </button>
+                <button
+                  onClick={() => toggleGroup(group._id)}
+                  className="w-full p-4 flex items-center justify-between bg-white"
+                >
+                  <div>
+                    <h3 className="font-semibold text-lg">{formatGroupTitle(group._id)}</h3>
+                    <p className="text-sm text-gray-500">{group.count} spots</p>
+                  </div>
+                  <ChevronDown 
+                    className={`text-gray-400 transition-transform ${
+                      expandedGroups.has(group._id) ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
 
+                <AnimatePresence>
                   {expandedGroups.has(group._id) && (
-                    <div className="border-t p-4 space-y-4">
-                      {group.spots.map((spot) => (
-                        <div key={spot._id} className="bg-gray-50 rounded-lg p-4 shadow-sm">
-                          <div className="space-y-4">
-                            {/* Flight Info */}
-                            <div className="grid grid-cols-2 gap-4">
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: 'auto' }}
+                      exit={{ height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-4 space-y-3 bg-gray-50">
+                        {group.spots.map((spot) => (
+                          <div 
+                            key={spot._id}
+                            className="bg-white p-4 rounded-xl shadow-sm"
+                          >
+                            <div className="flex justify-between items-start mb-3">
                               <div>
-                                <p className="font-medium">Flight</p>
-                                <p className="text-gray-600">{spot.flight?.flight || 'N/A'}</p>
+                                <h4 className="font-medium">{spot.flight?.flight || 'Unknown Flight'}</h4>
+                                <p className="text-sm text-gray-500">{spot.flight?.operator || 'Unknown Operator'}</p>
+                              </div>
+                              {spot.guessResult && (
+                                <span className="text-green-500 text-sm font-medium">
+                                  +{spot.guessResult.xpEarned} XP
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                              <div>
+                                <p className="text-gray-500">Altitude</p>
+                                <p className="font-medium">
+                                  {spot.flight?.alt ? `${spot.flight.alt.toLocaleString()} ft` : 'N/A'}
+                                </p>
                               </div>
                               <div>
-                                <p className="font-medium">Operator</p>
-                                <p className="text-gray-600">{spot.flight?.operator || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium">Altitude</p>
-                                <p className="text-gray-600">{spot.flight?.alt ? `${spot.flight.alt}ft` : 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium">Speed</p>
-                                <p className="text-gray-600">{spot.flight?.speed ? `${spot.flight.speed}kt` : 'N/A'}</p>
+                                <p className="text-gray-500">Speed</p>
+                                <p className="font-medium">
+                                  {spot.flight?.speed ? `${spot.flight.speed} kts` : 'N/A'}
+                                </p>
                               </div>
                             </div>
 
-                            {/* Guess Results */}
                             {spot.guessResult && (
-                              <div className="border-t pt-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-medium">Guess Results</h4>
-                                  <span className="text-green-600 font-medium">
-                                    +{spot.guessResult.xpEarned} XP
-                                  </span>
+                              <div className="flex gap-3 text-sm">
+                                <div className={`flex items-center gap-1 ${
+                                  spot.guessResult.isTypeCorrect ? 'text-green-500' : 'text-red-500'
+                                }`}>
+                                  {spot.guessResult.isTypeCorrect ? (
+                                    <CheckCircle size={16} />
+                                  ) : (
+                                    <XCircle size={16} />
+                                  )}
+                                  <span>Type</span>
                                 </div>
-                                <div className="flex gap-4">
-                                  <div className="flex items-center gap-1">
-                                    {spot.guessResult.isTypeCorrect ? (
-                                      <CheckCircle className="text-green-500 w-4 h-4" />
-                                    ) : (
-                                      <XCircle className="text-red-500 w-4 h-4" />
-                                    )}
-                                    <span className="text-sm">Type</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    {spot.guessResult.isAltitudeCorrect ? (
-                                      <CheckCircle className="text-green-500 w-4 h-4" />
-                                    ) : (
-                                      <XCircle className="text-red-500 w-4 h-4" />
-                                    )}
-                                    <span className="text-sm">Altitude</span>
-                                  </div>
+                                <div className={`flex items-center gap-1 ${
+                                  spot.guessResult.isAltitudeCorrect ? 'text-green-500' : 'text-red-500'
+                                }`}>
+                                  {spot.guessResult.isAltitudeCorrect ? (
+                                    <CheckCircle size={16} />
+                                  ) : (
+                                    <XCircle size={16} />
+                                  )}
+                                  <span>Altitude</span>
                                 </div>
                               </div>
                             )}
 
-                            {/* Timestamp */}
-                            <div className="text-sm text-gray-500 border-t pt-3">
-                              Spotted: {new Date(spot.timestamp).toLocaleDateString('en-US', {
+                            <div className="mt-3 pt-3 border-t text-xs text-gray-500">
+                              {new Date(spot.timestamp).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'long',
                                 day: 'numeric',
@@ -276,16 +322,34 @@ export default function Collection() {
                               })}
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </motion.div>
                   )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
+
+      {/* Native-like bottom tab bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
+        <div className="flex justify-around py-2">
+          <Link href="/" className="p-2 text-gray-500 flex flex-col items-center">
+            <Home size={24} />
+            <span className="text-xs">Home</span>
+          </Link>
+          <Link href="/collections" className="p-2 text-blue-500 flex flex-col items-center">
+            <Layers size={24} />
+            <span className="text-xs">Collection</span>
+          </Link>
+          <Link href="/profile" className="p-2 text-gray-500 flex flex-col items-center">
+            <User size={24} />
+            <span className="text-xs">Profile</span>
+          </Link>
+        </div>
+      </nav>
     </div>
   );
 }
