@@ -3,7 +3,10 @@ const CACHE_NAME = 'plane-spotter-cache-v1';
 // URLs we want to keep cached
 const urlsToCache = [
   '/',
-  '/collections'
+  '/collections',
+  '/auth/signin',
+  '/auth/signup',
+  '/manifest.json',
 ];
 
 // When the service worker is installed
