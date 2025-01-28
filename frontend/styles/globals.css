@@ -17,29 +17,78 @@ body {
 }
 
 .btn-primary {
-  background-color: #3b82f6; /* Blue */
+  background-color: #3b82f6;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
   transition: background-color 0.2s;
-  text-decoration: none; /* Remove underline from links */
-  display: inline-block; /* Ensure proper button styling */
+  text-decoration: none;
+  display: inline-block;
 }
 
 .btn-primary:hover {
-  background-color: #2563eb; /* Darker blue */
+  background-color: #2563eb;
 }
 
 .btn-secondary {
-  background-color: #6b7280; /* Gray */
+  background-color: #6b7280;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
   transition: background-color 0.2s;
-  text-decoration: none; /* Remove underline from links */
-  display: inline-block; /* Ensure proper button styling */
+  text-decoration: none;
+  display: inline-block;
 }
 
 .btn-secondary:hover {
-  background-color: #4b5563; /* Darker gray */
+  background-color: #4b5563;
+}
+
+/* Prevent pull-to-refresh and bouncing on iOS */
+html, body {
+  overscroll-behavior-y: none;
+  height: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide scrollbars but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Native-like touch feedback */
+.touch-feedback:active {
+  opacity: 0.7;
+  transition-property: opacity;
+  transition-duration: 200ms;
+}
+
+/* iOS-style list transitions */
+.ios-list-item {
+  transition-property: all;
+  transition-duration: 200ms;
+}
+
+.ios-list-item-enter {
+  opacity: 0;
+  transform: translateY(1rem);
+}
+
+.ios-list-item-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ios-list-item-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ios-list-item-exit-active {
+  opacity: 0;
+  transform: translateY(-1rem);
 }
