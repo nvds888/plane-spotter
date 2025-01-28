@@ -114,11 +114,34 @@ router.post('/:userId/update', async (req, res) => {
     });
 
     // Count this week's Airbus spots
-    const weeklyAirbusSpots = await Spot.countDocuments({
-      userId: new mongoose.Types.ObjectId(user._id),
-      timestamp: { $gte: thisWeek },
-      'flight.type': { $regex: /^A/ }
-    });
+    const airbusPipeline = [
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(user._id),
+          timestamp: { $gte: thisWeek }
+        }
+      },
+      {
+        $addFields: {
+          isAirbus: {
+            $cond: {
+              if: { $eq: [{ $substr: ["$flight.type", 0, 1] }, "A"] },
+              then: true,
+              else: false
+            }
+          }
+        }
+      },
+      {
+        $match: { isAirbus: true }
+      },
+      {
+        $count: "total"
+      }
+    ];
+
+    const airbusResult = await Spot.aggregate(airbusPipeline);
+    const weeklyAirbusSpots = airbusResult.length > 0 ? airbusResult[0].total : 0;
 
     // Update achievements
     let achievementsUpdated = false;

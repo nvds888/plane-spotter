@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Trophy, Medal, Calendar, Clock } from "lucide-react";
+import { Trophy, Medal, Calendar, Clock, Home, Layers } from "lucide-react";
+import Link from "next/link";
+import confetti from 'canvas-confetti';
 
 type Achievement = {
   _id: string;
@@ -16,6 +18,15 @@ type Achievement = {
 };
 
 const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
+  useEffect(() => {
+    if (achievement.completed) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }, [achievement.completed]);
   const timeUntilReset = () => {
     const now = new Date();
     const resetDate = new Date(achievement.resetDate);
@@ -178,6 +189,24 @@ export default function Achievements() {
           </div>
         </section>
       </main>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg safe-area-bottom">
+        <div className="flex justify-around py-2 max-w-lg mx-auto">
+          <Link href="/" className="p-2 text-gray-500 flex flex-col items-center">
+            <Home size={24} />
+            <span className="text-xs mt-1">Home</span>
+          </Link>
+          <Link href="/collections" className="p-2 text-gray-500 flex flex-col items-center">
+            <Layers size={24} />
+            <span className="text-xs mt-1">Collection</span>
+          </Link>
+          <Link href="/achievements" className="p-2 text-blue-500 flex flex-col items-center">
+            <Trophy size={24} />
+            <span className="text-xs mt-1">Achievements</span>
+          </Link>
+        </div>
+      </nav>
     </div>
   );
 }
