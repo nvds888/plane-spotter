@@ -26,6 +26,13 @@ type Spot = {
   flight?: Flight;
 };
 
+type GuessResult = {
+  spot: Spot;
+  isTypeCorrect: boolean;
+  isAltitudeCorrect: boolean;
+  xpEarned: number;
+};
+
 export default function Home() {
   const { data: session } = useSession();
   const [spots, setSpots] = useState<Spot[]>([]);
@@ -37,6 +44,8 @@ export default function Home() {
   const [guessedType, setGuessedType] = useState('');
   const [guessedAltRange, setGuessedAltRange] = useState('');
   const [userXP, setUserXP] = useState<{ totalXP: number; weeklyXP: number }>({ totalXP: 0, weeklyXP: 0 });
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [guessResults, setGuessResults] = useState<GuessResult[]>([]);
 
   const { coords, isGeolocationAvailable } = useGeolocated({
     positionOptions: { enableHighAccuracy: true },
@@ -157,10 +166,10 @@ export default function Home() {
   };
 
   const handleGuessSubmit = async () => {
-    if (!currentGuessSpot) return;
+    if (!currentGuessSpot || !session?.user?.id) return;
 
     try {
-      await fetch(`https://plane-spotter-backend.onrender.com/api/spot/${currentGuessSpot._id}/guess`, {
+      const response = await fetch(`https://plane-spotter-backend.onrender.com/api/spot/${currentGuessSpot._id}/guess`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -169,7 +178,16 @@ export default function Home() {
         })
       });
 
-      const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/xp`);
+      const result = await response.json();
+      
+      setGuessResults(prev => [...prev, {
+        spot: currentGuessSpot,
+        isTypeCorrect: result.isTypeCorrect,
+        isAltitudeCorrect: result.isAltitudeCorrect,
+        xpEarned: result.xpEarned
+      }]);
+
+      const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
       const xpData = await xpResponse.json();
       setUserXP(xpData);
 
@@ -179,6 +197,7 @@ export default function Home() {
         setCurrentGuessSpot(nextSpots[0]);
       } else {
         setShowGuessModal(false);
+        setShowResultsModal(true);
         setNewSpots([]);
       }
     } catch (error) {
@@ -208,17 +227,19 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="p-4 bg-white shadow-sm">
+      <header className="p-4 bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">✈️ Plane Spotter</h1>
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            ✈️ <span className="hidden sm:inline">Plane Spotter</span>
+          </h1>
           <div className="flex gap-3">
-            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
-              <span className="font-semibold">Weekly:</span> {userXP.weeklyXP}
+            <div className="bg-blue-100 px-3 py-1 rounded-lg text-sm flex items-center gap-2">
+              <span className="text-blue-600">⭐ {userXP.weeklyXP}</span>
             </div>
-            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm">
-              <span className="font-semibold">Total:</span> {userXP.totalXP}
+            <div className="bg-gray-100 px-3 py-1 rounded-lg text-sm flex items-center gap-2">
+              <span className="font-medium">🏆 {userXP.totalXP}</span>
             </div>
           </div>
         </div>
@@ -228,43 +249,56 @@ export default function Home() {
       <main className="flex-1 p-4 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">
         {isClient && isGeolocationAvailable ? (
           <button
+            id="spot-button"
             onClick={handleSpot}
             disabled={isLoading}
-            className={`w-48 h-48 rounded-full font-bold transition-all transform hover:scale-105 ${
-              isLoading 
+            className={`w-48 h-48 rounded-full font-bold transition-all transform hover:scale-105
+              flex items-center justify-center text-xl relative
+              ${isLoading 
                 ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg'
-            }`}
+                : 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg ring-4 ring-blue-200'}`}
           >
-            {isLoading ? 'Spotting...' : 'SPOT PLANE!'}
+            {isLoading ? (
+              <span className="animate-spin">🌀</span>
+            ) : (
+              <>
+                <span>SPOT PLANE</span>
+                {spots.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center">
+                    {spots.length}
+                  </span>
+                )}
+              </>
+            )}
           </button>
         ) : (
           <div className="text-center p-6 bg-yellow-100 rounded-lg w-full max-w-md">
             {isClient ? 'Enable GPS to start spotting!' : 'Loading...'}
           </div>
         )}
-        
-        <div className="mt-8 text-center text-gray-600">
-          You have spotted {spots.length} planes
-        </div>
       </main>
 
-      {/* Footer */}
-      <footer className="p-4 bg-white shadow-lg">
-        <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <Link 
-            href="/collections"
-            className="px-4 py-2 text-blue-500 hover:text-blue-600 transition-colors"
-          >
-            My Collection
-          </Link>
-          <button 
-            onClick={() => signOut()}
-            className="px-4 py-2 text-red-500 hover:text-red-600 transition-colors"
-          >
-            Sign Out
-          </button>
-        </div>
+      {/* Enhanced Navigation Footer */}
+      <footer className="sticky bottom-0 bg-white border-t shadow-lg">
+        <nav className="max-w-2xl mx-auto p-2">
+          <div className="flex justify-around items-center">
+            <Link href="/" className="p-2 text-gray-600 hover:text-blue-500 transition-colors">
+              <span className="text-2xl">✈️</span>
+              <span className="sr-only">Home</span>
+            </Link>
+            <Link href="/collections" className="p-2 text-gray-600 hover:text-blue-500 transition-colors">
+              <span className="text-2xl">📚</span>
+              <span className="sr-only">Collection</span>
+            </Link>
+            <button 
+              onClick={() => signOut()}
+              className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+            >
+              <span className="text-2xl">🚪</span>
+              <span className="sr-only">Sign Out</span>
+            </button>
+          </div>
+        </nav>
       </footer>
 
       {/* Guess Modal */}
@@ -339,6 +373,41 @@ export default function Home() {
                 className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
                 Submit Guess
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Results Modal */}
+      {showResultsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-20">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full space-y-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              🎉 Results
+            </h3>
+            
+            <div className="space-y-3">
+              {guessResults.map((result, index) => (
+                <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{result.spot.flight?.type || 'Unknown'}</span>
+                    <span className="text-sm text-green-600">+{result.xpEarned} XP</span>
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Type: {result.isTypeCorrect ? '✅' : '❌'} | 
+                    Altitude: {result.isAltitudeCorrect ? '✅' : '❌'}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-4 border-t">
+              <button
+                onClick={() => setShowResultsModal(false)}
+                className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Continue
               </button>
             </div>
           </div>
