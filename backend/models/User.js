@@ -1,4 +1,3 @@
-// User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -18,13 +17,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    maxLength: 8,
+    maxLength: 12,
     validate: {
       validator: function(v) {
         // Must contain at least one letter and one number
-        return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,8}$/.test(v);
+        return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,12}$/.test(v);
       },
-      message: 'Username must be max 8 characters and contain at least one letter and one number'
+      message: 'Username must be max 12 characters and contain at least one letter and one number'
     }
   },
   email: {
@@ -38,7 +37,11 @@ const userSchema = new mongoose.Schema({
       message: 'Please enter a valid email address'
     }
   },
-  password: { type: String, required: true },
+  password: {
+    type: String,
+    required: true,
+    minLength: [8, 'Password must be at least 8 characters long']
+  },
   role: { type: String, default: 'user' },
   spots: [{
     type: mongoose.Schema.Types.ObjectId,

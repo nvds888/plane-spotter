@@ -105,12 +105,13 @@ export default function SignUp() {
                   <Lock className="text-gray-400" size={20} />
                 </div>
                 <input
-                  type="password"
-                  name="password"
-                  placeholder="Create a password"
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
-                  required
-                />
+  type="password"
+  name="password"
+  placeholder="Create a password"
+  minLength={8}
+  className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+  required
+/>
               </div>
               <p className="mt-2 text-sm text-gray-500">
                 Must be at least 8 characters long
