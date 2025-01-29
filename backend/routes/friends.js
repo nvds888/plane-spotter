@@ -10,6 +10,46 @@ const geocoder = NodeGeocoder({
   provider: 'openstreetmap'
 });
 
+// Helper function to update user location
+async function updateUserLocation(userId) {
+  try {
+    const user = await User.findById(userId);
+    if (!user) return;
+
+    // Check if location needs updating (older than 24 hours or doesn't exist)
+    if (!user.location?.lastUpdated || 
+        Date.now() - user.location.lastUpdated > 24 * 60 * 60 * 1000) {
+      
+      // Get user's latest spot
+      const latestSpot = await Spot.findOne({ userId: user._id })
+        .sort({ timestamp: -1 });
+
+      if (latestSpot) {
+        try {
+          const location = await geocoder.reverse({
+            lat: latestSpot.lat,
+            lon: latestSpot.lon
+          });
+
+          user.location = {
+            country: location[0]?.country || 'Unknown Location',
+            lastUpdated: new Date(),
+            coordinates: {
+              lat: latestSpot.lat,
+              lon: latestSpot.lon
+            }
+          };
+          await user.save();
+        } catch (error) {
+          console.error(`Failed to update location for user ${user._id}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in updateUserLocation:', error);
+  }
+}
+
 // Get user's friends
 router.get('/:userId/friends', async (req, res) => {
   try {
@@ -52,34 +92,30 @@ router.get('/:userId/friend-spots', async (req, res) => {
     const user = await User.findById(req.params.userId);
     if (!user) throw new Error('User not found');
 
+    // First get all spots
     const spots = await Spot.find({
       userId: { $in: user.friends }
     })
-    .populate('userId', 'username')
+    .populate('userId', 'username location')
     .sort({ timestamp: -1 })
     .limit(20);
 
-    // Add reverse geocoding for each spot
-    const spotsWithLocation = await Promise.all(spots.map(async (spot) => {
-      try {
-        const location = await geocoder.reverse({
-          lat: spot.lat,
-          lon: spot.lon
-        });
+    // Update locations for users who need it
+    const uniqueUserIds = [...new Set(spots.map(spot => spot.userId._id))];
+    await Promise.all(uniqueUserIds.map(updateUserLocation));
 
-        return {
-          ...spot.toObject(),
-          username: spot.userId.username,
-          country: location[0]?.country || 'Unknown Location'
-        };
-      } catch (error) {
-        console.error('Geocoding error:', error);
-        return {
-          ...spot.toObject(),
-          username: spot.userId.username,
-          country: 'Unknown Location'
-        };
-      }
+    // Fetch spots again with updated locations
+    const updatedSpots = await Spot.find({
+      userId: { $in: user.friends }
+    })
+    .populate('userId', 'username location')
+    .sort({ timestamp: -1 })
+    .limit(20);
+
+    const spotsWithLocation = updatedSpots.map(spot => ({
+      ...spot.toObject(),
+      username: spot.userId.username,
+      country: spot.userId.location?.country || 'Unknown Location'
     }));
 
     res.json(spotsWithLocation);
@@ -92,6 +128,7 @@ router.get('/:userId/friend-spots', async (req, res) => {
 router.get('/spots/latest', async (req, res) => {
   try {
     const latestSpot = await Spot.findOne()
+      .populate('userId', 'username location')
       .sort({ timestamp: -1 })
       .limit(1);
 
@@ -99,26 +136,19 @@ router.get('/spots/latest', async (req, res) => {
       return res.json(null);
     }
 
-    // Add reverse geocoding
-    try {
-      const location = await geocoder.reverse({
-        lat: latestSpot.lat,
-        lon: latestSpot.lon
-      });
+    // Update location if needed
+    await updateUserLocation(latestSpot.userId._id);
 
-      const spotWithLocation = {
-        ...latestSpot.toObject(),
-        country: location[0]?.country || 'Unknown Location'
-      };
+    // Fetch updated spot with new location
+    const updatedSpot = await Spot.findById(latestSpot._id)
+      .populate('userId', 'username location');
 
-      res.json(spotWithLocation);
-    } catch (error) {
-      console.error('Geocoding error:', error);
-      res.json({
-        ...latestSpot.toObject(),
-        country: 'Unknown Location'
-      });
-    }
+    const spotWithLocation = {
+      ...updatedSpot.toObject(),
+      country: updatedSpot.userId.location?.country || 'Unknown Location'
+    };
+
+    res.json(spotWithLocation);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

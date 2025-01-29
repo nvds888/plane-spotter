@@ -55,7 +55,15 @@ const userSchema = new mongoose.Schema({
   friends: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }]
+  }],
+  location: {
+    country: { type: String },
+    lastUpdated: { type: Date },
+    coordinates: {
+      lat: Number,
+      lon: Number
+    }
+  }
 });
 
 userSchema.pre('save', async function (next) {
