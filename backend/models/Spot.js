@@ -1,15 +1,33 @@
-const mongoose = require('mongoose'); // Add this line at the top
+const mongoose = require('mongoose');
 
-// In Spot.js
 const flightSchema = new mongoose.Schema({
-  hex: String,
-  flight: String,
-  type: String,
-  alt: Number,
-  speed: Number,
-  operator: String,
-  lat: Number,
-  lon: Number
+  // Aircraft details
+  aircraftIcao24: String,
+  aircraftIcaoCode: String,
+  aircraftRegNumber: String,
+  
+  // Airline details
+  airlineIcaoCode: String,
+  
+  // Flight details
+  flightNumber: String,
+  flightIcaoNumber: String,
+  
+  // Geography
+  latitude: Number,
+  longitude: Number,
+  altitude: Number,
+  direction: Number,
+  
+  // Speed
+  horizontalSpeed: Number,
+  isGround: Boolean,
+  verticalSpeed: Number,
+  
+  // System
+  squawk: String,
+  status: String,
+  lastUpdate: Date
 });
 
 const spotSchema = new mongoose.Schema({
@@ -26,7 +44,7 @@ const spotSchema = new mongoose.Schema({
   baseXP: { type: Number, default: 5 },
 });
 
-spotSchema.index({ userId: 1, timestamp: -1 }); // For friend spots feed
-spotSchema.index({ timestamp: -1 }); 
+spotSchema.index({ userId: 1, timestamp: -1 });
+spotSchema.index({ timestamp: -1 });
 
 module.exports = mongoose.model('Spot', spotSchema);
