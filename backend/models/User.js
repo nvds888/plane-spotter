@@ -3,18 +3,41 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const achievementSchema = new mongoose.Schema({
-  type: { type: String, required: true }, // 'daily' or 'weekly'
+  type: { type: String, required: true },
   name: { type: String, required: true },
   description: { type: String, required: true },
   progress: { type: Number, default: 0 },
   target: { type: Number, required: true },
   completed: { type: Boolean, default: false },
   completedAt: Date,
-  resetDate: Date // When this achievement should reset
+  resetDate: Date
 });
 
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    maxLength: 8,
+    validate: {
+      validator: function(v) {
+        // Must contain at least one letter and one number
+        return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,8}$/.test(v);
+      },
+      message: 'Username must be max 8 characters and contain at least one letter and one number'
+    }
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    validate: {
+      validator: function(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: 'Please enter a valid email address'
+    }
+  },
   password: { type: String, required: true },
   role: { type: String, default: 'user' },
   spots: [{

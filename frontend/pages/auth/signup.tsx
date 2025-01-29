@@ -1,13 +1,14 @@
 "use client"
 
 import Link from 'next/link'
-import { Plane, Mail, Lock, ArrowLeft } from 'lucide-react'
+import { Plane, Mail, Lock, ArrowLeft, User } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
+    const username = formData.get('username') as string
     const email = formData.get('email') as string
     const password = formData.get('password') as string
 
@@ -18,7 +19,7 @@ export default function SignUp() {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, email, password }),
       })
 
       const data = await res.json()
@@ -55,6 +56,28 @@ export default function SignUp() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="text-gray-400" size={20} />
+                </div>
+                <input
+                  type="text"
+                  name="username"
+                  placeholder="Choose a username"
+                  pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,8}$"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                  required
+                />
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                Max 8 characters, must contain at least one letter and one number
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address

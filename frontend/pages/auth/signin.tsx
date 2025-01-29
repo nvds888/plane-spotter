@@ -2,19 +2,19 @@
 
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
-import { Plane, Mail, Lock, ArrowLeft } from 'lucide-react'
+import { Plane, User, Lock, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function SignIn() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    const email = formData.get('email') as string
+    const login = formData.get('login') as string // Can be email or username
     const password = formData.get('password') as string
 
     try {
       const result = await signIn('credentials', {
-        email,
+        login,
         password,
         redirect: false,
         callbackUrl: '/'
@@ -54,16 +54,16 @@ export default function SignIn() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+                Username or Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="text-gray-400" size={20} />
+                  <User className="text-gray-400" size={20} />
                 </div>
                 <input
-                  type="email"
-                  name="email"
-                  placeholder="Enter your email"
+                  type="text"
+                  name="login"
+                  placeholder="Enter your username or email"
                   className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
                   required
                 />

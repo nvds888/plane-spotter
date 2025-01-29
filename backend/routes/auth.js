@@ -5,29 +5,48 @@ const User = require('../models/User');
 
 // Register a new user
 router.post('/register', async (req, res) => {
-    const { email, password } = req.body;
+    const { username, email, password } = req.body;
   
     try {
-      if (!email || !password) {
+      if (!username || !email || !password) {
         return res.status(400).json({
           success: false,
-          error: 'Email and password are required'
+          error: 'Username, email and password are required'
         });
       }
 
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
+      // Check username format
+      if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,8}$/.test(username)) {
         return res.status(400).json({
           success: false,
-          error: 'User already exists'
+          error: 'Username must be max 8 characters and contain at least one letter and one number'
+        });
+      }
+
+      // Check if username exists
+      const existingUsername = await User.findOne({ username });
+      if (existingUsername) {
+        return res.status(400).json({
+          success: false,
+          error: 'Username already exists'
+        });
+      }
+
+      // Check if email exists
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email already exists'
         });
       }
   
-      const user = await User.create({ email, password }); // Password hashed in pre-save hook
+      const user = await User.create({ username, email, password });
       res.status(201).json({
         success: true,
         user: {
           id: user._id.toString(),
+          username: user.username,
           email: user.email,
           role: user.role || 'user'
         }
@@ -36,7 +55,7 @@ router.post('/register', async (req, res) => {
       console.error('Registration error:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to register user'
+        error: error.message || 'Failed to register user'
       });
     }
 });
@@ -44,16 +63,23 @@ router.post('/register', async (req, res) => {
 // Login user
 router.post('/login', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { login, password } = req.body; // login can be email or username
 
-      if (!email || !password) {
+      if (!login || !password) {
         return res.status(400).json({
           success: false,
-          error: 'Email and password are required'
+          error: 'Login credentials and password are required'
         });
       }
 
-      const user = await User.findOne({ email }).select('+password');
+      // Find user by email or username
+      const user = await User.findOne({
+        $or: [
+          { email: login },
+          { username: login }
+        ]
+      }).select('+password');
+
       if (!user) {
         return res.status(401).json({
           success: false,
@@ -73,6 +99,7 @@ router.post('/login', async (req, res) => {
         success: true,
         user: {
           id: user._id.toString(),
+          username: user.username,
           email: user.email,
           role: user.role || 'user'
         }
