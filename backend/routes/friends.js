@@ -7,10 +7,20 @@ const NodeGeocoder = require('node-geocoder');
 
 // Initialize geocoder
 const geocoder = NodeGeocoder({
-  provider: 'openstreetmap'
-});
+    provider: 'openstreetmap',
+    httpAdapter: 'fetch',
+    apiVersion: '2.5',
+    formatter: null,
+    timeout: 5000,
+    https: true,
+    headers: {
+      'User-Agent': 'PlaneSpotter/1.0 (your@email.com)',  // Replace with your email
+    }
+  });
 
-// Helper function to update user location
+// Helper function to delay between requests
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 async function updateUserLocation(userId) {
   try {
     const user = await User.findById(userId);
@@ -26,6 +36,9 @@ async function updateUserLocation(userId) {
 
       if (latestSpot) {
         try {
+          // Add delay between requests to respect rate limits
+          await delay(1000);  // 1 second delay between requests
+          
           const location = await geocoder.reverse({
             lat: latestSpot.lat,
             lon: latestSpot.lon
@@ -42,6 +55,16 @@ async function updateUserLocation(userId) {
           await user.save();
         } catch (error) {
           console.error(`Failed to update location for user ${user._id}:`, error);
+          // Set lastUpdated even on failure to prevent repeated attempts
+          user.location = {
+            country: 'Unknown Location',
+            lastUpdated: new Date(),
+            coordinates: {
+              lat: latestSpot.lat,
+              lon: latestSpot.lon
+            }
+          };
+          await user.save();
         }
       }
     }
