@@ -27,43 +27,27 @@ router.get('/nearby', async (req, res) => {
           key: process.env.AVIATION_EDGE_API_KEY,
           lat,
           lng: lon,
-          distance: '50' // 50km radius
+          distance: '50'
         }
       }
     );
 
-    console.log('API Response:', response.data);
-
+    // Map the new API response to match the existing frontend Flight type
     const flights = response.data.map(flight => ({
-      aircraftIcao24: flight.aircraft?.icao24 || 'N/A',
-      aircraftIcaoCode: flight.aircraft?.icaoCode || 'N/A',
-      aircraftRegNumber: flight.aircraft?.regNumber || 'N/A',
-      airlineIcaoCode: flight.airline?.icaoCode || 'Unknown',
-      flightNumber: flight.flight?.number || 'N/A',
-      flightIcaoNumber: flight.flight?.icaoNumber || 'N/A',
-      latitude: flight.geography?.latitude || 0,
-      longitude: flight.geography?.longitude || 0,
-      altitude: flight.geography?.altitude || 0,
-      direction: flight.geography?.direction || 0,
-      horizontalSpeed: flight.speed?.horizontal || 0,
-      isGround: flight.speed?.isGround || false,
-      verticalSpeed: flight.speed?.vspeed || 0,
-      squawk: flight.system?.squawk || 'N/A',
-      status: flight.status || 'unknown',
-      lastUpdate: new Date(flight.system?.updated || Date.now())
+      hex: flight.aircraft?.icao24 || 'N/A',  // map to existing hex field
+      flight: flight.flight?.number || 'N/A',  // map flight number
+      type: flight.aircraft?.icaoCode || 'N/A', // map aircraft type
+      alt: flight.geography?.altitude || 0,     // map altitude
+      speed: flight.speed?.horizontal || 0,     // map ground speed
+      operator: flight.airline?.icaoCode || 'Unknown', // map operator
+      lat: flight.geography?.latitude || 0,     // map latitude
+      lon: flight.geography?.longitude || 0     // map longitude
     }));
 
     const visibleFlights = flights.filter(flight => {
-      const distance = calculateDistance(lat, lon, flight.latitude, flight.longitude);
-      console.log(
-        'Flight:', flight.flightIcaoNumber,
-        'Distance:', distance,
-        'Altitude:', flight.altitude
-      );
-      return (flight.altitude === 0 || flight.altitude < 40000) && distance <= 50;
+      const distance = calculateDistance(lat, lon, flight.lat, flight.lon);
+      return (flight.alt === 0 || flight.alt < 40000) && distance <= 50;
     });
-
-    console.log('Visible Flights:', visibleFlights);
 
     res.status(200).json(visibleFlights);
   } catch (error) {
