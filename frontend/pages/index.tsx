@@ -243,24 +243,29 @@ export default function Home() {
       {/* Header */}
       <div className="bg-white pb-6 shadow-sm">
         <div className="max-w-lg mx-auto px-4">
-          <div className="pt-12 pb-4">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">✈️ Plane Spotter</h1>
-              <div className="flex gap-3">
-                <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-                  {userXP.weeklyXP} XP
-                </div>
-                <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-sm font-medium">
-                  Total: {userXP.totalXP}
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="pt-12 pb-4">
+  <div className="flex justify-between items-center">
+    <h1 className="text-2xl font-bold text-gray-900">✈️ Plane Spotter</h1>
+    <div className="flex flex-col items-end gap-2">
+      <div className="text-gray-600 text-sm font-medium">
+        @{session.user.username}
+      </div>
+      <div className="flex gap-3">
+        <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
+          Weekly XP: {userXP.weeklyXP}
+        </div>
+        <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-sm font-medium">
+          Total XP: {userXP.totalXP}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-lg mx-auto px-4 py-8">
+      <div className="max-w-lg mx-auto px-4 py-8 flex-1 flex items-center justify-center" style={{ minHeight: "calc(100vh - 280px)" }}>
         {isClient && isGeolocationAvailable ? (
           <div className="flex flex-col items-center">
             <motion.button
