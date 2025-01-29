@@ -43,7 +43,7 @@ export default function Community() {
 
   const fetchFriendSpots = async () => {
     try {
-      const response = await fetch(`https://plane-spotter-backend.onrender.com/api/spot/friends/${session?.user?.id}`);
+        const response = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/friend-spots`);
       const data = await response.json();
       setFriendSpots(data);
     } catch (error) {
@@ -54,7 +54,7 @@ export default function Community() {
   const subscribeToGlobalSpots = () => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch('https://plane-spotter-backend.onrender.com/api/spot/latest');
+        const response = await fetch('https://plane-spotter-backend.onrender.com/api/user/spots/latest');
         const spot = await response.json();
         
         if (spot) {

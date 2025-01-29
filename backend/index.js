@@ -5,6 +5,7 @@ const authRoutes = require('./routes/auth');
 const flightRoutes = require('./routes/flights');
 const userRoutes = require('./routes/User');
 const achievementsRouter = require('./routes/achievements');
+const friendRoutes = require('./routes/friends');
 require('dotenv').config();
 
 const app = express();
@@ -18,6 +19,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+app.use('/api/user', friendRoutes);
 
 
 app.use('/api/achievements', achievementsRouter);

@@ -47,7 +47,7 @@ router.post('/:userId/friends', async (req, res) => {
 });
 
 // Get friend's spots
-router.get('/spot/friends/:userId', async (req, res) => {
+router.get('/:userId/friend-spots', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
     if (!user) throw new Error('User not found');
@@ -89,7 +89,7 @@ router.get('/spot/friends/:userId', async (req, res) => {
 });
 
 // Get latest global spot
-router.get('/spot/latest', async (req, res) => {
+router.get('/spots/latest', async (req, res) => {
   try {
     const latestSpot = await Spot.findOne()
       .sort({ timestamp: -1 })
