@@ -7,16 +7,16 @@ const NodeGeocoder = require('node-geocoder');
 
 // Initialize geocoder
 const geocoder = NodeGeocoder({
-    provider: 'openstreetmap',
-    httpAdapter: 'fetch',
-    apiVersion: '2.5',
-    formatter: null,
-    timeout: 5000,
-    https: true,
-    headers: {
-      'User-Agent': 'PlaneSpotter/1.0 (your@email.com)',  // Replace with your email
-    }
-  });
+  provider: 'openstreetmap',
+  httpAdapter: 'fetch',
+  apiVersion: '2.5',
+  formatter: null,
+  timeout: 5000,
+  https: true,
+  headers: {
+    'User-Agent': 'PlaneSpotter/1.0 (your@email.com)',
+  }
+});
 
 // Helper function to delay between requests
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -26,18 +26,15 @@ async function updateUserLocation(userId) {
     const user = await User.findById(userId);
     if (!user) return;
 
-    // Check if location needs updating (older than 24 hours or doesn't exist)
     if (!user.location?.lastUpdated || 
         Date.now() - user.location.lastUpdated > 24 * 60 * 60 * 1000) {
       
-      // Get user's latest spot
       const latestSpot = await Spot.findOne({ userId: user._id })
         .sort({ timestamp: -1 });
 
       if (latestSpot) {
         try {
-          // Add delay between requests to respect rate limits
-          await delay(1000);  // 1 second delay between requests
+          await delay(1000);
           
           const location = await geocoder.reverse({
             lat: latestSpot.lat,
@@ -55,7 +52,6 @@ async function updateUserLocation(userId) {
           await user.save();
         } catch (error) {
           console.error(`Failed to update location for user ${user._id}:`, error);
-          // Set lastUpdated even on failure to prevent repeated attempts
           user.location = {
             country: 'Unknown Location',
             lastUpdated: new Date(),
@@ -73,63 +69,103 @@ async function updateUserLocation(userId) {
   }
 }
 
-// Get user's friends
-router.get('/:userId/friends', async (req, res) => {
+// Get user's followers
+router.get('/:userId/followers', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
-      .populate('friends', 'username email');
+      .populate('followers', 'username email');
     
     if (!user) throw new Error('User not found');
     
-    res.json(user.friends);
+    res.json(user.followers);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Add friend
-router.post('/:userId/friends', async (req, res) => {
+// Get user's following
+router.get('/:userId/following', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .populate('following', 'username email');
+    
+    if (!user) throw new Error('User not found');
+    
+    res.json(user.following);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Follow a user
+router.post('/:userId/follow', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
     if (!user) throw new Error('User not found');
 
-    const friend = await User.findOne({ username: req.body.friendUsername });
-    if (!friend) throw new Error('Friend not found');
+    const userToFollow = await User.findOne({ username: req.body.username });
+    if (!userToFollow) throw new Error('User to follow not found');
 
-    if (user.friends.includes(friend._id)) {
-      throw new Error('Already friends with this user');
+    // Check if already following
+    if (user.following.includes(userToFollow._id)) {
+      throw new Error('Already following this user');
     }
 
-    user.friends.push(friend._id);
+    // Add to following list
+    user.following.push(userToFollow._id);
     await user.save();
 
-    res.json({ message: 'Friend added successfully' });
+    // Add to followers list of the other user
+    userToFollow.followers.push(user._id);
+    await userToFollow.save();
+
+    res.json({ message: 'Successfully followed user' });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// Get friend's spots
+// Unfollow a user
+router.post('/:userId/unfollow', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) throw new Error('User not found');
+
+    const userToUnfollow = await User.findOne({ username: req.body.username });
+    if (!userToUnfollow) throw new Error('User to unfollow not found');
+
+    // Remove from following list
+    user.following = user.following.filter(id => !id.equals(userToUnfollow._id));
+    await user.save();
+
+    // Remove from followers list of the other user
+    userToUnfollow.followers = userToUnfollow.followers.filter(id => !id.equals(user._id));
+    await userToUnfollow.save();
+
+    res.json({ message: 'Successfully unfollowed user' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get following user's spots
 router.get('/:userId/friend-spots', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
     if (!user) throw new Error('User not found');
 
-    // First get all spots
     const spots = await Spot.find({
-      userId: { $in: user.friends }
+      userId: { $in: user.following }
     })
     .populate('userId', 'username location')
     .sort({ timestamp: -1 })
     .limit(20);
 
-    // Update locations for users who need it
     const uniqueUserIds = [...new Set(spots.map(spot => spot.userId._id))];
     await Promise.all(uniqueUserIds.map(updateUserLocation));
 
-    // Fetch spots again with updated locations
     const updatedSpots = await Spot.find({
-      userId: { $in: user.friends }
+      userId: { $in: user.following }
     })
     .populate('userId', 'username location')
     .sort({ timestamp: -1 })
@@ -159,10 +195,8 @@ router.get('/spots/latest', async (req, res) => {
       return res.json(null);
     }
 
-    // Update location if needed
     await updateUserLocation(latestSpot.userId._id);
 
-    // Fetch updated spot with new location
     const updatedSpot = await Spot.findById(latestSpot._id)
       .populate('userId', 'username location');
 

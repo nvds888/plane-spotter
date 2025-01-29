@@ -20,7 +20,6 @@ const userSchema = new mongoose.Schema({
     maxLength: 12,
     validate: {
       validator: function(v) {
-        // Must contain at least one letter and one number
         return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,12}$/.test(v);
       },
       message: 'Username must be max 12 characters and contain at least one letter and one number'
@@ -52,7 +51,12 @@ const userSchema = new mongoose.Schema({
   achievements: [achievementSchema],
   lastDailyReset: { type: Date, default: Date.now },
   lastWeeklyReset: { type: Date, default: Date.now },
-  friends: [{
+  // Remove friends array and add followers/following
+  followers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  following: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
