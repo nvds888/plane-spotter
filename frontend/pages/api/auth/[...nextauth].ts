@@ -2,17 +2,18 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { NextAuthOptions } from 'next-auth';
 
-// Type definitions
 declare module "next-auth" {
   interface User {
     id: string
     role: string
+    username?: string
   }
   
   interface Session {
     user: {
       id: string
       email?: string
+      username?: string
       role: string
     }
   }
@@ -22,6 +23,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string
     role: string
+    username?: string
   }
 }
 
@@ -39,12 +41,12 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "text", placeholder: "your-email@example.com" },
+        login: { label: "Username or Email", type: "text" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Please provide both email and password');
+        if (!credentials?.login || !credentials?.password) {
+          throw new Error('Please provide both username/email and password');
         }
 
         try {
@@ -55,14 +57,13 @@ export const authOptions: NextAuthOptions = {
               'Accept': 'application/json'
             },
             body: JSON.stringify({
-              email: credentials.email,
+              login: credentials.login,
               password: credentials.password
             }),
           });
 
           const data = await response.json();
           
-          // Debug logging
           console.log('Login response status:', response.status);
           console.log('Login response data:', data);
 
@@ -71,10 +72,10 @@ export const authOptions: NextAuthOptions = {
           }
 
           if (data.success && data.user) {
-            // Return the user object in the expected format
             return {
               id: data.user.id,
               email: data.user.email,
+              username: data.user.username,
               role: data.user.role || 'user'
             };
           } else {
@@ -93,6 +94,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.username = user.username;
       }
       return token;
     },
@@ -100,6 +102,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id;
         session.user.role = token.role;
+        session.user.username = token.username;
       }
       return session;
     }
