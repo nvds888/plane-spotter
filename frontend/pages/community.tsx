@@ -5,25 +5,25 @@ import { UserPlus, Users, MapPin, Plane, House, BookOpen, Trophy, X } from "luci
 import Link from "next/link";
 
 interface Flight {
-  hex: string;
-  flight: string;
-  type: string;
-  alt: number;
-  speed: number;
-  operator: string;
-  lat: number;
-  lon: number;
+  hex: string
+  flight: string
+  type: string
+  alt: number
+  speed: number
+  operator: string
+  lat: number
+  lon: number
 }
 
 interface Spot {
-  _id: string;
-  userId: string;
-  username?: string;
-  lat: number;
-  lon: number;
-  timestamp: string;
-  country?: string;
-  flight?: Flight;
+  _id: string
+  userId: string
+  username?: string
+  lat: number
+  lon: number
+  timestamp: string
+  country?: string
+  flight?: Flight  
 }
 
 interface User {

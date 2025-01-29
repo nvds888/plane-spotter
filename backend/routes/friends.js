@@ -5,6 +5,23 @@ const Spot = require('../models/Spot');
 const mongoose = require('mongoose');
 const NodeGeocoder = require('node-geocoder');
 
+const mapSpotToFrontend = (spot) => {
+  const spotObj = spot.toObject ? spot.toObject() : spot;
+  return {
+    ...spotObj,
+    flight: {
+      hex: spotObj.flight.aircraft?.icao24 || 'N/A',
+      flight: spotObj.flight.flight?.icaoNumber || 'N/A',
+      type: spotObj.flight.aircraft?.icaoCode || 'N/A',
+      alt: spotObj.flight.geography?.altitude || 0,
+      speed: spotObj.flight.speed?.horizontal || 0,
+      operator: spotObj.flight.airline?.icaoCode || 'Unknown',
+      lat: spotObj.flight.geography?.latitude || 0,
+      lon: spotObj.flight.geography?.longitude || 0
+    }
+  };
+};
+
 // Initialize geocoder
 const geocoder = NodeGeocoder({
   provider: 'openstreetmap',
@@ -172,7 +189,7 @@ router.get('/:userId/friend-spots', async (req, res) => {
     .limit(20);
 
     const spotsWithLocation = updatedSpots.map(spot => ({
-      ...spot.toObject(),
+      ...mapSpotToFrontend(spot),
       username: spot.userId.username,
       country: spot.userId.location?.country || 'Unknown Location'
     }));
@@ -201,7 +218,7 @@ router.get('/spots/latest', async (req, res) => {
       .populate('userId', 'username location');
 
     const spotWithLocation = {
-      ...updatedSpot.toObject(),
+      ...mapSpotToFrontend(updatedSpot),
       country: updatedSpot.userId.location?.country || 'Unknown Location'
     };
 
