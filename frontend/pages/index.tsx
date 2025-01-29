@@ -243,19 +243,23 @@ export default function Home() {
       {/* Header */}
       <div className="bg-white pb-6 shadow-sm">
         <div className="max-w-lg mx-auto px-4">
-        <div className="pt-12 pb-4">
-  <div className="flex justify-between items-center">
-    <h1 className="text-2xl font-bold text-gray-900">✈️ Plane Spotter</h1>
-    <div className="flex flex-col items-end gap-2">
-      <div className="text-gray-600 text-sm font-medium">
-        @{session.user.username}
-      </div>
-      <div className="flex gap-3">
-        <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-          Weekly XP: {userXP.weeklyXP}
+        <div className="bg-white pb-6 shadow-sm">
+  <div className="max-w-lg mx-auto px-4">
+    <div className="pt-12 pb-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">✈️ Plane Spotter</h1>
+        <div className="text-gray-900 font-bold text-lg">
+          @{session.user.username}
         </div>
-        <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-sm font-medium">
-          Total XP: {userXP.totalXP}
+      </div>
+      <div className="flex flex-col gap-3">
+        <div className="bg-amber-50 rounded-xl p-4">
+          <span className="text-amber-600 font-medium">Total XP</span>
+          <div className="text-2xl font-bold text-amber-700">{userXP.totalXP}</div>
+        </div>
+        <div className="bg-blue-50 rounded-xl p-4">
+          <span className="text-blue-600 font-medium">Weekly XP</span>
+          <div className="text-2xl font-bold text-blue-700">{userXP.weeklyXP}</div>
         </div>
       </div>
     </div>
