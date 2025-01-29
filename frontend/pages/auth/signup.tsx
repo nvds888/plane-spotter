@@ -68,13 +68,13 @@ export default function SignUp() {
                   type="text"
                   name="username"
                   placeholder="Choose a username"
-                  pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,8}$"
+                  pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,12}$"
                   className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
                   required
                 />
               </div>
               <p className="mt-2 text-sm text-gray-500">
-                Max 8 characters, must contain at least one letter and one number
+                Max 12 characters, must contain at least one letter and one number
               </p>
             </div>
 

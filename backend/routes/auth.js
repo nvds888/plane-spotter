@@ -16,10 +16,10 @@ router.post('/register', async (req, res) => {
       }
 
       // Check username format
-      if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,8}$/.test(username)) {
+      if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,12}$/.test(username)) {
         return res.status(400).json({
           success: false,
-          error: 'Username must be max 8 characters and contain at least one letter and one number'
+          error: 'Username must be max 12 characters and contain at least one letter and one number'
         });
       }
 
