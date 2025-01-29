@@ -51,7 +51,11 @@ const userSchema = new mongoose.Schema({
   weeklyXP: { type: Number, default: 0 },
   achievements: [achievementSchema],
   lastDailyReset: { type: Date, default: Date.now },
-  lastWeeklyReset: { type: Date, default: Date.now }
+  lastWeeklyReset: { type: Date, default: Date.now },
+  friends: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 });
 
 userSchema.pre('save', async function (next) {

@@ -26,4 +26,7 @@ const spotSchema = new mongoose.Schema({
   baseXP: { type: Number, default: 5 },
 });
 
+spotSchema.index({ userId: 1, timestamp: -1 }); // For friend spots feed
+spotSchema.index({ timestamp: -1 }); 
+
 module.exports = mongoose.model('Spot', spotSchema);
