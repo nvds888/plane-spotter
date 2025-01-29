@@ -33,13 +33,17 @@ interface User {
 }
 
 interface UsersModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  users: User[];
-  onAction?: (username: string) => Promise<void>;
-  actionLabel?: string;
-}
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    users: UserWithFollowing[];
+    onAction?: (username: string) => Promise<void>;
+    actionLabel?: string | ((user: UserWithFollowing) => string);
+  }
+
+interface UserWithFollowing extends User {
+    isFollowing?: boolean;
+  }
 
 const UsersModal: React.FC<UsersModalProps> = ({
   isOpen,
@@ -91,12 +95,12 @@ const UsersModal: React.FC<UsersModalProps> = ({
                       </div>
                     </div>
                     {onAction && actionLabel && (
-                      <button
-                        onClick={() => onAction(user.username)}
-                        className="text-sm text-blue-600 hover:text-blue-700"
-                      >
-                        {actionLabel}
-                      </button>
+  <button
+    onClick={() => !user.isFollowing && onAction(user.username)}
+    className={`text-sm ${user.isFollowing ? 'text-gray-400' : 'text-blue-600 hover:text-blue-700'}`}
+  >
+    {typeof actionLabel === 'function' ? actionLabel(user) : actionLabel}
+  </button>
                     )}
                   </div>
                 </div>
@@ -281,18 +285,21 @@ export default function Community() {
 
       {/* Followers Modal */}
       <UsersModal
-        isOpen={showFollowers}
-        onClose={() => setShowFollowers(false)}
-        title="Followers"
-        users={followers}
-        onAction={async (username) => {
-          const isFollowing = following.some(user => user.username === username);
-          if (!isFollowing) {
-            await handleFollow(username);
-          }
-        }}
-        actionLabel="Follow Back"
-      />
+  isOpen={showFollowers}
+  onClose={() => setShowFollowers(false)}
+  title="Followers"
+  users={followers.map(user => ({
+    ...user,
+    isFollowing: following.some(f => f.username === user.username)
+  }))}
+  onAction={async (username) => {
+    const isFollowing = following.some(user => user.username === username);
+    if (!isFollowing) {
+      await handleFollow(username);
+    }
+  }}
+  actionLabel={(user) => user.isFollowing ? "Following" : "Follow Back"}
+/>
 
       {/* Following Modal */}
       <UsersModal
