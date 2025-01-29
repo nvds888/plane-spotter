@@ -19,13 +19,61 @@ type Flight = {
   lon: number
 }
 
+// Define the API response type from Aviation Edge
+type AviationEdgeFlight = {
+  aircraft: {
+    iataCode?: string
+    icao24?: string
+    icaoCode?: string
+    regNumber?: string
+  }
+  airline: {
+    iataCode?: string
+    icaoCode?: string
+  }
+  arrival: {
+    iataCode?: string
+    icaoCode?: string
+  }
+  departure: {
+    iataCode?: string
+    icaoCode?: string
+  }
+  flight: {
+    iataNumber?: string
+    icaoNumber?: string
+    number?: string
+  }
+  geography: {
+    altitude?: number
+    direction?: number
+    latitude?: number
+    longitude?: number
+  }
+  speed: {
+    horizontal?: number
+    isGround?: number
+    vspeed?: number
+  }
+  status?: string
+  system: {
+    squawk?: string
+    updated?: number
+  }
+}
+
 type Spot = {
   _id: string
   userId: string
   lat: number
   lon: number
   timestamp: string
-  flight?: Flight
+  flight: Flight
+  guessedType?: string
+  guessedAltitudeRange?: string
+  isTypeCorrect?: boolean
+  isAltitudeCorrect?: boolean
+  bonusXP?: number
 }
 
 type GuessResult = {
@@ -94,60 +142,51 @@ export default function Home() {
   const handleSpot = async () => {
     if (!coords || isLoading || !session?.user?.id) return
     setIsLoading(true)
-
+  
     try {
       const flightsResponse = await fetch(
         `https://plane-spotter-backend.onrender.com/api/flights/nearby?lat=${coords.latitude}&lon=${coords.longitude}`,
       )
-
+  
       if (!flightsResponse.ok) throw new Error("Failed to fetch flights")
-      const flights: Flight[] = await flightsResponse.json()
-
+      const flights: AviationEdgeFlight[] = await flightsResponse.json()
+  
       if (!flights.length) {
         alert("No flights detected within visible range!")
         return
       }
-
+  
       const savedSpots: Spot[] = []
       for (const flight of flights) {
         const requestBody = {
           userId: session.user.id,
           lat: coords.latitude,
           lon: coords.longitude,
-          flight: {
-            hex: flight.hex,
-            flight: flight.flight,
-            type: flight.type,
-            alt: flight.alt,
-            speed: flight.speed,
-            operator: flight.operator,
-            lat: flight.lat,
-            lon: flight.lon,
-          },
+          flight // Send complete Aviation Edge data
         }
-
+  
         const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestBody),
         })
-
+  
         if (!spotResponse.ok) {
           const errorResponse = await spotResponse.json()
           throw new Error(errorResponse.error || "Failed to save spot")
         }
-
+  
         const newSpot: Spot = await spotResponse.json()
         savedSpots.push(newSpot)
       }
-
+  
       setSpots((prev) => [...prev, ...savedSpots])
       alert(`Spotted ${savedSpots.length} flights!`)
-
+  
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`)
       const xpData = await xpResponse.json()
       setUserXP(xpData)
-
+  
       if (savedSpots.length > 0) {
         setNewSpots(savedSpots)
         setCurrentGuessSpot(savedSpots[0])

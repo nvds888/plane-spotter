@@ -1,33 +1,46 @@
+// models/Spot.js
 const mongoose = require('mongoose');
 
 const flightSchema = new mongoose.Schema({
-  // Aircraft details
-  aircraftIcao24: String,
-  aircraftIcaoCode: String,
-  aircraftRegNumber: String,
-  
-  // Airline details
-  airlineIcaoCode: String,
-  
-  // Flight details
-  flightNumber: String,
-  flightIcaoNumber: String,
-  
-  // Geography
-  latitude: Number,
-  longitude: Number,
-  altitude: Number,
-  direction: Number,
-  
-  // Speed
-  horizontalSpeed: Number,
-  isGround: Boolean,
-  verticalSpeed: Number,
-  
-  // System
-  squawk: String,
+  aircraft: {
+    iataCode: String,
+    icao24: String,
+    icaoCode: String,
+    regNumber: String
+  },
+  airline: {
+    iataCode: String,
+    icaoCode: String
+  },
+  arrival: {
+    iataCode: String,
+    icaoCode: String
+  },
+  departure: {
+    iataCode: String,
+    icaoCode: String
+  },
+  flight: {
+    iataNumber: String,
+    icaoNumber: String,
+    number: String
+  },
+  geography: {
+    altitude: Number,
+    direction: Number,
+    latitude: Number,
+    longitude: Number
+  },
+  speed: {
+    horizontal: Number,
+    isGround: Number,
+    vspeed: Number
+  },
   status: String,
-  lastUpdate: Date
+  system: {
+    squawk: String,
+    updated: Number
+  }
 });
 
 const spotSchema = new mongoose.Schema({

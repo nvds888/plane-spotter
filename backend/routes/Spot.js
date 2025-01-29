@@ -4,6 +4,24 @@ const Spot = require('../models/Spot');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
+// Helper function to map spot to frontend format
+const mapSpotToFrontend = (spot) => {
+  // Handle both mongoose documents and plain objects
+  const spotObj = spot.toObject ? spot.toObject() : spot;
+  return {
+    ...spotObj,
+    flight: {
+      hex: spotObj.flight.aircraft?.icao24 || 'N/A',
+      flight: spotObj.flight.flight?.icaoNumber || 'N/A',
+      type: spotObj.flight.aircraft?.icaoCode || 'N/A',
+      alt: spotObj.flight.geography?.altitude || 0,
+      speed: spotObj.flight.speed?.horizontal || 0,
+      operator: spotObj.flight.airline?.icaoCode || 'Unknown',
+      lat: spotObj.flight.geography?.latitude || 0,
+      lon: spotObj.flight.geography?.longitude || 0
+    }
+  };
+};
 
 // Get user's spots
 router.get('/', async (req, res) => {
@@ -12,14 +30,90 @@ router.get('/', async (req, res) => {
       .populate('spots')
       .exec();
       
-    res.json(user?.spots || []);
+    const mappedSpots = user?.spots.map(mapSpotToFrontend) || [];
+    res.json(mappedSpots);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get user's spots grouped by aircraft type
-// routes/Spot.js - Updated grouped endpoint
+// Create new spot
+router.post('/', async (req, res) => {
+  try {
+    const spotData = {
+      userId: req.body.userId,
+      lat: req.body.lat,
+      lon: req.body.lon,
+      flight: req.body.flight,
+      baseXP: 5
+    };
+    
+    const spot = await Spot.create(spotData);
+
+    // Award base XP
+    await User.findByIdAndUpdate(
+      spot.userId,
+      { $inc: { totalXP: 5, weeklyXP: 5 } }
+    );
+
+    // Update achievements
+    try {
+      await fetch(`${req.protocol}://${req.get('host')}/api/achievements/${spot.userId}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (achievementError) {
+      console.error('Error updating achievements:', achievementError);
+    }
+
+    // Map to frontend format before sending response
+    const mappedSpot = mapSpotToFrontend(spot);
+    res.status(201).json(mappedSpot);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Handle guesses
+router.patch('/:id/guess', async (req, res) => {
+  try {
+    const spot = await Spot.findById(req.params.id);
+    
+    // Calculate correctness using Aviation Edge data structure
+    const isTypeCorrect = req.body.guessedType === spot.flight.aircraft.icaoCode;
+    const altitude = spot.flight.geography.altitude;
+    const actualAltRange = altitude < 10000 ? '0-10,000 ft' :
+      altitude <= 30000 ? '10,000-30,000 ft' : '30,000+ ft';
+    const isAltitudeCorrect = req.body.guessedAltitudeRange === actualAltRange;
+
+    const bonusXP = (isTypeCorrect ? 10 : 0) + (isAltitudeCorrect ? 10 : 0);
+
+    const updatedSpot = await Spot.findByIdAndUpdate(
+      req.params.id,
+      {
+        guessedType: req.body.guessedType,
+        guessedAltitudeRange: req.body.guessedAltitudeRange,
+        isTypeCorrect,
+        isAltitudeCorrect,
+        bonusXP
+      },
+      { new: true }
+    );
+
+    await User.findByIdAndUpdate(
+      spot.userId,
+      { $inc: { totalXP: bonusXP, weeklyXP: bonusXP } }
+    );
+
+    // Map to frontend format before sending response
+    const mappedSpot = mapSpotToFrontend(updatedSpot);
+    res.json(mappedSpot);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get grouped spots
 router.get('/grouped', async (req, res) => {
   try {
     const { userId, groupBy = 'type' } = req.query;
@@ -28,10 +122,9 @@ router.get('/grouped', async (req, res) => {
 
     switch (groupBy) {
       case 'type':
-        groupingField = '$flight.type';
+        groupingField = '$flight.aircraft.icaoCode';
         break;
       case 'date':
-        // Group by month and year
         groupingPipeline = [
           {
             $addFields: {
@@ -47,17 +140,7 @@ router.get('/grouped', async (req, res) => {
         groupingField = '$monthYear';
         break;
       case 'airline':
-        // Extract first 3 characters of flight number
-        groupingPipeline = [
-          {
-            $addFields: {
-              airline: { 
-                $substr: ['$flight.flight', 0, 3] 
-              }
-            }
-          }
-        ];
-        groupingField = '$airline';
+        groupingField = '$flight.airline.icaoCode';
         break;
       case 'altitude':
         groupingPipeline = [
@@ -67,11 +150,11 @@ router.get('/grouped', async (req, res) => {
                 $switch: {
                   branches: [
                     { 
-                      case: { $lt: ['$flight.alt', 10000] },
+                      case: { $lt: ['$flight.geography.altitude', 10000] },
                       then: 'Low Altitude (0-10,000 ft)'
                     },
                     { 
-                      case: { $lt: ['$flight.alt', 30000] },
+                      case: { $lt: ['$flight.geography.altitude', 30000] },
                       then: 'Medium Altitude (10,000-30,000 ft)'
                     }
                   ],
@@ -84,7 +167,7 @@ router.get('/grouped', async (req, res) => {
         groupingField = '$altitudeRange';
         break;
       default:
-        groupingField = '$flight.type';
+        groupingField = '$flight.aircraft.icaoCode';
     }
 
     const pipeline = [
@@ -107,87 +190,18 @@ router.get('/grouped', async (req, res) => {
     ];
 
     const groupedSpots = await Spot.aggregate(pipeline);
-    res.json(groupedSpots);
+    
+    // Map the grouped spots to frontend format
+    const mappedGroupedSpots = groupedSpots.map(group => ({
+      ...group,
+      spots: group.spots.map(mapSpotToFrontend)
+    }));
+    
+    res.json(mappedGroupedSpots);
   } catch (error) {
     console.error('Error in /grouped endpoint:', error);
     res.status(500).json({ error: error.message });
   }
 });
-
-// routes/Spot.js
-router.post('/', async (req, res) => {
-  try {
-    const spotData = { ...req.body, baseXP: 5 };
-    const spot = await Spot.create(spotData);
-
-    // Always award 5 XP per spot
-    const baseXP = 5; 
-    console.log('Awarding Base XP:', baseXP);
-
-    // Update user XP
-    await User.findByIdAndUpdate(
-      spot.userId,
-      { $inc: { totalXP: baseXP, weeklyXP: baseXP } }
-    );
-
-    // Update achievements
-    try {
-      await fetch(`${req.protocol}://${req.get('host')}/api/achievements/${spot.userId}/update`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-    } catch (achievementError) {
-      console.error('Error updating achievements:', achievementError);
-      // Don't throw the error as the spot was still created successfully
-    }
-
-    res.status(201).json(spot);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// PATCH /api/spot/:id/guess - New route for guesses
-router.patch('/:id/guess', async (req, res) => {
-  try {
-    const spot = await Spot.findById(req.params.id);
-    const flight = spot.flight;
-    
-    // Calculate correctness
-    const isTypeCorrect = req.body.guessedType === flight.type;
-    const actualAltRange = flight.alt < 10000 ? '0-10,000 ft' :
-      flight.alt <= 30000 ? '10,000-30,000 ft' : '30,000+ ft';
-    const isAltitudeCorrect = req.body.guessedAltitudeRange === actualAltRange;
-
-    // Calculate bonus XP
-    const bonusXP = (isTypeCorrect ? 10 : 0) + (isAltitudeCorrect ? 10 : 0);
-
-    // Update spot
-    const updatedSpot = await Spot.findByIdAndUpdate(
-      req.params.id,
-      {
-        guessedType: req.body.guessedType,
-        guessedAltitudeRange: req.body.guessedAltitudeRange,
-        isTypeCorrect,
-        isAltitudeCorrect,
-        bonusXP
-      },
-      { new: true }
-    );
-
-    // Update user XP
-    await User.findByIdAndUpdate(
-      spot.userId,
-      { $inc: { totalXP: bonusXP, weeklyXP: bonusXP } }
-    );
-
-    res.json(updatedSpot);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
 
 module.exports = router;
