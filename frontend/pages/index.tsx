@@ -164,7 +164,7 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
   
     try {
       const flightsResponse = await fetch(
-        `https://plane-spotter-backend.onrender.com/api/flights/nearby?lat=${coords.latitude}&lon=${coords.longitude}`,
+        `https://plane-spotter-backend.onrender.com/api/flights/nearby?lat=${coords.latitude}&lon=${coords.longitude}&userId=${session.user.id}`,
       )
   
       if (!flightsResponse.ok) throw new Error("Failed to fetch flights")
@@ -221,26 +221,27 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
   }
 
   const fetchSuggestions = async () => {
-    if (!coords) return;
-    console.log('Fetching suggestions for coords:', coords);
+    if (!coords || !session) return;
+    if (!session.user?.id) return;
+    console.log('Fetching suggestions for coords:', coords)
     try {
       const response = await fetch(
-        `https://plane-spotter-backend.onrender.com/api/flights/suggestions?lat=${coords.latitude}&lon=${coords.longitude}`
-      );
-      const data = await response.json();
-      console.log('Received suggestions:', data);
+        `https://plane-spotter-backend.onrender.com/api/flights/suggestions?lat=${coords.latitude}&lon=${coords.longitude}&userId=${session.user.id}`
+      )
+      const data = await response.json()
+      console.log('Received suggestions:', data)
       
-      setAirlineOptions(data.airlines);
-      setDestinationOptions(data.destinations);
+      setAirlineOptions(data.airlines)
+      setDestinationOptions(data.destinations)
       
       console.log('Set options:', {
         airlines: data.airlines,
         destinations: data.destinations
-      });
+      })
     } catch (error) {
-      console.error("Failed to fetch suggestions:", error);
+      console.error("Failed to fetch suggestions:", error)
     }
-  };
+  }
 
   const handleGuessSubmit = async () => {
     if (!currentGuessSpot || !session?.user?.id) return

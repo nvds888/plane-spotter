@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
+// User-specific cache with Map
+const flightCache = new Map();
+
+// Cache configuration
+const CACHE_DURATION = 10000; // 10 seconds in milliseconds
+const SEARCH_RADIUS = {
+  NEARBY: 25,    // 25km radius for nearby flights
+  EXTENDED: 100  // 100km radius for fetching data
+};
+
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -17,8 +27,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 function calculateBoundingBox(lat, lon, distance) {
-  // Convert distance from km to degrees (approximate)
-  const latDelta = distance / 111.32; // 1 degree ~ 111.32 km
+  const latDelta = distance / 111.32;
   const lonDelta = distance / (111.32 * Math.cos(lat * (Math.PI / 180)));
   
   return {
@@ -59,37 +68,74 @@ function transformFlightData(flight) {
   };
 }
 
+async function fetchFlightData(userId, lat, lon) {
+  const now = Date.now();
+  const parsedLat = parseFloat(lat);
+  const parsedLon = parseFloat(lon);
+
+  // Check user's cache
+  const userCache = flightCache.get(userId);
+  if (userCache) {
+    const timeDiff = now - userCache.timestamp;
+    if (timeDiff < CACHE_DURATION) {
+      console.log(`Using cached flight data for user ${userId}`);
+      return userCache.data;
+    } else {
+      // Clean up expired cache
+      flightCache.delete(userId);
+    }
+  }
+
+  // Fetch new data with extended radius
+  const bbox = calculateBoundingBox(parsedLat, parsedLon, SEARCH_RADIUS.EXTENDED);
+  const config = {
+    method: 'get',
+    url: `https://fr24api.flightradar24.com/api/live/flight-positions/full?bounds=${bbox.north},${bbox.south},${bbox.west},${bbox.east}`,
+    headers: {
+      'Accept': 'application/json',
+      'Accept-Version': 'v1',
+      'Authorization': `Bearer ${process.env.FLIGHTRADAR24_API_KEY}`
+    }
+  };
+
+  const response = await axios.request(config);
+  const transformedData = response.data.data.map(transformFlightData);
+
+  // Update user's cache
+  flightCache.set(userId, {
+    data: transformedData,
+    timestamp: now
+  });
+
+  // Set cleanup timeout
+  setTimeout(() => {
+    flightCache.delete(userId);
+  }, CACHE_DURATION);
+
+  return transformedData;
+}
+
 router.get('/nearby', async (req, res) => {
-  const { lat, lon } = req.query;
-  const searchRadius = 25; // 25km radius
+  const { lat, lon, userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
 
   try {
-    const bbox = calculateBoundingBox(parseFloat(lat), parseFloat(lon), searchRadius);
-    const config = {
-      method: 'get',
-      url: `https://fr24api.flightradar24.com/api/live/flight-positions/full?bounds=${bbox.north},${bbox.south},${bbox.west},${bbox.east}`,
-      headers: {
-        'Accept': 'application/json',
-        'Accept-Version': 'v1',
-        'Authorization': `Bearer ${process.env.FLIGHTRADAR24_API_KEY}`
-      }
-    };
+    const flights = await fetchFlightData(userId, lat, lon);
 
-    const response = await axios.request(config);
-
-    // Filter flights based on distance and altitude
-    const visibleFlights = response.data.data
-      .filter(flight => {
-        const distance = calculateDistance(
-          parseFloat(lat),
-          parseFloat(lon),
-          flight.lat,
-          flight.lon
-        );
-        const hasValidAltitude = flight.alt && flight.alt >= 500;
-        return hasValidAltitude && distance <= searchRadius;
-      })
-      .map(transformFlightData);
+    // Filter flights for nearby radius and altitude
+    const visibleFlights = flights.filter(flight => {
+      const distance = calculateDistance(
+        parseFloat(lat),
+        parseFloat(lon),
+        flight.geography.latitude,
+        flight.geography.longitude
+      );
+      const hasValidAltitude = flight.geography.altitude && flight.geography.altitude >= 500;
+      return hasValidAltitude && distance <= SEARCH_RADIUS.NEARBY;
+    });
 
     res.status(200).json(visibleFlights);
   } catch (error) {
@@ -99,43 +145,32 @@ router.get('/nearby', async (req, res) => {
 });
 
 router.get('/suggestions', async (req, res) => {
-  const { lat, lon } = req.query;
-  const searchRadius = 100; // Wider radius for suggestions
+  const { lat, lon, userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
 
   try {
-    const bbox = calculateBoundingBox(parseFloat(lat), parseFloat(lon), searchRadius);
-    const config = {
-      method: 'get',
-      url: `https://fr24api.flightradar24.com/api/live/flight-positions/full?bounds=${bbox.north},${bbox.south},${bbox.west},${bbox.east}`,
-      headers: {
-        'Accept': 'application/json',
-        'Accept-Version': 'v1',
-        'Authorization': `Bearer ${process.env.FLIGHTRADAR24_API_KEY}`
-      }
-    };
-
-    const response = await axios.request(config);
-    const flights = response.data.data;
+    const flights = await fetchFlightData(userId, lat, lon);
 
     // Extract unique airlines and destinations
     const airlines = new Map();
     const destinations = new Map();
 
     flights.forEach(flight => {
-      // For airlines, use the operating_as or painted_as
       const airlineCode = flight.operating_as || flight.painted_as;
       if (airlineCode) {
         airlines.set(airlineCode, {
           code: airlineCode,
-          name: airlineCode // We could add a lookup table for full airline names if needed
+          name: airlineCode
         });
       }
 
-      // Always use IATA codes for airports
       if (flight.dest_iata) {
         destinations.set(flight.dest_iata, {
           code: flight.dest_iata,
-          name: flight.dest_iata // We could add a lookup table for airport names if needed
+          name: flight.dest_iata
         });
       }
     });
