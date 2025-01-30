@@ -22,122 +22,67 @@ function getNextResetDate(type) {
   }
 }
 
-// Initialize achievements for a user
-async function initializeAchievements(userId) {
-  try {
-    const user = await User.findById(userId);
-    if (!user) throw new Error('User not found');
-
-    const defaultAchievements = [
-      {
-        type: 'daily',
-        name: 'Daily Spotter',
-        description: 'Spot 2 planes today',
-        target: 2,
-        progress: 0,
-        completed: false,
-        resetDate: getNextResetDate('daily')
-      },
-      {
-        type: 'weekly',
-        name: 'Airbus Expert',
-        description: 'Spot 10 Airbus planes this week',
-        target: 10,
-        progress: 0,
-        completed: false,
-        resetDate: getNextResetDate('weekly')
-      },
-      {
-        type: 'weekly',
-        name: 'A321neo Hunter',
-        description: 'Spot 3 Airbus A321neo aircraft this week',
-        target: 3,
-        progress: 0,
-        completed: false,
-        resetDate: getNextResetDate('weekly')
-      }
-    ];
-
-    user.achievements = defaultAchievements;
-    await user.save();
-  } catch (error) {
-    console.error('Error initializing achievements:', error);
-    throw error;
+const defaultAchievements = [
+  {
+    type: 'daily',
+    name: 'Daily Spotter',
+    description: 'Spot 2 planes today',
+    target: 2,
+    progress: 0,
+    completed: false,
+    resetDate: getNextResetDate('daily')
+  },
+  {
+    type: 'weekly',
+    name: 'Airbus Expert',
+    description: 'Spot 10 Airbus planes this week',
+    target: 10,
+    progress: 0,
+    completed: false,
+    resetDate: getNextResetDate('weekly')
+  },
+  {
+    type: 'weekly',
+    name: 'A321neo Hunter',
+    description: 'Spot 3 Airbus A321neo aircraft this week',
+    target: 3,
+    progress: 0,
+    completed: false,
+    resetDate: getNextResetDate('weekly')
   }
-}
+];
 
-// Get user's achievements
+// Get user's achievements with initialization if needed
 router.get('/:userId', async (req, res) => {
   try {
     let user = await User.findById(req.params.userId);
     if (!user) throw new Error('User not found');
 
-    // Initialize achievements if they don't exist
-    if (!user.achievements || user.achievements.length === 0) {
-      await initializeAchievements(req.params.userId);
-      user = await User.findById(req.params.userId);
-    } else {
-      // Check for missing achievements and add them
-      const defaultAchievements = [
-        {
-          type: 'daily',
-          name: 'Daily Spotter',
-          description: 'Spot 2 planes today',
-          target: 2,
-          progress: 0,
-          completed: false,
-          resetDate: getNextResetDate('daily')
-        },
-        {
-          type: 'weekly',
-          name: 'Airbus Expert',
-          description: 'Spot 10 Airbus planes this week',
-          target: 10,
-          progress: 0,
-          completed: false,
-          resetDate: getNextResetDate('weekly')
-        },
-        {
-          type: 'weekly',
-          name: 'A321neo Hunter',
-          description: 'Spot 3 Airbus A321neo aircraft this week',
-          target: 3,
-          progress: 0,
-          completed: false,
-          resetDate: getNextResetDate('weekly')
-        }
-      ];
+    const now = new Date();
+    let achievementsNeedUpdate = false;
 
-      // Add any missing achievements
-      let achievementsUpdated = false;
+    // Initialize or update achievements
+    if (!user.achievements || user.achievements.length === 0) {
+      user.achievements = defaultAchievements;
+      achievementsNeedUpdate = true;
+    } else {
+      // Add any missing achievements and check for resets
       defaultAchievements.forEach(defaultAchievement => {
-        if (!user.achievements.find(a => a.name === defaultAchievement.name)) {
-          console.log(`Adding missing achievement: ${defaultAchievement.name}`);
+        const existingAchievement = user.achievements.find(a => a.name === defaultAchievement.name);
+        if (!existingAchievement) {
           user.achievements.push(defaultAchievement);
-          achievementsUpdated = true;
+          achievementsNeedUpdate = true;
+        } else if (now >= new Date(existingAchievement.resetDate)) {
+          existingAchievement.progress = 0;
+          existingAchievement.completed = false;
+          existingAchievement.resetDate = getNextResetDate(existingAchievement.type);
+          achievementsNeedUpdate = true;
         }
       });
-
-      if (achievementsUpdated) {
-        user.markModified('achievements');
-        await user.save();
-      }
     }
 
-    // Reset achievements if needed
-    const now = new Date();
-    let achievementsUpdated = false;
-
-    for (let achievement of user.achievements) {
-      if (now >= new Date(achievement.resetDate)) {
-        achievement.progress = 0;
-        achievement.completed = false;
-        achievement.resetDate = getNextResetDate(achievement.type);
-        achievementsUpdated = true;
-      }
-    }
-
-    if (achievementsUpdated) {
+    if (achievementsNeedUpdate) {
+      user.markModified('achievements');
       await user.save();
     }
 
@@ -148,7 +93,7 @@ router.get('/:userId', async (req, res) => {
   }
 });
 
-// Update achievements progress
+// Update achievements progress more efficiently
 router.post('/:userId/update', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
@@ -162,92 +107,93 @@ router.post('/:userId/update', async (req, res) => {
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
 
-    // Get all spots for today and this week
-    const todaySpots = await Spot.find({
-      userId: new mongoose.Types.ObjectId(user._id),
-      timestamp: { $gte: startOfToday }
-    }).lean();
+    // Use aggregation pipeline for more efficient counting
+    const [dailyStats, weeklyStats] = await Promise.all([
+      // Daily spots count
+      Spot.countDocuments({
+        userId: user._id,
+        timestamp: { $gte: startOfToday }
+      }),
+      
+      // Weekly aircraft type counts
+      Spot.aggregate([
+        {
+          $match: {
+            userId: user._id,
+            timestamp: { $gte: startOfWeek },
+            'flight.type': { $exists: true }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            airbusCount: {
+              $sum: {
+                $cond: [
+                  { $regexMatch: { input: { $toLower: '$flight.type' }, regex: '^a' } },
+                  1,
+                  0
+                ]
+              }
+            },
+            a321neoCount: {
+              $sum: {
+                $cond: [
+                  { $regexMatch: { input: { $toLower: '$flight.type' }, regex: '^a21n$' } },
+                  1,
+                  0
+                ]
+              }
+            }
+          }
+        }
+      ])
+    ]);
 
-    const weeklySpots = await Spot.find({
-      userId: new mongoose.Types.ObjectId(user._id),
-      timestamp: { $gte: startOfWeek }
-    }).lean();
-
-    // Count today's spots
-    const todayCount = todaySpots.length;
-    console.log('Today spots count:', todayCount);
-
-    // Count different types of aircraft
-    const airbusCount = weeklySpots.filter(spot => 
-      spot.flight?.type && 
-      /^a/i.test(spot.flight.type)
-    ).length;
-    
-    const a321neoCount = weeklySpots.filter(spot => 
-      spot.flight?.type && 
-      /^a21n$/i.test(spot.flight.type)
-    ).length;
-    
-    console.log('Airbus spots count:', airbusCount);
-    console.log('A321neo spots count:', a321neoCount);
-
-    // Update achievements
+    const weeklyTypeCounts = weeklyStats[0] || { airbusCount: 0, a321neoCount: 0 };
     let achievementsUpdated = false;
-    
-    // Log current state before updates
-    console.log('Current achievements state:', user.achievements);
 
     for (let achievement of user.achievements) {
       // Check for reset
       if (now >= new Date(achievement.resetDate)) {
-        console.log(`Resetting achievement ${achievement.name}`);
         achievement.progress = 0;
         achievement.completed = false;
         achievement.resetDate = getNextResetDate(achievement.type);
         achievementsUpdated = true;
       }
 
-      const oldProgress = achievement.progress;
-
-      if (achievement.name === 'Daily Spotter') {
-        achievement.progress = todayCount;
-        console.log(`Updating Daily Spotter: ${oldProgress} -> ${achievement.progress}`);
-        if (todayCount >= achievement.target && !achievement.completed) {
-          achievement.completed = true;
-          achievement.completedAt = now;
-          achievementsUpdated = true;
-        }
-      } else if (achievement.name === 'Airbus Expert') {
-        achievement.progress = airbusCount;
-        console.log(`Updating Airbus Expert: ${oldProgress} -> ${achievement.progress}`);
-        if (airbusCount >= achievement.target && !achievement.completed) {
-          achievement.completed = true;
-          achievement.completedAt = now;
-          achievementsUpdated = true;
-        }
-      } else if (achievement.name === 'A321neo Hunter') {
-        achievement.progress = a321neoCount;
-        console.log(`Updating A321neo Hunter: ${oldProgress} -> ${achievement.progress}`);
-        if (a321neoCount >= achievement.target && !achievement.completed) {
-          achievement.completed = true;
-          achievement.completedAt = now;
-          achievementsUpdated = true;
-        }
+      // Update progress based on achievement type
+      switch (achievement.name) {
+        case 'Daily Spotter':
+          achievement.progress = dailyStats;
+          if (dailyStats >= achievement.target && !achievement.completed) {
+            achievement.completed = true;
+            achievement.completedAt = now;
+            achievementsUpdated = true;
+          }
+          break;
+        case 'Airbus Expert':
+          achievement.progress = weeklyTypeCounts.airbusCount;
+          if (weeklyTypeCounts.airbusCount >= achievement.target && !achievement.completed) {
+            achievement.completed = true;
+            achievement.completedAt = now;
+            achievementsUpdated = true;
+          }
+          break;
+        case 'A321neo Hunter':
+          achievement.progress = weeklyTypeCounts.a321neoCount;
+          if (weeklyTypeCounts.a321neoCount >= achievement.target && !achievement.completed) {
+            achievement.completed = true;
+            achievement.completedAt = now;
+            achievementsUpdated = true;
+          }
+          break;
       }
-
-      // Force the achievement to be marked as modified
-      user.markModified(`achievements`);
     }
 
-    if (achievementsUpdated || true) { // Always save to ensure updates are persisted
-      console.log('Saving updated achievements state:', user.achievements);
-      try {
-        await user.save();
-        console.log('Successfully saved achievements');
-      } catch (error) {
-        console.error('Error saving achievements:', error);
-        throw error;
-      }
+    if (achievementsUpdated) {
+      user.markModified('achievements');
+      await user.save();
     }
 
     res.json(user.achievements);
