@@ -13,6 +13,8 @@ interface Flight {
   operator: string
   lat: number
   lon: number
+  departureAirport: string
+  arrivalAirport: string
 }
 
 interface Spot {
@@ -419,14 +421,21 @@ export default function Community() {
                         </div>
                       </div>
                       <div className="ml-10">
-                        <p className="text-gray-900 mb-1">
-                          Spotted a {spot.flight?.type || 'Unknown Aircraft'}
-                        </p>
-                        <p className="text-sm text-gray-500 flex items-center gap-1">
-                          <MapPin size={14} />
-                          {spot.country || 'Unknown Location'}
-                        </p>
-                      </div>
+  <p className="text-gray-900 mb-1">
+    Spotted a {spot.flight?.type || 'Unknown Aircraft'}
+  </p>
+  <div className="space-y-2">
+    <p className="text-sm text-gray-500 flex items-center gap-1">
+      <MapPin size={14} />
+      {spot.country || 'Unknown Location'}
+    </p>
+    <div className="flex items-center gap-2 text-sm text-gray-500">
+      <span>{spot.flight?.departureAirport || 'N/A'}</span>
+      <span>→</span>
+      <span>{spot.flight?.arrivalAirport || 'N/A'}</span>
+    </div>
+  </div>
+</div>
                     </div>
                   </div>
                 </div>

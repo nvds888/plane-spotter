@@ -12,12 +12,14 @@ const mapSpotToFrontend = (spot) => {
     flight: {
       hex: spotObj.flight.aircraft?.icao24 || 'N/A',
       flight: spotObj.flight.flight?.icaoNumber || 'N/A',
-      type: spotObj.flight.aircraft?.icaoCode || 'N/A',
+      type: spotObj.flight.aircraft?.iataCode || 'N/A',
       alt: spotObj.flight.geography?.altitude || 0,
       speed: spotObj.flight.speed?.horizontal || 0,
-      operator: spotObj.flight.airline?.icaoCode || 'Unknown',
+      operator: spotObj.flight.airline?.iataCode || 'Unknown',
       lat: spotObj.flight.geography?.latitude || 0,
-      lon: spotObj.flight.geography?.longitude || 0
+      lon: spotObj.flight.geography?.longitude || 0,
+      departureAirport: spotObj.flight.departure?.iataCode || 'N/A',
+      arrivalAirport: spotObj.flight.arrival?.iataCode || 'N/A'
     }
   };
 };
