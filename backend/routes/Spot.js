@@ -11,16 +11,16 @@ const mapSpotToFrontend = (spot) => {
   return {
     ...spotObj,
     flight: {
-      hex: spotObj.flight.aircraft?.icao24 || 'N/A',
-      flight: spotObj.flight.flight?.icaoNumber || 'N/A',
-      type: spotObj.flight.aircraft?.iataCode || 'N/A',
-      alt: spotObj.flight.geography?.altitude || 0,
-      speed: spotObj.flight.speed?.horizontal || 0,
-      operator: spotObj.flight.airline?.iataCode || 'Unknown',
-      lat: spotObj.flight.geography?.latitude || 0,
-      lon: spotObj.flight.geography?.longitude || 0,
-      departureAirport: spotObj.flight.departure?.iataCode || 'N/A',
-      arrivalAirport: spotObj.flight.arrival?.iataCode || 'N/A'
+      hex: spotObj.flight?.system?.hex || 'N/A',
+      flight: spotObj.flight?.flight || 'N/A',
+      type: spotObj.flight?.type || 'N/A',
+      alt: spotObj.flight?.geography?.altitude || 0,
+      speed: spotObj.flight?.geography?.gspeed || 0,
+      operator: spotObj.flight?.operating_as || 'Unknown',
+      lat: spotObj.flight?.geography?.latitude || 0,
+      lon: spotObj.flight?.geography?.longitude || 0,
+      departureAirport: spotObj.flight?.orig_iata || 'N/A',
+      arrivalAirport: spotObj.flight?.dest_iata || 'N/A'
     }
   };
 };
@@ -81,29 +81,29 @@ router.patch('/:id/guess', async (req, res) => {
   try {
     const spot = await Spot.findById(req.params.id);
     
-    // Calculate correctness using Aviation Edge data structure
-const isTypeCorrect = req.body.guessedType === spot.flight.aircraft?.iataCode;
-const isAirlineCorrect = req.body.guessedAirline === spot.flight.airline?.iataCode;
-const isDestinationCorrect = req.body.guessedDestination === spot.flight.arrival?.iataCode;
+    // Calculate correctness using FlightRadar24 data structure
+    const isTypeCorrect = req.body.guessedType === spot.flight?.type;
+    const isAirlineCorrect = req.body.guessedAirline === spot.flight?.operating_as;
+    const isDestinationCorrect = req.body.guessedDestination === spot.flight?.dest_iata;
 
-// Log the comparison values for debugging
-console.log('Guess comparison:', {
-  type: {
-    guessed: req.body.guessedType,
-    actual: spot.flight.aircraft?.iataCode,
-    correct: isTypeCorrect
-  },
-  airline: {
-    guessed: req.body.guessedAirline,
-    actual: spot.flight.airline?.iataCode,
-    correct: isAirlineCorrect
-  },
-  destination: {
-    guessed: req.body.guessedDestination,
-    actual: spot.flight.arrival?.iataCode,
-    correct: isDestinationCorrect
-  }
-});
+    // Log the comparison values for debugging
+    console.log('Guess comparison:', {
+      type: {
+        guessed: req.body.guessedType,
+        actual: spot.flight?.type,
+        correct: isTypeCorrect
+      },
+      airline: {
+        guessed: req.body.guessedAirline,
+        actual: spot.flight?.operating_as,
+        correct: isAirlineCorrect
+      },
+      destination: {
+        guessed: req.body.guessedDestination,
+        actual: spot.flight?.dest_iata,
+        correct: isDestinationCorrect
+      }
+    });
 
     // Calculate bonus XP - 10 points for each correct guess
     const bonusXP = (isTypeCorrect ? 10 : 0) + 
@@ -147,7 +147,7 @@ router.get('/grouped', async (req, res) => {
 
     switch (groupBy) {
       case 'type':
-        groupingField = '$flight.aircraft.icaoCode';
+        groupingField = '$flight.type';
         break;
       case 'date':
         groupingPipeline = [
@@ -165,7 +165,7 @@ router.get('/grouped', async (req, res) => {
         groupingField = '$monthYear';
         break;
       case 'airline':
-        groupingField = '$flight.airline.icaoCode';
+        groupingField = '$flight.operating_as';
         break;
       case 'altitude':
         groupingPipeline = [
@@ -192,7 +192,7 @@ router.get('/grouped', async (req, res) => {
         groupingField = '$altitudeRange';
         break;
       default:
-        groupingField = '$flight.aircraft.icaoCode';
+        groupingField = '$flight.type';
     }
 
     const pipeline = [

@@ -16,36 +16,80 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+function calculateBoundingBox(lat, lon, distance) {
+  // Convert distance from km to degrees (approximate)
+  const latDelta = distance / 111.32; // 1 degree ~ 111.32 km
+  const lonDelta = distance / (111.32 * Math.cos(lat * (Math.PI / 180)));
+  
+  return {
+    north: lat + latDelta,
+    south: lat - latDelta,
+    east: lon + lonDelta,
+    west: lon - lonDelta
+  };
+}
+
+function transformFlightData(flight) {
+  return {
+    fr24_id: flight.fr24_id,
+    flight: flight.flight,
+    callsign: flight.callsign,
+    type: flight.type,
+    reg: flight.reg,
+    painted_as: flight.painted_as,
+    operating_as: flight.operating_as,
+    orig_iata: flight.orig_iata,
+    orig_icao: flight.orig_icao,
+    dest_iata: flight.dest_iata,
+    dest_icao: flight.dest_icao,
+    geography: {
+      altitude: flight.alt,
+      direction: flight.track,
+      latitude: flight.lat,
+      longitude: flight.lon,
+      gspeed: flight.gspeed,
+      vspeed: flight.vspeed
+    },
+    system: {
+      squawk: flight.squawk,
+      timestamp: new Date(flight.timestamp),
+      source: flight.source,
+      hex: flight.hex
+    }
+  };
+}
+
 router.get('/nearby', async (req, res) => {
   const { lat, lon } = req.query;
+  const searchRadius = 25; // 25km radius
 
   try {
-    const response = await axios.get(
-      'https://aviation-edge.com/v2/public/flights',
-      {
-        params: {
-          key: process.env.AVIATION_EDGE_API_KEY,
-          lat,
-          lng: lon,
-          distance: '25'
-        }
+    const bbox = calculateBoundingBox(parseFloat(lat), parseFloat(lon), searchRadius);
+    const config = {
+      method: 'get',
+      url: `https://fr24api.flightradar24.com/api/live/flight-positions/full?bounds=${bbox.north},${bbox.south},${bbox.west},${bbox.east}`,
+      headers: {
+        'Accept': 'application/json',
+        'Accept-Version': 'v1',
+        'Authorization': `Bearer ${process.env.FLIGHTRADAR24_API_KEY}`
       }
-    );
+    };
+
+    const response = await axios.request(config);
 
     // Filter flights based on distance and altitude
-    const visibleFlights = response.data.filter(flight => {
-      const distance = calculateDistance(
-        lat, 
-        lon, 
-        flight.geography.latitude, 
-        flight.geography.longitude
-      );
-      const hasValidAltitude = flight.geography.altitude && flight.geography.altitude >= 500;
-      // Check if within 25km radius
-      const isWithinRange = distance <= 25;
-      
-      return hasValidAltitude && isWithinRange;
-    });
+    const visibleFlights = response.data.data
+      .filter(flight => {
+        const distance = calculateDistance(
+          parseFloat(lat),
+          parseFloat(lon),
+          flight.lat,
+          flight.lon
+        );
+        const hasValidAltitude = flight.alt && flight.alt >= 500;
+        return hasValidAltitude && distance <= searchRadius;
+      })
+      .map(transformFlightData);
 
     res.status(200).json(visibleFlights);
   } catch (error) {
@@ -56,46 +100,39 @@ router.get('/nearby', async (req, res) => {
 
 router.get('/suggestions', async (req, res) => {
   const { lat, lon } = req.query;
-  console.log('Suggestions API called with:', { lat, lon });
+  const searchRadius = 100; // Wider radius for suggestions
 
   try {
-    const response = await axios.get(
-      'https://aviation-edge.com/v2/public/flights',
-      {
-        params: {
-          key: process.env.AVIATION_EDGE_API_KEY,
-          lat,
-          lng: lon,
-          distance: '100'
-        }
+    const bbox = calculateBoundingBox(parseFloat(lat), parseFloat(lon), searchRadius);
+    const config = {
+      method: 'get',
+      url: `https://fr24api.flightradar24.com/api/live/flight-positions/full?bounds=${bbox.north},${bbox.south},${bbox.west},${bbox.east}`,
+      headers: {
+        'Accept': 'application/json',
+        'Accept-Version': 'v1',
+        'Authorization': `Bearer ${process.env.FLIGHTRADAR24_API_KEY}`
       }
-    );
+    };
 
-    console.log('Raw flights data:', response.data.length, 'flights found');
+    const response = await axios.request(config);
+    const flights = response.data.data;
 
-    const flights = response.data;
-    
     // Extract unique airlines and destinations
     const airlines = new Map();
     const destinations = new Map();
-    
-    flights.forEach(flight => {
-      console.log('Processing flight:', {
-        airline: flight.airline?.iataCode,
-        destination: flight.arrival?.iataCode
-      });
 
-      if (flight.airline?.iataCode) {
-        airlines.set(flight.airline.iataCode, {
-          code: flight.airline.iataCode,
-          name: flight.airline.name || flight.airline.icaoCode || flight.airline.iataCode
+    flights.forEach(flight => {
+      if (flight.operating_as) {
+        airlines.set(flight.operating_as, {
+          code: flight.operating_as,
+          name: flight.operating_as
         });
       }
-      
-      if (flight.arrival?.iataCode) {
-        destinations.set(flight.arrival.iataCode, {
-          code: flight.arrival.iataCode,
-          name: flight.arrival.iataCode
+
+      if (flight.dest_iata) {
+        destinations.set(flight.dest_iata, {
+          code: flight.dest_iata,
+          name: flight.dest_icao || flight.dest_iata
         });
       }
     });
@@ -105,7 +142,6 @@ router.get('/suggestions', async (req, res) => {
       destinations: Array.from(destinations.values())
     };
 
-    console.log('Sending suggestions:', result);
     res.status(200).json(result);
   } catch (error) {
     console.error('API Error:', error.response?.data || error.message);

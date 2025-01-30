@@ -10,16 +10,16 @@ const mapSpotToFrontend = (spot) => {
   return {
     ...spotObj,
     flight: {
-      hex: spotObj.flight.aircraft?.icao24 || 'N/A',
-      flight: spotObj.flight.flight?.icaoNumber || 'N/A',
-      type: spotObj.flight.aircraft?.iataCode || 'N/A',
-      alt: spotObj.flight.geography?.altitude || 0,
-      speed: spotObj.flight.speed?.horizontal || 0,
-      operator: spotObj.flight.airline?.iataCode || 'Unknown',
-      lat: spotObj.flight.geography?.latitude || 0,
-      lon: spotObj.flight.geography?.longitude || 0,
-      departureAirport: spotObj.flight.departure?.iataCode || 'N/A',
-      arrivalAirport: spotObj.flight.arrival?.iataCode || 'N/A'
+      hex: spotObj.flight?.system?.hex || 'N/A',
+      flight: spotObj.flight?.flight || 'N/A',
+      type: spotObj.flight?.type || 'N/A',
+      alt: spotObj.flight?.geography?.altitude || 0,
+      speed: spotObj.flight?.geography?.gspeed || 0,
+      operator: spotObj.flight?.operating_as || 'Unknown',
+      lat: spotObj.flight?.geography?.latitude || 0,
+      lon: spotObj.flight?.geography?.longitude || 0,
+      departureAirport: spotObj.flight?.orig_iata || 'N/A',
+      arrivalAirport: spotObj.flight?.dest_iata || 'N/A'
     }
   };
 };

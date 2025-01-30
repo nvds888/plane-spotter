@@ -2,44 +2,30 @@
 const mongoose = require('mongoose');
 
 const flightSchema = new mongoose.Schema({
-  aircraft: {
-    iataCode: String,
-    icao24: String,
-    icaoCode: String,
-    regNumber: String
-  },
-  airline: {
-    iataCode: String,
-    icaoCode: String
-  },
-  arrival: {
-    iataCode: String,
-    icaoCode: String
-  },
-  departure: {
-    iataCode: String,
-    icaoCode: String
-  },
-  flight: {
-    iataNumber: String,
-    icaoNumber: String,
-    number: String
-  },
+  fr24_id: String,
+  flight: String,
+  callsign: String,
+  type: String,
+  reg: String,
+  painted_as: String,
+  operating_as: String,
+  orig_iata: String,
+  orig_icao: String,
+  dest_iata: String,
+  dest_icao: String,
   geography: {
     altitude: Number,
     direction: Number,
     latitude: Number,
-    longitude: Number
-  },
-  speed: {
-    horizontal: Number,
-    isGround: Number,
+    longitude: Number,
+    gspeed: Number,
     vspeed: Number
   },
-  status: String,
   system: {
     squawk: String,
-    updated: Number
+    timestamp: Date,
+    source: String,
+    hex: String
   }
 });
 
