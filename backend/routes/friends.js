@@ -61,6 +61,7 @@ async function updateUserLocation(userId) {
           });
 
           user.location = {
+            city: location[0]?.city || 'Unknown City',
             country: location[0]?.country || 'Unknown Location',
             lastUpdated: new Date(),
             coordinates: {
@@ -72,6 +73,7 @@ async function updateUserLocation(userId) {
         } catch (error) {
           console.error(`Failed to update location for user ${user._id}:`, error);
           user.location = {
+            city: 'Unknown City',
             country: 'Unknown Location',
             lastUpdated: new Date(),
             coordinates: {

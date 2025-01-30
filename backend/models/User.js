@@ -61,6 +61,7 @@ const userSchema = new mongoose.Schema({
     ref: 'User'
   }],
   location: {
+    city: { type: String },    // Add this line
     country: { type: String },
     lastUpdated: { type: Date },
     coordinates: {
