@@ -222,13 +222,21 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
 
   const fetchSuggestions = async () => {
     if (!coords) return;
+    console.log('Fetching suggestions for coords:', coords);
     try {
       const response = await fetch(
         `/api/flights/suggestions?lat=${coords.latitude}&lon=${coords.longitude}`
       );
       const data = await response.json();
+      console.log('Received suggestions:', data);
+      
       setAirlineOptions(data.airlines);
       setDestinationOptions(data.destinations);
+      
+      console.log('Set options:', {
+        airlines: data.airlines,
+        destinations: data.destinations
+      });
     } catch (error) {
       console.error("Failed to fetch suggestions:", error);
     }

@@ -56,6 +56,7 @@ router.get('/nearby', async (req, res) => {
 
 router.get('/suggestions', async (req, res) => {
   const { lat, lon } = req.query;
+  console.log('Suggestions API called with:', { lat, lon });
 
   try {
     const response = await axios.get(
@@ -65,10 +66,12 @@ router.get('/suggestions', async (req, res) => {
           key: process.env.AVIATION_EDGE_API_KEY,
           lat,
           lng: lon,
-          distance: '100' // Larger radius for suggestions
+          distance: '100'
         }
       }
     );
+
+    console.log('Raw flights data:', response.data.length, 'flights found');
 
     const flights = response.data;
     
@@ -77,6 +80,11 @@ router.get('/suggestions', async (req, res) => {
     const destinations = new Map();
     
     flights.forEach(flight => {
+      console.log('Processing flight:', {
+        airline: flight.airline?.iataCode,
+        destination: flight.arrival?.iataCode
+      });
+
       if (flight.airline?.iataCode) {
         airlines.set(flight.airline.iataCode, {
           code: flight.airline.iataCode,
@@ -92,10 +100,13 @@ router.get('/suggestions', async (req, res) => {
       }
     });
 
-    res.status(200).json({
+    const result = {
       airlines: Array.from(airlines.values()),
       destinations: Array.from(destinations.values())
-    });
+    };
+
+    console.log('Sending suggestions:', result);
+    res.status(200).json(result);
   } catch (error) {
     console.error('API Error:', error.response?.data || error.message);
     res.status(500).json({ error: 'Failed to fetch flight suggestions' });
