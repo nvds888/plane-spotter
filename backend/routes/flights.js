@@ -27,7 +27,7 @@ router.get('/nearby', async (req, res) => {
           key: process.env.AVIATION_EDGE_API_KEY,
           lat,
           lng: lon,
-          distance: '50'
+          distance: '25'
         }
       }
     );
@@ -42,7 +42,7 @@ router.get('/nearby', async (req, res) => {
       );
       const hasValidAltitude = flight.geography.altitude && flight.geography.altitude >= 500;
       // Check if within 25km radius
-      const isWithinRange = distance <= 50;
+      const isWithinRange = distance <= 25;
       
       return hasValidAltitude && isWithinRange;
     });
