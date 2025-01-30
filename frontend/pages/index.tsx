@@ -8,6 +8,16 @@ import dynamic from "next/dynamic"
 import { motion, AnimatePresence } from "framer-motion"
 import { Trophy, House, BookOpen, Users, MapPin, Plane } from "lucide-react"
 
+interface AirlineOption {
+  code: string;
+  name: string;
+}
+
+interface DestinationOption {
+  code: string;
+  name: string;
+}
+
 type Flight = {
   hex: string
   flight: string
@@ -102,6 +112,9 @@ export default function Home() {
   const [guessResults, setGuessResults] = useState<GuessResult[]>([])
   const [guessedAirline, setGuessedAirline] = useState("")
 const [guessedDestination, setGuessedDestination] = useState("")
+const [airlineOptions, setAirlineOptions] = useState<AirlineOption[]>([]);
+const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]>([]);
+
 
   const { coords, isGeolocationAvailable } = useGeolocated({
     positionOptions: { enableHighAccuracy: true },
@@ -194,9 +207,10 @@ const [guessedDestination, setGuessedDestination] = useState("")
       setUserXP(xpData)
   
       if (savedSpots.length > 0) {
-        setNewSpots(savedSpots)
-        setCurrentGuessSpot(savedSpots[0])
-        setShowGuessModal(true)
+        setNewSpots(savedSpots);
+        setCurrentGuessSpot(savedSpots[0]);
+        await fetchSuggestions(); // Add this line
+        setShowGuessModal(true);
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error"
@@ -205,6 +219,20 @@ const [guessedDestination, setGuessedDestination] = useState("")
       setIsLoading(false)
     }
   }
+
+  const fetchSuggestions = async () => {
+    if (!coords) return;
+    try {
+      const response = await fetch(
+        `/api/flights/suggestions?lat=${coords.latitude}&lon=${coords.longitude}`
+      );
+      const data = await response.json();
+      setAirlineOptions(data.airlines);
+      setDestinationOptions(data.destinations);
+    } catch (error) {
+      console.error("Failed to fetch suggestions:", error);
+    }
+  };
 
   const handleGuessSubmit = async () => {
     if (!currentGuessSpot || !session?.user?.id) return
@@ -431,28 +459,48 @@ const [guessedDestination, setGuessedDestination] = useState("")
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Aircraft Type
             </label>
-            <select
-              value={guessedType}
-              onChange={(e) => setGuessedType(e.target.value)}
-              className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select Type</option>
-              <option value="A320">Airbus A320</option>
-              <option value="A20N">Airbus A320neo</option>
-              <option value="A321">Airbus A321</option>
-              <option value="A21N">Airbus A321neo</option>
-              <option value="A330">Airbus A330</option>
-              <option value="A350">Airbus A350</option>
-              <option value="A380">Airbus A380</option>
-              <option value="737">Boeing 737</option>
-              <option value="737M">Boeing 737 MAX</option>
-              <option value="747">Boeing 747</option>
-              <option value="757">Boeing 757</option>
-              <option value="767">Boeing 767</option>
-              <option value="777">Boeing 777</option>
-              <option value="787">Boeing 787</option>
-              <option value="Other">Other</option>
-            </select>
+            <select 
+  value={guessedType}
+  onChange={(e) => setGuessedType(e.target.value)}
+  className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+>
+  <option value="">Select Type</option>
+  <option value="A20N">Airbus A320neo</option>
+  <option value="A21N">Airbus A321neo</option>
+  <option value="A318">Airbus A318</option>
+  <option value="A319">Airbus A319</option>
+  <option value="A320">Airbus A320</option>
+  <option value="A321">Airbus A321</option>
+  <option value="A332">Airbus A330-200</option>
+  <option value="A333">Airbus A330-300</option>
+  <option value="A338">Airbus A330-800neo</option>
+  <option value="A339">Airbus A330-900neo</option>
+  <option value="A359">Airbus A350-900</option>
+  <option value="A35K">Airbus A350-1000</option>
+  <option value="A388">Airbus A380-800</option>
+  <option value="B737">Boeing 737</option>
+  <option value="B738">Boeing 737-800</option>
+  <option value="B739">Boeing 737-900</option>
+  <option value="B38M">Boeing 737 MAX 8</option>
+  <option value="B39M">Boeing 737 MAX 9</option>
+  <option value="B744">Boeing 747-400</option>
+  <option value="B748">Boeing 747-8</option>
+  <option value="B752">Boeing 757-200</option>
+  <option value="B753">Boeing 757-300</option>
+  <option value="B762">Boeing 767-200</option>
+  <option value="B763">Boeing 767-300</option>
+  <option value="B764">Boeing 767-400</option>
+  <option value="B772">Boeing 777-200</option>
+  <option value="B773">Boeing 777-300</option>
+  <option value="B77W">Boeing 777-300ER</option>
+  <option value="B788">Boeing 787-8</option>
+  <option value="B789">Boeing 787-9</option>
+  <option value="B78X">Boeing 787-10</option>
+  <option value="E190">Embraer E190</option>
+  <option value="E195">Embraer E195</option>
+  <option value="E290">Embraer E190-E2</option>
+  <option value="E295">Embraer E195-E2</option>
+</select>
           </div>
 
           <div>
@@ -460,41 +508,32 @@ const [guessedDestination, setGuessedDestination] = useState("")
               Airline
             </label>
             <select
-              value={guessedAirline}
-              onChange={(e) => setGuessedAirline(e.target.value)}
-              className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select Airline</option>
-              <option value="AAL">American Airlines</option>
-              <option value="UAL">United Airlines</option>
-              <option value="DAL">Delta Air Lines</option>
-              <option value="SWA">Southwest Airlines</option>
-              <option value="AFR">Air France</option>
-              <option value="BAW">British Airways</option>
-              <option value="DLH">Lufthansa</option>
-              <option value="UAE">Emirates</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+  value={guessedAirline}
+  onChange={(e) => setGuessedAirline(e.target.value)}
+  className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+>
+  <option value="">Select Airline</option>
+  {airlineOptions.map(airline => (
+    <option key={airline.code} value={airline.code}>
+      {airline.name}
+    </option>
+  ))}
+  <option value="Other">Other</option>
+</select>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Destination
-            </label>
-            <select
-              value={guessedDestination}
-              onChange={(e) => setGuessedDestination(e.target.value)}
-              className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select Destination</option>
-              <option value="JFK">New York (JFK)</option>
-              <option value="LAX">Los Angeles (LAX)</option>
-              <option value="ORD">Chicago (ORD)</option>
-              <option value="LHR">London (LHR)</option>
-              <option value="CDG">Paris (CDG)</option>
-              <option value="DXB">Dubai (DXB)</option>
-              <option value="Other">Other</option>
-            </select>
+<select
+  value={guessedDestination}
+  onChange={(e) => setGuessedDestination(e.target.value)}
+  className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+>
+  <option value="">Select Destination</option>
+  {destinationOptions.map(destination => (
+    <option key={destination.code} value={destination.code}>
+      {destination.name}
+    </option>
+  ))}
+  <option value="Other">Other</option>
+</select>
           </div>
         </div>
 
