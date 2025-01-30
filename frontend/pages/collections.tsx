@@ -15,6 +15,8 @@ type Flight = {
   operator: string
   lat: number
   lon: number
+  departureAirport: string
+  arrivalAirport: string
 }
 
 type GuessResult = {
@@ -305,6 +307,22 @@ export default function Collection() {
                                 </p>
                               </div>
                             </div>
+
+                            {/* Add the new airport information grid RIGHT HERE */}
+    <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="bg-white rounded-lg p-3">
+        <p className="text-sm text-gray-500 mb-1">From</p>
+        <p className="font-medium text-gray-900">
+          {spot.flight?.departureAirport || "N/A"}
+        </p>
+      </div>
+      <div className="bg-white rounded-lg p-3">
+        <p className="text-sm text-gray-500 mb-1">To</p>
+        <p className="font-medium text-gray-900">
+          {spot.flight?.arrivalAirport || "N/A"}
+        </p>
+      </div>
+    </div>
 
                             {spot.guessResult && (
                               <div className="flex gap-4 mb-4">
