@@ -95,7 +95,7 @@ router.get('/suggestions', async (req, res) => {
       if (flight.arrival?.iataCode) {
         destinations.set(flight.arrival.iataCode, {
           code: flight.arrival.iataCode,
-          name: `${flight.arrival.airport || 'Unknown'} (${flight.arrival.iataCode})`
+          name: flight.arrival.iataCode
         });
       }
     });

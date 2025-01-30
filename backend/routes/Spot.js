@@ -82,9 +82,28 @@ router.patch('/:id/guess', async (req, res) => {
     const spot = await Spot.findById(req.params.id);
     
     // Calculate correctness using Aviation Edge data structure
-    const isTypeCorrect = req.body.guessedType === spot.flight.aircraft.icaoCode;
-    const isAirlineCorrect = req.body.guessedAirline === spot.flight.airline.icaoCode;
-    const isDestinationCorrect = req.body.guessedDestination === spot.flight.arrival.iataCode;
+const isTypeCorrect = req.body.guessedType === spot.flight.aircraft?.iataCode;
+const isAirlineCorrect = req.body.guessedAirline === spot.flight.airline?.iataCode;
+const isDestinationCorrect = req.body.guessedDestination === spot.flight.arrival?.iataCode;
+
+// Log the comparison values for debugging
+console.log('Guess comparison:', {
+  type: {
+    guessed: req.body.guessedType,
+    actual: spot.flight.aircraft?.iataCode,
+    correct: isTypeCorrect
+  },
+  airline: {
+    guessed: req.body.guessedAirline,
+    actual: spot.flight.airline?.iataCode,
+    correct: isAirlineCorrect
+  },
+  destination: {
+    guessed: req.body.guessedDestination,
+    actual: spot.flight.arrival?.iataCode,
+    correct: isDestinationCorrect
+  }
+});
 
     // Calculate bonus XP - 10 points for each correct guess
     const bonusXP = (isTypeCorrect ? 10 : 0) + 
