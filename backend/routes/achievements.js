@@ -130,7 +130,10 @@ router.post('/:userId/update', async (req, res) => {
             airbusCount: {
               $sum: {
                 $cond: [
-                  { $regexMatch: { input: { $toLower: '$flight.type' }, regex: '^a' } },
+                  { $regexMatch: { 
+                    input: { $toLower: '$flight.type' }, 
+                    regex: '^a|^A' 
+                  }},
                   1,
                   0
                 ]
@@ -139,7 +142,7 @@ router.post('/:userId/update', async (req, res) => {
             a321neoCount: {
               $sum: {
                 $cond: [
-                  { $regexMatch: { input: { $toLower: '$flight.type' }, regex: '^a21n$' } },
+                  { $eq: [{ $toLower: '$flight.type' }, 'a21n'] },
                   1,
                   0
                 ]
