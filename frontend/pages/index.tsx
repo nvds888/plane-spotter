@@ -225,7 +225,7 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
     console.log('Fetching suggestions for coords:', coords);
     try {
       const response = await fetch(
-        `/api/flights/suggestions?lat=${coords.latitude}&lon=${coords.longitude}`
+        `https://plane-spotter-backend.onrender.com/api/flights/suggestions?lat=${coords.latitude}&lon=${coords.longitude}`
       );
       const data = await response.json();
       console.log('Received suggestions:', data);
