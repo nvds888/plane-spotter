@@ -421,33 +421,34 @@ export default function Community() {
             friendSpots.map((spot) => (
               <div key={spot._id} className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-4">
-                  <div className="flex items-start justify-between">
-<div className="flex items-center gap-2">
-  <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-    <Users size={16} className="text-blue-500" />
+                <div>
+  <div className="flex items-center gap-2 mb-4">
+    <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+      <Users size={16} className="text-blue-500" />
+    </div>
+    <div>
+      <p className="font-medium text-gray-900">@{spot.username}</p>
+      <p className="text-sm text-gray-500">{formatDate(spot.timestamp)}</p>
+    </div>
   </div>
-  <div>
-    <p className="font-medium text-gray-900">@{spot.username}</p>
-    <p className="text-sm text-gray-500">{formatDate(spot.timestamp)}</p>
+  
+  <div className="flex justify-between items-start">
+    <div className="flex-1">
+      <p className="text-gray-900">{spot.flight?.type || 'Unknown Aircraft'}</p>
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        <span>{spot.flight?.departureAirport || 'N/A'}</span>
+        <span>→</span>
+        <span>{spot.flight?.arrivalAirport || 'N/A'}</span>
+      </div>
+    </div>
+    <p className="text-sm text-gray-500 flex items-center gap-1 ml-4">
+      <MapPin size={14} />
+      {spot.userId?.location?.city 
+        ? `${spot.userId.location.city}, ${spot.userId.location.country}`
+        : (spot.country || 'Unknown Location')}
+    </p>
   </div>
 </div>
-<p className="text-sm text-gray-500 flex items-center gap-1">
-  <MapPin size={14} />
-  {spot.userId?.location?.city 
-    ? `${spot.userId.location.city}, ${spot.userId.location.country}`
-    : (spot.country || 'Unknown Location')}
-</p>
-<div className="ml-10 mt-2">
-  <p className="text-gray-900 mb-1">
-    Spotted a {spot.flight?.type || 'Unknown Aircraft'}
-  </p>
-  <div className="flex items-center gap-2 text-sm text-gray-500">
-    <span>{spot.flight?.departureAirport || 'N/A'}</span>
-    <span>→</span>
-    <span>{spot.flight?.arrivalAirport || 'N/A'}</span>
-  </div>
-</div>
-                  </div>
                 </div>
               </div>
             ))
