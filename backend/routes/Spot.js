@@ -16,7 +16,7 @@ const mapSpotToFrontend = (spot) => {
       type: spotObj.flight?.type || 'N/A',
       alt: spotObj.flight?.geography?.altitude || 0,
       speed: spotObj.flight?.geography?.gspeed || 0,
-      operator: spotObj.flight?.operating_as || 'Unknown',
+      operator: spotObj.flight?.operating_as || spotObj.flight?.painted_as || 'Unknown',
       lat: spotObj.flight?.geography?.latitude || 0,
       lon: spotObj.flight?.geography?.longitude || 0,
       departureAirport: spotObj.flight?.orig_iata || 'N/A',
@@ -83,7 +83,8 @@ router.patch('/:id/guess', async (req, res) => {
     
     // Calculate correctness using FlightRadar24 data structure
     const isTypeCorrect = req.body.guessedType === spot.flight?.type;
-    const isAirlineCorrect = req.body.guessedAirline === spot.flight?.operating_as;
+    const isAirlineCorrect = req.body.guessedAirline === (spot.flight?.operating_as || spot.flight?.painted_as);
+    // Always use IATA codes for destination comparison
     const isDestinationCorrect = req.body.guessedDestination === spot.flight?.dest_iata;
 
     // Log the comparison values for debugging

@@ -122,17 +122,20 @@ router.get('/suggestions', async (req, res) => {
     const destinations = new Map();
 
     flights.forEach(flight => {
-      if (flight.operating_as) {
-        airlines.set(flight.operating_as, {
-          code: flight.operating_as,
-          name: flight.operating_as
+      // For airlines, use the operating_as or painted_as
+      const airlineCode = flight.operating_as || flight.painted_as;
+      if (airlineCode) {
+        airlines.set(airlineCode, {
+          code: airlineCode,
+          name: airlineCode // We could add a lookup table for full airline names if needed
         });
       }
 
+      // Always use IATA codes for airports
       if (flight.dest_iata) {
         destinations.set(flight.dest_iata, {
           code: flight.dest_iata,
-          name: flight.dest_icao || flight.dest_iata
+          name: flight.dest_iata // We could add a lookup table for airport names if needed
         });
       }
     });
