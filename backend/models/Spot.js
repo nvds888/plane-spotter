@@ -50,9 +50,11 @@ const spotSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
   flight: flightSchema,
   guessedType: String,
-  guessedAltitudeRange: String,
+  guessedAirline: String,
+  guessedDestination: String,
+  isAirlineCorrect: Boolean,
+  isDestinationCorrect: Boolean,
   isTypeCorrect: Boolean,
-  isAltitudeCorrect: Boolean,
   bonusXP: { type: Number, default: 0 },
   baseXP: { type: Number, default: 5 },
 });

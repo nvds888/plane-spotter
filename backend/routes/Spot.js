@@ -83,25 +83,29 @@ router.patch('/:id/guess', async (req, res) => {
     
     // Calculate correctness using Aviation Edge data structure
     const isTypeCorrect = req.body.guessedType === spot.flight.aircraft.icaoCode;
-    const altitude = spot.flight.geography.altitude;
-    const actualAltRange = altitude < 10000 ? '0-10,000 ft' :
-      altitude <= 30000 ? '10,000-30,000 ft' : '30,000+ ft';
-    const isAltitudeCorrect = req.body.guessedAltitudeRange === actualAltRange;
+    const isAirlineCorrect = req.body.guessedAirline === spot.flight.airline.icaoCode;
+    const isDestinationCorrect = req.body.guessedDestination === spot.flight.arrival.iataCode;
 
-    const bonusXP = (isTypeCorrect ? 10 : 0) + (isAltitudeCorrect ? 10 : 0);
+    // Calculate bonus XP - 10 points for each correct guess
+    const bonusXP = (isTypeCorrect ? 10 : 0) + 
+                    (isAirlineCorrect ? 10 : 0) + 
+                    (isDestinationCorrect ? 10 : 0);
 
     const updatedSpot = await Spot.findByIdAndUpdate(
       req.params.id,
       {
         guessedType: req.body.guessedType,
-        guessedAltitudeRange: req.body.guessedAltitudeRange,
+        guessedAirline: req.body.guessedAirline,
+        guessedDestination: req.body.guessedDestination,
         isTypeCorrect,
-        isAltitudeCorrect,
+        isAirlineCorrect,
+        isDestinationCorrect,
         bonusXP
       },
       { new: true }
     );
 
+    // Award XP to user
     await User.findByIdAndUpdate(
       spot.userId,
       { $inc: { totalXP: bonusXP, weeklyXP: bonusXP } }

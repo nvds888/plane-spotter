@@ -17,6 +17,8 @@ type Flight = {
   operator: string
   lat: number
   lon: number
+  departureairport?: string  // Add this
+  arrivalairport?: string    // Add this
 }
 
 // Define the API response type from Aviation Edge
@@ -70,16 +72,19 @@ type Spot = {
   timestamp: string
   flight: Flight
   guessedType?: string
-  guessedAltitudeRange?: string
+  guessedAirline?: string
+  guessedDestination?: string
   isTypeCorrect?: boolean
-  isAltitudeCorrect?: boolean
+  isAirlineCorrect?: boolean
+  isDestinationCorrect?: boolean
   bonusXP?: number
 }
 
 type GuessResult = {
   spot: Spot
   isTypeCorrect: boolean
-  isAltitudeCorrect: boolean
+  isAirlineCorrect: boolean
+  isDestinationCorrect: boolean
   xpEarned: number
 }
 
@@ -92,10 +97,11 @@ export default function Home() {
   const [showGuessModal, setShowGuessModal] = useState(false)
   const [currentGuessSpot, setCurrentGuessSpot] = useState<Spot | null>(null)
   const [guessedType, setGuessedType] = useState("")
-  const [guessedAltRange, setGuessedAltRange] = useState("")
   const [userXP, setUserXP] = useState<{ totalXP: number; weeklyXP: number }>({ totalXP: 0, weeklyXP: 0 })
   const [showResultsModal, setShowResultsModal] = useState(false)
   const [guessResults, setGuessResults] = useState<GuessResult[]>([])
+  const [guessedAirline, setGuessedAirline] = useState("")
+const [guessedDestination, setGuessedDestination] = useState("")
 
   const { coords, isGeolocationAvailable } = useGeolocated({
     positionOptions: { enableHighAccuracy: true },
@@ -202,7 +208,7 @@ export default function Home() {
 
   const handleGuessSubmit = async () => {
     if (!currentGuessSpot || !session?.user?.id) return
-
+  
     try {
       const response = await fetch(
         `https://plane-spotter-backend.onrender.com/api/spot/${currentGuessSpot._id}/guess`,
@@ -211,27 +217,34 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             guessedType,
-            guessedAltitudeRange: guessedAltRange,
+            guessedAirline,
+            guessedDestination
           }),
         },
       )
-
+  
       const result = await response.json()
-
+  
       setGuessResults((prev) => [
         ...prev,
         {
           spot: currentGuessSpot,
           isTypeCorrect: result.isTypeCorrect,
-          isAltitudeCorrect: result.isAltitudeCorrect,
+          isAirlineCorrect: result.isAirlineCorrect,
+          isDestinationCorrect: result.isDestinationCorrect,
           xpEarned: result.bonusXP + 5, // Base XP (5) + Bonus XP
         },
       ])
-
+  
+      // Reset guess fields
+      setGuessedType("")
+      setGuessedAirline("")
+      setGuessedDestination("")
+  
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`)
       const xpData = await xpResponse.json()
       setUserXP(xpData)
-
+  
       const nextSpots = newSpots.slice(1)
       if (nextSpots.length > 0) {
         setNewSpots(nextSpots)
@@ -378,170 +391,207 @@ export default function Home() {
       </nav>
 
       {/* Guess Modal */}
-      <AnimatePresence>
-        {showGuessModal && currentGuessSpot && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white rounded-2xl max-w-md w-full p-6"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
+      {/* Guess Modal */}
+<AnimatePresence>
+  {showGuessModal && currentGuessSpot && (
+    <motion.div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="bg-white rounded-2xl max-w-md w-full p-6"
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-blue-100 rounded-xl">
+            <Plane className="text-blue-500" size={24} />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">What Did You Spot?</h3>
+            <p className="text-sm text-gray-500">
+              {newSpots.length} plane{newSpots.length > 1 ? "s" : ""} left to guess
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <Map
+            center={coords ? [coords.latitude, coords.longitude] : [0, 0]}
+            spots={newSpots}
+            highlightedSpot={currentGuessSpot}
+          />
+        </div>
+
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Aircraft Type
+            </label>
+            <select
+              value={guessedType}
+              onChange={(e) => setGuessedType(e.target.value)}
+              className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-blue-100 rounded-xl">
-                  <Plane className="text-blue-500" size={24} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">What Did You Spot?</h3>
-                  <p className="text-sm text-gray-500">
-                    {newSpots.length} plane{newSpots.length > 1 ? "s" : ""} left to guess
-                  </p>
-                </div>
-              </div>
+              <option value="">Select Type</option>
+              <option value="A320">Airbus A320</option>
+              <option value="A20N">Airbus A320neo</option>
+              <option value="A321">Airbus A321</option>
+              <option value="A21N">Airbus A321neo</option>
+              <option value="A330">Airbus A330</option>
+              <option value="A350">Airbus A350</option>
+              <option value="A380">Airbus A380</option>
+              <option value="737">Boeing 737</option>
+              <option value="737M">Boeing 737 MAX</option>
+              <option value="747">Boeing 747</option>
+              <option value="757">Boeing 757</option>
+              <option value="767">Boeing 767</option>
+              <option value="777">Boeing 777</option>
+              <option value="787">Boeing 787</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
 
-              <div className="mb-6">
-                <Map
-                  center={coords ? [coords.latitude, coords.longitude] : [0, 0]}
-                  spots={newSpots}
-                  highlightedSpot={currentGuessSpot}
-                />
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Airline
+            </label>
+            <select
+              value={guessedAirline}
+              onChange={(e) => setGuessedAirline(e.target.value)}
+              className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Select Airline</option>
+              <option value="AAL">American Airlines</option>
+              <option value="UAL">United Airlines</option>
+              <option value="DAL">Delta Air Lines</option>
+              <option value="SWA">Southwest Airlines</option>
+              <option value="AFR">Air France</option>
+              <option value="BAW">British Airways</option>
+              <option value="DLH">Lufthansa</option>
+              <option value="UAE">Emirates</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
 
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Aircraft Type
-                  </label>
-                  <select
-                    value={guessedType}
-                    onChange={(e) => setGuessedType(e.target.value)}
-                    className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select Type</option>
-                    <option value="A320">Airbus A320</option>
-                    <option value="A20N">Airbus A320neo</option>
-                    <option value="A321">Airbus A321</option>
-                    <option value="A21N">Airbus A321neo</option>
-                    <option value="A330">Airbus A330</option>
-                    <option value="A350">Airbus A350</option>
-                    <option value="A380">Airbus A380</option>
-                    <option value="737">Boeing 737</option>
-                    <option value="737M">Boeing 737 MAX</option>
-                    <option value="747">Boeing 747</option>
-                    <option value="757">Boeing 757</option>
-                    <option value="767">Boeing 767</option>
-                    <option value="777">Boeing 777</option>
-                    <option value="787">Boeing 787</option>
-                    <option value="C130">Lockheed C-130 Hercules</option>
-                    <option value="F16">F-16 Fighting Falcon</option>
-                    <option value="B2">B-2 Spirit</option>
-                    <option value="Beluga">Airbus Beluga</option>
-                    <option value="Concorde">Concorde</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Destination
+            </label>
+            <select
+              value={guessedDestination}
+              onChange={(e) => setGuessedDestination(e.target.value)}
+              className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Select Destination</option>
+              <option value="JFK">New York (JFK)</option>
+              <option value="LAX">Los Angeles (LAX)</option>
+              <option value="ORD">Chicago (ORD)</option>
+              <option value="LHR">London (LHR)</option>
+              <option value="CDG">Paris (CDG)</option>
+              <option value="DXB">Dubai (DXB)</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Altitude Range
-                  </label>
-                  <div className="space-y-3">
-                    {["0-10,000 ft", "10,000-30,000 ft", "30,000+ ft"].map((range) => (
-                      <label key={range} className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="altRange"
-                          value={range}
-                          checked={guessedAltRange === range}
-                          onChange={(e) => setGuessedAltRange(e.target.value)}
-                          className="w-4 h-4 text-blue-500 border-gray-300 focus:ring-blue-500"
-                        />
-                        <span className="text-gray-700">{range}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <motion.button
-                onClick={handleGuessSubmit}
-                className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium mt-6"
-                whileTap={{ scale: 0.95 }}
-              >
-                Submit Guess
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <motion.button
+          onClick={handleGuessSubmit}
+          className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium mt-6"
+          whileTap={{ scale: 0.95 }}
+        >
+          Submit Guess
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* Results Modal */}
-      <AnimatePresence>
-        {showResultsModal && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
+<AnimatePresence>
+  {showResultsModal && (
+    <motion.div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="bg-white rounded-2xl max-w-md w-full p-6"
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-green-100 rounded-xl">
+            <Trophy className="text-green-500" size={24} />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900">Results</h3>
+        </div>
+
+        <div className="space-y-4">
+          {guessResults.map((result, index) => (
             <motion.div
-              className="bg-white rounded-2xl max-w-md w-full p-6"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
+              key={index}
+              className="p-4 bg-gray-50 rounded-xl"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
             >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-green-100 rounded-xl">
-                  <Trophy className="text-green-500" size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">Results</h3>
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-medium text-gray-900">
+                  Flight Details
+                </span>
+                <span className="text-sm font-medium text-green-600">
+                  +{result.xpEarned} XP
+                </span>
               </div>
-
+              
               <div className="space-y-3">
-                {guessResults.map((result, index) => (
-                  <motion.div
-                    key={index}
-                    className="p-4 bg-gray-50 rounded-xl"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium text-gray-900">
-                        {result.spot.flight?.type || "Unknown"}
-                      </span>
-                      <span className="text-sm font-medium text-green-600">
-                        +{result.xpEarned} XP
-                      </span>
-                    </div>
-                    <div className="flex gap-3 text-sm">
-                      <span className={result.isTypeCorrect ? "text-green-600" : "text-red-600"}>
-                        Type {result.isTypeCorrect ? "✓" : "✗"}
-                      </span>
-                      <span className={result.isAltitudeCorrect ? "text-green-600" : "text-red-600"}>
-                        Altitude {result.isAltitudeCorrect ? "✓" : "✗"}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Aircraft Type:</span>
+                    <span className={result.isTypeCorrect ? "text-green-600" : "text-red-600"}>
+                      {result.spot.flight?.type} 
+                      {result.isTypeCorrect ? " ✓" : ` (you guessed: ${result.spot.guessedType})`}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Airline:</span>
+                    <span className={result.isAirlineCorrect ? "text-green-600" : "text-red-600"}>
+                      {result.spot.flight?.operator}
+                      {result.isAirlineCorrect ? " ✓" : ` (you guessed: ${result.spot.guessedAirline})`}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between text-sm">
+  <span className="text-gray-500">Destination:</span>
+  <span className={result.isDestinationCorrect ? "text-green-600" : "text-red-600"}>
+    {result.spot.flight?.arrivalairport}
+    {result.isDestinationCorrect ? " ✓" : ` (you guessed: ${result.spot.guessedDestination})`}
+  </span>
+</div>
+                </div>
               </div>
-
-              <motion.button
-                onClick={() => setShowResultsModal(false)}
-                className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium mt-6"
-                whileTap={{ scale: 0.95 }}
-              >
-                Continue
-              </motion.button>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ))}
+        </div>
+
+        <motion.button
+          onClick={() => setShowResultsModal(false)}
+          className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium mt-6"
+          whileTap={{ scale: 0.95 }}
+        >
+          Continue
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
     </div>
   )
 }
