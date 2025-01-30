@@ -131,8 +131,8 @@ router.post('/:userId/update', async (req, res) => {
               $sum: {
                 $cond: [
                   { $regexMatch: { 
-                    input: { $toLower: '$flight.type' }, 
-                    regex: '^a|^A' 
+                    input: '$flight.type', 
+                    regex: '^A[0-9]' // This will match any Airbus code like A21N, A320, A359, etc.
                   }},
                   1,
                   0
@@ -142,7 +142,7 @@ router.post('/:userId/update', async (req, res) => {
             a321neoCount: {
               $sum: {
                 $cond: [
-                  { $eq: [{ $toLower: '$flight.type' }, 'a21n'] },
+                  { $eq: ['$flight.type', 'A21N'] }, // Exact match for A21N
                   1,
                   0
                 ]
