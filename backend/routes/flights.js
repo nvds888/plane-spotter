@@ -122,8 +122,11 @@ router.get('/nearby', async (req, res) => {
     return res.status(400).json({ error: 'userId is required' });
   }
 
+  // Decode userId if it's encoded
+  const decodedUserId = decodeURIComponent(userId);
+
   try {
-    const flights = await fetchFlightData(userId, lat, lon);
+    const flights = await fetchFlightData(decodedUserId, lat, lon);
 
     // Filter flights for nearby radius and altitude
     const visibleFlights = flights.filter(flight => {

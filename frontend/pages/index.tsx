@@ -31,48 +31,7 @@ type Flight = {
   arrivalairport?: string    // Add this
 }
 
-// Define the API response type from Aviation Edge
-type AviationEdgeFlight = {
-  aircraft: {
-    iataCode?: string
-    icao24?: string
-    icaoCode?: string
-    regNumber?: string
-  }
-  airline: {
-    iataCode?: string
-    icaoCode?: string
-  }
-  arrival: {
-    iataCode?: string
-    icaoCode?: string
-  }
-  departure: {
-    iataCode?: string
-    icaoCode?: string
-  }
-  flight: {
-    iataNumber?: string
-    icaoNumber?: string
-    number?: string
-  }
-  geography: {
-    altitude?: number
-    direction?: number
-    latitude?: number
-    longitude?: number
-  }
-  speed: {
-    horizontal?: number
-    isGround?: number
-    vspeed?: number
-  }
-  status?: string
-  system: {
-    squawk?: string
-    updated?: number
-  }
-}
+
 
 type Spot = {
   _id: string
@@ -163,15 +122,18 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
     setIsLoading(true)
   
     try {
+      // Encode userId to make it URL safe
+      const userId = encodeURIComponent(session.user.id)
       const flightsResponse = await fetch(
-        `https://plane-spotter-backend.onrender.com/api/flights/nearby?lat=${coords.latitude}&lon=${coords.longitude}&userId=${session.user.id}`,
+        `https://plane-spotter-backend.onrender.com/api/flights/nearby?lat=${coords.latitude}&lon=${coords.longitude}&userId=${userId}`
       )
   
       if (!flightsResponse.ok) throw new Error("Failed to fetch flights")
-      const flights: AviationEdgeFlight[] = await flightsResponse.json()
+      const flights = await flightsResponse.json()
   
       if (!flights.length) {
         alert("No flights detected within visible range!")
+        setIsLoading(false)
         return
       }
   
@@ -181,7 +143,7 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
           userId: session.user.id,
           lat: coords.latitude,
           lon: coords.longitude,
-          flight // Send complete Aviation Edge data
+          flight
         }
   
         const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
@@ -207,10 +169,10 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
       setUserXP(xpData)
   
       if (savedSpots.length > 0) {
-        setNewSpots(savedSpots);
-        setCurrentGuessSpot(savedSpots[0]);
-        await fetchSuggestions(); // Add this line
-        setShowGuessModal(true);
+        setNewSpots(savedSpots)
+        setCurrentGuessSpot(savedSpots[0])
+        await fetchSuggestions()
+        setShowGuessModal(true)
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error"
@@ -219,25 +181,21 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
       setIsLoading(false)
     }
   }
-
+  
   const fetchSuggestions = async () => {
-    if (!coords || !session) return;
-    if (!session.user?.id) return;
-    console.log('Fetching suggestions for coords:', coords)
+    if (!coords || !session) return
+    if (!session.user?.id) return
+    
     try {
+      // Encode userId to make it URL safe
+      const userId = encodeURIComponent(session.user.id)
       const response = await fetch(
-        `https://plane-spotter-backend.onrender.com/api/flights/suggestions?lat=${coords.latitude}&lon=${coords.longitude}&userId=${session.user.id}`
+        `https://plane-spotter-backend.onrender.com/api/flights/suggestions?lat=${coords.latitude}&lon=${coords.longitude}&userId=${userId}`
       )
-      const data = await response.json()
-      console.log('Received suggestions:', data)
       
+      const data = await response.json()
       setAirlineOptions(data.airlines)
       setDestinationOptions(data.destinations)
-      
-      console.log('Set options:', {
-        airlines: data.airlines,
-        destinations: data.destinations
-      })
     } catch (error) {
       console.error("Failed to fetch suggestions:", error)
     }
