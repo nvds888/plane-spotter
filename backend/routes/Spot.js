@@ -108,57 +108,56 @@ router.post('/', async (req, res) => {
         now: now.toISOString()
       });
  
-      // Get stats with explicit date ranges
-      const [dailyStats, weeklyStats] = await Promise.all([
-        Spot.countDocuments({
-          userId: new mongoose.Types.ObjectId(user._id),
-          timestamp: { 
-            $gte: startOfToday.toISOString(),
-            $lt: new Date(startOfToday).setUTCHours(48, 0, 0, 0)
-          }
-        }),
-        Spot.aggregate([
-          {
-            $match: {
-              userId: new mongoose.Types.ObjectId(user._id),
-              timestamp: { 
-                $gte: startOfWeek.toISOString(),
-                $lt: new Date(startOfWeek).setUTCDate(startOfWeek.getDate() + 7)
-              }
-            }
-          },
-          {
-            $addFields: {
-              planeType: { $ifNull: ["$flight.type", ""] }
-            }
-          },
-          {
-            $group: {
-              _id: null,
-              airbusCount: {
-                $sum: {
-                  $cond: [
-                    { $regexMatch: { input: "$planeType", regex: /^A\d+/ } },
-                    1,
-                    0
-                  ]
-                }
-              },
-              a321neoCount: {
-                $sum: {
-                  $cond: [
-                    { $eq: ["$planeType", "A21N"] },
-                    1,
-                    0
-                  ]
-                }
-              },
-              // Debug: collect all plane types to verify what we're seeing
-              planeTypes: { $push: "$planeType" }
-            }
-          }
-        ])
-      ]);
+      // Corrected dailyStats query
+const dailyStats = await Spot.countDocuments({
+  userId: new mongoose.Types.ObjectId(user._id),
+  timestamp: { 
+    $gte: startOfToday.toISOString(),
+    $lt: new Date(startOfToday).setUTCHours(24, 0, 0, 0)
+  }
+});
+
+// Corrected weeklyStats query
+const weeklyStats = await Spot.aggregate([
+  {
+    $match: {
+      userId: new mongoose.Types.ObjectId(user._id),
+      timestamp: { 
+        $gte: startOfWeek.toISOString(),
+        $lt: new Date(startOfWeek).setUTCDate(startOfWeek.getDate() + 7)
+      }
+    }
+  },
+  {
+    $addFields: {
+      planeType: { $ifNull: ["$flight.type", ""] }
+    }
+  },
+  {
+    $group: {
+      _id: null,
+      airbusCount: {
+        $sum: {
+          $cond: [
+            { $regexMatch: { input: "$planeType", regex: /^A\d+/ } },
+            1,
+            0
+          ]
+        }
+      },
+      a321neoCount: {
+        $sum: {
+          $cond: [
+            { $eq: ["$planeType", "A21N"] },
+            1,
+            0
+          ]
+        }
+      },
+      planeTypes: { $push: "$planeType" }
+    }
+  }
+]);
  
       console.log("Stats retrieved:", {
         dailyStats,
