@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from "next-auth/react";
 import { Trophy, Medal, Calendar, Star, Home, BookOpen, Users } from "lucide-react";
 import Link from "next/link";
@@ -119,32 +119,75 @@ export default function Achievements() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily');
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
-  useEffect(() => {
-    const fetchAchievements = async () => {
-      if (!session?.user?.id) return;
+  const fetchAchievements = useCallback(async (force = false) => {
+    if (!session?.user?.id) return;
+    
+    const now = Date.now();
+    // Only fetch if forced or if it's been more than 30 seconds since last fetch
+    if (!force && now - lastFetchTime < 30000) return;
+    
+    try {
+      setIsLoading(true);
       
-      try {
-        await fetch(`https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}/update`, {
-          method: 'POST'
-        });
-        
-        const response = await fetch(`https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}`);
-        if (!response.ok) throw new Error('Failed to fetch achievements');
-        
-        const data = await response.json();
-        setAchievements(data);
-      } catch (error) {
-        console.error('Failed to fetch achievements:', error);
-      } finally {
-        setIsLoading(false);
+      // First update achievements
+      const updateResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}/update`, {
+        method: 'POST',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (!updateResponse.ok) throw new Error('Failed to update achievements');
+      
+      // Then fetch the latest data
+      const response = await fetch(`https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch achievements');
+      
+      const data = await response.json();
+      setAchievements(data);
+      setLastFetchTime(now);
+    } catch (error) {
+      console.error('Failed to fetch achievements:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [session?.user?.id, lastFetchTime]);
+
+  // Initial fetch when component mounts
+  useEffect(() => {
+    fetchAchievements(true);
+  }, [fetchAchievements]);
+
+  // Set up polling interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchAchievements();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [fetchAchievements]);
+
+  // Fetch when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchAchievements(true);
       }
     };
 
-    fetchAchievements();
-    const interval = setInterval(fetchAchievements, 60000);
-    return () => clearInterval(interval);
-  }, [session]);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchAchievements]);
 
   const filteredAchievements = achievements.filter(a => a.type === activeTab);
   const completedCount = achievements.filter(a => a.completed).length;
@@ -162,19 +205,8 @@ export default function Achievements() {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin text-blue-500">
-          <Trophy size={32} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white pb-6 shadow-sm">
         <div className="max-w-lg mx-auto px-4">
           <div className="pt-12 pb-4">
@@ -184,7 +216,6 @@ export default function Achievements() {
             </p>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-4">
             <button
               onClick={() => setActiveTab('daily')}
@@ -210,16 +241,22 @@ export default function Achievements() {
         </div>
       </div>
 
-      {/* Achievement Cards */}
       <div className="max-w-lg mx-auto px-4 py-6">
-        <div className="space-y-4">
-          {filteredAchievements.map(achievement => (
-            <AchievementCard key={achievement._id} achievement={achievement} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin text-blue-500">
+              <Trophy size={32} />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredAchievements.map(achievement => (
+              <AchievementCard key={achievement._id} achievement={achievement} />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
         <div className="max-w-lg mx-auto px-4">
           <div className="flex justify-around py-3">
