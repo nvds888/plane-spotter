@@ -65,16 +65,19 @@ router.get('/', async (req, res) => {
 // Create new spot
 router.post('/', async (req, res) => {
   try {
+    const now = new Date();
     const spotData = {
       userId: req.body.userId,
       lat: req.body.lat,
       lon: req.body.lon,
       flight: req.body.flight,
       baseXP: 5,
-      timestamp: new Date() // Add timestamp here
+      timestamp: now // Use same timestamp throughout
     };
     
     const spot = await Spot.create(spotData);
+    // Wait for spot to be fully saved
+    await spot.save();
 
     // Award base XP
     await User.findByIdAndUpdate(
@@ -85,25 +88,30 @@ router.post('/', async (req, res) => {
     // Update achievements directly
     const user = await User.findById(spot.userId);
     if (user) {
-      const now = new Date();
       const startOfToday = new Date(now);
-      startOfToday.setHours(0, 0, 0, 0);
+      startOfToday.setUTCHours(0, 0, 0, 0);
 
       const startOfWeek = new Date(now);
       startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
+      startOfWeek.setUTCHours(0, 0, 0, 0);
 
-      // Get stats
+      // Get stats with explicit date ranges
       const [dailyStats, weeklyStats] = await Promise.all([
         Spot.countDocuments({
-          userId: user._id,
-          timestamp: { $gte: startOfToday }
+          userId: new mongoose.Types.ObjectId(user._id),
+          timestamp: { 
+            $gte: startOfToday.toISOString(),
+            $lt: new Date(startOfToday).setUTCHours(48, 0, 0, 0) // Next day
+          }
         }),
         Spot.aggregate([
           {
             $match: {
               userId: new mongoose.Types.ObjectId(user._id),
-              timestamp: { $gte: startOfWeek },
+              timestamp: { 
+                $gte: startOfWeek.toISOString(),
+                $lt: new Date(startOfWeek).setUTCDate(startOfWeek.getDate() + 7)
+              },
               'flight.type': { $exists: true }
             }
           },
