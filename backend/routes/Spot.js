@@ -4,6 +4,24 @@ const Spot = require('../models/Spot');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
+// Helper function to get next reset date in UTC
+function getNextResetDate(type) {
+  const now = new Date();
+  
+  if (type === 'daily') {
+    const nextDay = new Date(now);
+    nextDay.setUTCHours(24, 0, 0, 0);
+    return nextDay;
+  } else if (type === 'weekly') {
+    const currentDay = now.getUTCDay();
+    const daysUntilMonday = currentDay === 0 ? 1 : 1 + 7 - currentDay;
+    const nextMonday = new Date(now);
+    nextMonday.setUTCDate(now.getUTCDate() + daysUntilMonday);
+    nextMonday.setUTCHours(0, 0, 0, 0);
+    return nextMonday;
+  }
+}
+
 // Helper function to map spot to frontend format
 const mapSpotToFrontend = (spot) => {
   // Handle both mongoose documents and plain objects
@@ -47,7 +65,8 @@ router.post('/', async (req, res) => {
       lat: req.body.lat,
       lon: req.body.lon,
       flight: req.body.flight,
-      baseXP: 5
+      baseXP: 5,
+      timestamp: new Date() // Add timestamp here
     };
     
     const spot = await Spot.create(spotData);
@@ -58,14 +77,104 @@ router.post('/', async (req, res) => {
       { $inc: { totalXP: 5, weeklyXP: 5 } }
     );
 
-    // Update achievements
-    try {
-      await fetch(`${req.protocol}://${req.get('host')}/api/achievements/${spot.userId}/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } catch (achievementError) {
-      console.error('Error updating achievements:', achievementError);
+    // Update achievements directly
+    const user = await User.findById(spot.userId);
+    if (user) {
+      const now = new Date();
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      // Get stats
+      const [dailyStats, weeklyStats] = await Promise.all([
+        Spot.countDocuments({
+          userId: user._id,
+          timestamp: { $gte: startOfToday }
+        }),
+        Spot.aggregate([
+          {
+            $match: {
+              userId: new mongoose.Types.ObjectId(user._id),
+              timestamp: { $gte: startOfWeek },
+              'flight.type': { $exists: true }
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              airbusCount: {
+                $sum: {
+                  $cond: [
+                    { $regexMatch: { 
+                      input: '$flight.type', 
+                      regex: '^A[0-9]' // This will match any Airbus code like A21N, A320, A359, etc.
+                    }},
+                    1,
+                    0
+                  ]
+                }
+              },
+              a321neoCount: {
+                $sum: {
+                  $cond: [
+                    { $eq: ['$flight.type', 'A21N'] }, // Exact match for A21N
+                    1,
+                    0
+                  ]
+                }
+              }
+            }
+          }
+        ])
+      ]);
+
+      const weeklyTypeCounts = weeklyStats[0] || { airbusCount: 0, a321neoCount: 0 };
+      let achievementsUpdated = false;
+
+      // Update achievements
+      for (let achievement of user.achievements) {
+        if (now >= new Date(achievement.resetDate)) {
+          achievement.progress = 0;
+          achievement.completed = false;
+          achievement.resetDate = getNextResetDate(achievement.type);
+          achievementsUpdated = true;
+        }
+
+        switch (achievement.name) {
+          case 'Daily Spotter':
+            achievement.progress = dailyStats;
+            if (dailyStats >= achievement.target && !achievement.completed) {
+              achievement.completed = true;
+              achievement.completedAt = now;
+              achievementsUpdated = true;
+            }
+            break;
+          case 'Airbus Expert':
+            achievement.progress = weeklyTypeCounts.airbusCount;
+            if (weeklyTypeCounts.airbusCount >= achievement.target && !achievement.completed) {
+              achievement.completed = true;
+              achievement.completedAt = now;
+              achievementsUpdated = true;
+            }
+            break;
+          case 'A321neo Hunter':
+            achievement.progress = weeklyTypeCounts.a321neoCount;
+            if (weeklyTypeCounts.a321neoCount >= achievement.target && !achievement.completed) {
+              achievement.completed = true;
+              achievement.completedAt = now;
+              achievementsUpdated = true;
+            }
+            break;
+        }
+      }
+
+      if (achievementsUpdated) {
+        user.markModified('achievements');
+        await user.save();
+      }
     }
 
     // Map to frontend format before sending response
