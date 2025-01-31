@@ -134,6 +134,12 @@ const weeklyStats = await Spot.aggregate([
     }
   },
   {
+    $project: {
+      planeType: 1, // Debug: Include planeType in the output
+      flight: 1
+    }
+  },
+  {
     $group: {
       _id: null,
       airbusCount: {
@@ -154,10 +160,12 @@ const weeklyStats = await Spot.aggregate([
           ]
         }
       },
-      planeTypes: { $push: "$planeType" }
+      planeTypes: { $push: "$planeType" } // Debug: Collect all plane types
     }
   }
 ]);
+
+console.log("Weekly stats planeTypes:", weeklyStats[0]?.planeTypes || []);
  
       console.log("Stats retrieved:", {
         dailyStats,
