@@ -3,6 +3,7 @@ const router = express.Router();
 const Spot = require('../models/Spot');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const { getBestAirlineName } = require('../utils/airlineMapping');
 
 // Helper function to get next reset date in UTC
 function getNextResetDate(type) {
@@ -26,6 +27,7 @@ function getNextResetDate(type) {
 const mapSpotToFrontend = (spot) => {
   // Handle both mongoose documents and plain objects
   const spotObj = spot.toObject ? spot.toObject() : spot;
+  
   return {
     ...spotObj,
     flight: {
@@ -34,7 +36,10 @@ const mapSpotToFrontend = (spot) => {
       type: spotObj.flight?.type || 'N/A',
       alt: spotObj.flight?.geography?.altitude || 0,
       speed: spotObj.flight?.geography?.gspeed || 0,
-      operator: spotObj.flight?.operating_as || spotObj.flight?.painted_as || 'Unknown',
+      operator: getBestAirlineName(
+        spotObj.flight?.operating_as,
+        spotObj.flight?.painted_as
+      ),
       lat: spotObj.flight?.geography?.latitude || 0,
       lon: spotObj.flight?.geography?.longitude || 0,
       departureAirport: spotObj.flight?.orig_iata || 'N/A',

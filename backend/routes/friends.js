@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Spot = require('../models/Spot');
 const mongoose = require('mongoose');
 const NodeGeocoder = require('node-geocoder');
+const { getBestAirlineName } = require('../utils/airlineMapping');
 
 const mapSpotToFrontend = (spot) => {
   const spotObj = spot.toObject ? spot.toObject() : spot;
@@ -15,7 +16,10 @@ const mapSpotToFrontend = (spot) => {
       type: spotObj.flight?.type || 'N/A',
       alt: spotObj.flight?.geography?.altitude || 0,
       speed: spotObj.flight?.geography?.gspeed || 0,
-      operator: spotObj.flight?.operating_as || spotObj.flight?.painted_as || 'Unknown',
+      operator: getBestAirlineName(
+        spotObj.flight?.operating_as,
+        spotObj.flight?.painted_as
+      ),
       lat: spotObj.flight?.geography?.latitude || 0,
       lon: spotObj.flight?.geography?.longitude || 0,
       departureAirport: spotObj.flight?.orig_iata || 'N/A',
