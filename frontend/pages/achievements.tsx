@@ -125,30 +125,21 @@ export default function Achievements() {
     if (!session?.user?.id) return;
     
     const now = Date.now();
-    // Only fetch if forced or if it's been more than 30 seconds since last fetch
     if (!force && now - lastFetchTime < 30000) return;
     
     try {
       setIsLoading(true);
       
-      // First update achievements
-      const updateResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}/update`, {
-        method: 'POST',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      // Update achievements
+      await fetch(
+        `https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}/update`,
+        { method: 'POST' }
+      );
       
-      if (!updateResponse.ok) throw new Error('Failed to update achievements');
-      
-      // Then fetch the latest data
-      const response = await fetch(`https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      // Fetch latest data
+      const response = await fetch(
+        `https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}`
+      );
       
       if (!response.ok) throw new Error('Failed to fetch achievements');
       
@@ -162,12 +153,10 @@ export default function Achievements() {
     }
   }, [session?.user?.id, lastFetchTime]);
 
-  // Initial fetch when component mounts
   useEffect(() => {
     fetchAchievements(true);
   }, [fetchAchievements]);
 
-  // Set up polling interval
   useEffect(() => {
     const interval = setInterval(() => {
       fetchAchievements();
@@ -175,7 +164,6 @@ export default function Achievements() {
     return () => clearInterval(interval);
   }, [fetchAchievements]);
 
-  // Fetch when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -242,7 +230,7 @@ export default function Achievements() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6">
-        {isLoading ? (
+        {isLoading && achievements.length === 0 ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin text-blue-500">
               <Trophy size={32} />
