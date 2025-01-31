@@ -163,92 +163,27 @@ router.patch('/:id/guess', async (req, res) => {
 });
 
 // Get grouped spots
-router.get('/grouped', async (req, res) => {
+router.get('/all', async (req, res) => {
   try {
-    const { userId, groupBy = 'type' } = req.query;
-    let groupingField;
-    let groupingPipeline = [];
-
-    switch (groupBy) {
-      case 'type':
-        groupingField = '$flight.type';
-        break;
-      case 'date':
-        groupingPipeline = [
-          {
-            $addFields: {
-              monthYear: {
-                $dateToString: { 
-                  format: "%Y-%m", 
-                  date: { $toDate: "$timestamp" }
-                }
-              }
-            }
-          }
-        ];
-        groupingField = '$monthYear';
-        break;
-      case 'airline':
-        groupingField = '$flight.operating_as';
-        break;
-      case 'altitude':
-        groupingPipeline = [
-          {
-            $addFields: {
-              altitudeRange: {
-                $switch: {
-                  branches: [
-                    { 
-                      case: { $lt: ['$flight.geography.altitude', 10000] },
-                      then: 'Low Altitude (0-10,000 ft)'
-                    },
-                    { 
-                      case: { $lt: ['$flight.geography.altitude', 30000] },
-                      then: 'Medium Altitude (10,000-30,000 ft)'
-                    }
-                  ],
-                  default: 'High Altitude (30,000+ ft)'
-                }
-              }
-            }
-          }
-        ];
-        groupingField = '$altitudeRange';
-        break;
-      default:
-        groupingField = '$flight.type';
-    }
-
-    const pipeline = [
-      { 
-        $match: { 
-          userId: new mongoose.Types.ObjectId(userId)
-        } 
-      },
-      ...groupingPipeline,
-      { 
-        $group: {
-          _id: groupingField,
-          count: { $sum: 1 },
-          spots: { $push: "$$ROOT" }
-        }
-      },
-      { 
-        $sort: { count: -1 } 
-      }
-    ];
-
-    const groupedSpots = await Spot.aggregate(pipeline);
+    const { userId } = req.query;
     
-    // Map the grouped spots to frontend format
-    const mappedGroupedSpots = groupedSpots.map(group => ({
-      ...group,
-      spots: group.spots.map(mapSpotToFrontend)
+    const spots = await Spot.find({ 
+      userId: new mongoose.Types.ObjectId(userId) 
+    }).sort({ timestamp: -1 });
+    
+    const mappedSpots = spots.map(spot => ({
+      ...mapSpotToFrontend(spot),
+      guessResult: {
+        isTypeCorrect: spot.isTypeCorrect,
+        isAirlineCorrect: spot.isAirlineCorrect,
+        isDestinationCorrect: spot.isDestinationCorrect,
+        xpEarned: spot.baseXP + (spot.bonusXP || 0)
+      }
     }));
     
-    res.json(mappedGroupedSpots);
+    res.json(mappedSpots);
   } catch (error) {
-    console.error('Error in /grouped endpoint:', error);
+    console.error('Error in /all endpoint:', error);
     res.status(500).json({ error: error.message });
   }
 });
