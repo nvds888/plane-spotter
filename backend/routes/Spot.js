@@ -127,18 +127,17 @@ router.post('/', async (req, res) => {
             }
           },
           {
+            $addFields: {
+              planeType: { $ifNull: ["$flight.type", ""] }
+            }
+          },
+          {
             $group: {
               _id: null,
               airbusCount: {
                 $sum: {
                   $cond: [
-                    {
-                      $or: [
-                        { $regexMatch: { input: "$flight.type", regex: "^A[0-9]" } },
-                        { $regexMatch: { input: "$flight.type", regex: "^A[0-9][0-9]" } },
-                        { $regexMatch: { input: "$flight.type", regex: "^A3[0-9]" } }
-                      ]
-                    },
+                    { $regexMatch: { input: "$planeType", regex: /^A\d+/ } },
                     1,
                     0
                   ]
@@ -147,12 +146,14 @@ router.post('/', async (req, res) => {
               a321neoCount: {
                 $sum: {
                   $cond: [
-                    { $eq: ["$flight.type", "A21N"] },
+                    { $eq: ["$planeType", "A21N"] },
                     1,
                     0
                   ]
                 }
-              }
+              },
+              // Debug: collect all plane types to verify what we're seeing
+              planeTypes: { $push: "$planeType" }
             }
           }
         ])
