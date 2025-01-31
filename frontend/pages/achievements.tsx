@@ -126,18 +126,15 @@ export default function Achievements() {
     try {
       setIsLoading(true);
       
-      // First, update the achievements
-      const updateResponse = await fetch(
-        `https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}/update`,
-        { method: 'POST' }
+      const response = await fetch(
+        `https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}`
       );
       
-      if (!updateResponse.ok) {
-        throw new Error('Failed to update achievements');
+      if (!response.ok) {
+        throw new Error('Failed to fetch achievements');
       }
       
-      // Get the updated achievements data
-      const data = await updateResponse.json();
+      const data = await response.json();
       setAchievements(data);
       
     } catch (error) {
