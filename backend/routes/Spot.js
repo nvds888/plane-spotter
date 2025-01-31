@@ -63,8 +63,11 @@ router.get('/', async (req, res) => {
 });
 
 // Create new spot
+// Create new spot
 router.post('/', async (req, res) => {
   try {
+    console.log("Starting spot creation with data:", req.body);
+    
     const now = new Date();
     const spotData = {
       userId: req.body.userId,
@@ -72,21 +75,24 @@ router.post('/', async (req, res) => {
       lon: req.body.lon,
       flight: req.body.flight,
       baseXP: 5,
-      timestamp: now // Use same timestamp throughout
+      timestamp: now
     };
     
     const spot = await Spot.create(spotData);
-    // Wait for spot to be fully saved
     await spot.save();
+    console.log("Spot created and saved:", spot);
 
     // Award base XP
     await User.findByIdAndUpdate(
       spot.userId,
       { $inc: { totalXP: 5, weeklyXP: 5 } }
     );
+    console.log("Base XP awarded");
 
     // Update achievements directly
     const user = await User.findById(spot.userId);
+    console.log("User found:", user?._id);
+    
     if (user) {
       const startOfToday = new Date(now);
       startOfToday.setUTCHours(0, 0, 0, 0);
@@ -95,13 +101,19 @@ router.post('/', async (req, res) => {
       startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
       startOfWeek.setUTCHours(0, 0, 0, 0);
 
+      console.log("Date ranges:", {
+        startOfToday: startOfToday.toISOString(),
+        startOfWeek: startOfWeek.toISOString(),
+        now: now.toISOString()
+      });
+
       // Get stats with explicit date ranges
       const [dailyStats, weeklyStats] = await Promise.all([
         Spot.countDocuments({
           userId: new mongoose.Types.ObjectId(user._id),
           timestamp: { 
             $gte: startOfToday.toISOString(),
-            $lt: new Date(startOfToday).setUTCHours(48, 0, 0, 0) // Next day
+            $lt: new Date(startOfToday).setUTCHours(48, 0, 0, 0)
           }
         }),
         Spot.aggregate([
@@ -123,7 +135,7 @@ router.post('/', async (req, res) => {
                   $cond: [
                     { $regexMatch: { 
                       input: '$flight.type', 
-                      regex: '^A[0-9]' // This will match any Airbus code like A21N, A320, A359, etc.
+                      regex: '^A[0-9]'
                     }},
                     1,
                     0
@@ -133,7 +145,7 @@ router.post('/', async (req, res) => {
               a321neoCount: {
                 $sum: {
                   $cond: [
-                    { $eq: ['$flight.type', 'A21N'] }, // Exact match for A21N
+                    { $eq: ['$flight.type', 'A21N'] },
                     1,
                     0
                   ]
@@ -144,21 +156,34 @@ router.post('/', async (req, res) => {
         ])
       ]);
 
+      console.log("Stats retrieved:", {
+        dailyStats,
+        weeklyStats: weeklyStats[0] || { airbusCount: 0, a321neoCount: 0 }
+      });
+
       const weeklyTypeCounts = weeklyStats[0] || { airbusCount: 0, a321neoCount: 0 };
       let achievementsUpdated = false;
 
+      console.log("Current achievements before update:", user.achievements);
+
       // Update achievements
       for (let achievement of user.achievements) {
+        console.log(`Processing achievement: ${achievement.name}`);
+        
         if (now >= new Date(achievement.resetDate)) {
+          console.log(`Resetting achievement: ${achievement.name}`);
           achievement.progress = 0;
           achievement.completed = false;
           achievement.resetDate = getNextResetDate(achievement.type);
           achievementsUpdated = true;
         }
 
+        const oldProgress = achievement.progress;
+        
         switch (achievement.name) {
           case 'Daily Spotter':
             achievement.progress = dailyStats;
+            console.log('Daily Spotter:', { oldProgress, newProgress: dailyStats });
             if (dailyStats >= achievement.target && !achievement.completed) {
               achievement.completed = true;
               achievement.completedAt = now;
@@ -167,6 +192,7 @@ router.post('/', async (req, res) => {
             break;
           case 'Airbus Expert':
             achievement.progress = weeklyTypeCounts.airbusCount;
+            console.log('Airbus Expert:', { oldProgress, newProgress: weeklyTypeCounts.airbusCount });
             if (weeklyTypeCounts.airbusCount >= achievement.target && !achievement.completed) {
               achievement.completed = true;
               achievement.completedAt = now;
@@ -175,6 +201,7 @@ router.post('/', async (req, res) => {
             break;
           case 'A321neo Hunter':
             achievement.progress = weeklyTypeCounts.a321neoCount;
+            console.log('A321neo Hunter:', { oldProgress, newProgress: weeklyTypeCounts.a321neoCount });
             if (weeklyTypeCounts.a321neoCount >= achievement.target && !achievement.completed) {
               achievement.completed = true;
               achievement.completedAt = now;
@@ -184,9 +211,13 @@ router.post('/', async (req, res) => {
         }
       }
 
+      console.log("Achievements after update:", user.achievements);
+      console.log("Need to save?", achievementsUpdated);
+
       if (achievementsUpdated) {
         user.markModified('achievements');
         await user.save();
+        console.log("Achievements saved to database");
       }
     }
 
@@ -194,6 +225,7 @@ router.post('/', async (req, res) => {
     const mappedSpot = mapSpotToFrontend(spot);
     res.status(201).json(mappedSpot);
   } catch (error) {
+    console.error('Error in spot creation:', error);
     res.status(400).json({ error: error.message });
   }
 });
