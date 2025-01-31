@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const { getBestAirlineName } = require('../utils/airlineMapping');
 
 // User-specific cache with Map
 const flightCache = new Map();
@@ -166,7 +167,8 @@ router.get('/suggestions', async (req, res) => {
       if (airlineCode) {
         airlines.set(airlineCode, {
           code: airlineCode,
-          name: airlineCode
+          // Use the airline mapping function here
+          name: getBestAirlineName(flight.operating_as, flight.painted_as)
         });
       }
 
