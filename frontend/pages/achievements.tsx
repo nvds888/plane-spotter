@@ -119,55 +119,44 @@ export default function Achievements() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily');
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
-  const fetchAchievements = useCallback(async (force = false) => {
+  const fetchAchievements = useCallback(async () => {
     if (!session?.user?.id) return;
-    
-    const now = Date.now();
-    if (!force && now - lastFetchTime < 30000) return;
     
     try {
       setIsLoading(true);
       
-      // Update achievements
-      await fetch(
+      // First, update the achievements
+      const updateResponse = await fetch(
         `https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}/update`,
         { method: 'POST' }
       );
       
-      // Fetch latest data
-      const response = await fetch(
-        `https://plane-spotter-backend.onrender.com/api/achievements/${session.user.id}`
-      );
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update achievements');
+      }
       
-      if (!response.ok) throw new Error('Failed to fetch achievements');
-      
-      const data = await response.json();
+      // Get the updated achievements data
+      const data = await updateResponse.json();
       setAchievements(data);
-      setLastFetchTime(now);
+      
     } catch (error) {
       console.error('Failed to fetch achievements:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [session?.user?.id, lastFetchTime]);
+  }, [session?.user?.id]);
 
+  // Initial fetch
   useEffect(() => {
-    fetchAchievements(true);
+    fetchAchievements();
   }, [fetchAchievements]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchAchievements();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [fetchAchievements]);
-
+  // Refresh on visibility change
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        fetchAchievements(true);
+        fetchAchievements();
       }
     };
 
@@ -175,6 +164,12 @@ export default function Achievements() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
+  }, [fetchAchievements]);
+
+  // Regular polling
+  useEffect(() => {
+    const interval = setInterval(fetchAchievements, 30000);
+    return () => clearInterval(interval);
   }, [fetchAchievements]);
 
   const filteredAchievements = achievements.filter(a => a.type === activeTab);
