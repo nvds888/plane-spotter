@@ -45,6 +45,8 @@ type GroupFilterProps = {
   onClose: () => void
 }
 
+type ExpandedGroups = Set<string>
+
 const GroupFilter = ({ value, onChange, onClose }: GroupFilterProps) => {
   const options: { id: GroupBy; label: string }[] = [
     { id: 'type', label: 'Aircraft Type' },
@@ -161,7 +163,7 @@ const SpotCard = ({ spot }: SpotCardProps) => {
                     <p className="font-medium">{spot.flight?.departureAirport || "N/A"}</p>
                   </div>
                   <div className="text-center">
-                    <Plane className="text-gray-400 transform rotate-90" size={20} />
+                    <Plane className="text-gray-400 transform -rotate-90" size={20} />
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-500 mb-1">To</p>
@@ -214,6 +216,19 @@ export default function Collection() {
   const [groupBy, setGroupBy] = useState<GroupBy>("type")
   const [showFilters, setShowFilters] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [expandedGroups, setExpandedGroups] = useState<ExpandedGroups>(new Set())
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId)
+      } else {
+        newSet.add(groupId)
+      }
+      return newSet
+    })
+  }
 
   useEffect(() => {
     const fetchSpots = async () => {
@@ -258,27 +273,27 @@ export default function Collection() {
     let grouped: Record<string, Spot[]>
     switch (groupBy) {
       case 'type':
-        grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
-        break
-      case 'airline':
-        grouped = _.groupBy(filteredSpots, spot => spot.flight?.operator || 'Unknown')
-        break
-      case 'date':
-        grouped = _.groupBy(filteredSpots, spot => {
-          const date = new Date(spot.timestamp)
-          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-        })
-        break
-      case 'altitude':
-        grouped = _.groupBy(filteredSpots, spot => {
-          const alt = spot.flight?.alt || 0
-          if (alt < 10000) return 'Low Altitude (0-10,000 ft)'
-          if (alt < 30000) return 'Medium Altitude (10,000-30,000 ft)'
-          return 'High Altitude (30,000+ ft)'
-        })
-        break
-      default:
-        grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
+  grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
+  break
+case 'airline':
+  grouped = _.groupBy(filteredSpots, spot => spot.flight?.operator || 'Unknown')
+  break
+case 'date':
+  grouped = _.groupBy(filteredSpots, spot => {
+    const date = new Date(spot.timestamp)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+  })
+  break
+case 'altitude':
+  grouped = _.groupBy(filteredSpots, spot => {
+    const alt = spot.flight?.alt || 0
+    if (alt < 10000) return 'Low Altitude (0-10,000 ft)'
+    if (alt < 30000) return 'Medium Altitude (10,000-30,000 ft)'
+    return 'High Altitude (30,000+ ft)'
+  })
+  break
+default:
+  grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
     }
 
     return Object.entries(grouped)
@@ -398,20 +413,47 @@ export default function Collection() {
         ) : (
           <div className="space-y-6">
             {groupedSpots.map((group) => (
-              <div key={group.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {group.title}
-                  </h2>
-                  <span className="text-sm text-gray-500">
-                    {group.count} plane{group.count !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {group.spots.map((spot) => (
-                    <SpotCard key={spot._id} spot={spot} />
-                  ))}
-                </div>
+              <div key={group.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <button
+                  onClick={() => toggleGroup(group.id)}
+                  className="w-full p-4 flex items-center justify-between"
+                >
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      {group.title}
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      {group.count} plane{group.count !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <motion.div
+                    animate={{ rotate: expandedGroups.has(group.id) ? 180 : 0 }}
+                    className={`p-2 rounded-full ${
+                      expandedGroups.has(group.id) ? "bg-blue-50" : "bg-gray-50"
+                    }`}
+                  >
+                    <ChevronDown className={`${
+                      expandedGroups.has(group.id) ? "text-blue-500" : "text-gray-400"
+                    }`} />
+                  </motion.div>
+                </button>
+                
+                <AnimatePresence>
+                  {expandedGroups.has(group.id) && (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: "auto" }}
+                      exit={{ height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-4 space-y-3 border-t border-gray-100">
+                        {group.spots.map((spot) => (
+                          <SpotCard key={spot._id} spot={spot} />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
           </div>
