@@ -16,10 +16,10 @@ Papa.parse(csvData, {
   complete: (results) => {
     results.data.forEach(row => {
       // Assuming CSV columns: id, name, alias, iata, icao, callsign, country, active
-      const [id, name, alias, iata, icao, callsign] = row;
+      const [id, name, alias, iata, icao] = row;
       
-      // Use callsign if available, otherwise use name
-      const displayName = callsign || name;
+      // Use official name (always use the name field)
+      const displayName = name;
       
       // Add to ICAO mapping if exists and not empty
       if (icao && icao !== '\\N' && icao !== '') {
