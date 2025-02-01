@@ -340,7 +340,7 @@ export default function Collection() {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Fixed Header */}
-<div className="fixed top-0 left-0 right-0 bg-white z-50 shadow-sm">  {/* Changed z-40 to z-50 */}
+<div className="fixed top-0 left-0 right-0 bg-white z-[100] shadow-sm">  {/* Increased z-index significantly */}
   <div className="max-w-lg mx-auto px-4">
     <div className="pt-12 pb-4">
       <div className="flex justify-between items-center">
@@ -368,13 +368,13 @@ export default function Collection() {
         />
       </div>
     </div>
-    {/* Add white background extension to prevent content showing through */}
-    <div className="absolute bottom-0 left-0 right-0 h-4 bg-white" />
+    {/* Add white background extension with shadow transition */}
+    <div className="absolute bottom-0 left-0 right-0 h-6 bg-white shadow-sm" />
   </div>
 </div>
 
 {/* Main Content */}
-<div className="max-w-lg mx-auto px-4 pt-40">
+<div className="max-w-lg mx-auto px-4 pt-44">
       {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
