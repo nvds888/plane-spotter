@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, Users, MapPin, Plane, House, BookOpen, Trophy, X } from "lucide-react";
+import { UserPlus, Users, MapPin, Plane, House, BookOpen, Trophy, X, CheckCircle, XCircle, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 interface Flight {
@@ -37,7 +37,15 @@ interface Spot {
   lon: number
   timestamp: string
   country?: string
-  flight?: Flight  
+  flight?: Flight
+  guessedType?: string
+  guessedAirline?: string
+  guessedDestination?: string
+  isTypeCorrect?: boolean
+  isAirlineCorrect?: boolean
+  isDestinationCorrect?: boolean
+  baseXP?: number
+  bonusXP?: number
 }
 
 interface User {
@@ -46,18 +54,135 @@ interface User {
   email: string;
 }
 
-interface UsersModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    title: string;
-    users: UserWithFollowing[];
-    onAction?: (username: string) => Promise<void>;
-    actionLabel?: string | ((user: UserWithFollowing) => string);
-  }
-
 interface UserWithFollowing extends User {
-    isFollowing?: boolean;
-  }
+  isFollowing?: boolean;
+}
+
+interface UsersModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  users: UserWithFollowing[];
+  onAction?: (username: string) => Promise<void>;
+  actionLabel?: string | ((user: UserWithFollowing) => string);
+}
+
+const SpotCard = ({ spot }: { spot: Spot }) => {
+  const [expanded, setExpanded] = useState(false);
+  const totalXP = (spot.baseXP || 0) + (spot.bonusXP || 0);
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+            <Users size={16} className="text-blue-500" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-gray-900">@{spot.username}</p>
+              {totalXP > 0 && (
+                <span className="text-green-600 text-sm font-medium bg-green-50 px-3 py-1 rounded-full">
+                  +{totalXP} XP
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-500">{formatDate(spot.timestamp)}</p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full text-left"
+        >
+          <div className="flex justify-between items-start mb-3">
+            <div className="flex-1">
+              <p className="text-gray-900 font-medium">{spot.flight?.type || 'Unknown Aircraft'}</p>
+              <p className="text-sm text-gray-600">{spot.flight?.operator || 'Unknown Operator'}</p>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                <span>{spot.flight?.departureAirport || 'N/A'}</span>
+                <span>→</span>
+                <span>{spot.flight?.arrivalAirport || 'N/A'}</span>
+              </div>
+            </div>
+            <p className="text-sm text-gray-500 flex items-center gap-1 ml-4">
+              <MapPin size={14} />
+              {spot.userId?.location?.city 
+                ? `${spot.userId.location.city}, ${spot.userId.location.country}`
+                : (spot.country || 'Unknown Location')}
+            </p>
+          </div>
+
+          <motion.div
+            animate={{ rotate: expanded ? 180 : 0 }}
+            className="flex justify-center w-full"
+          >
+            <ChevronDown className="text-gray-400" />
+          </motion.div>
+        </button>
+
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ height: 0 }}
+              animate={{ height: "auto" }}
+              exit={{ height: 0 }}
+              className="overflow-hidden mt-3"
+            >
+              <div className="space-y-4 pt-3 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Altitude</p>
+                    <p className="font-medium">
+                      {spot.flight?.alt ? `${spot.flight.alt.toLocaleString()} ft` : "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Speed</p>
+                    <p className="font-medium">
+                      {spot.flight?.speed ? `${spot.flight.speed} kts` : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {(spot.isTypeCorrect !== undefined || 
+                  spot.isAirlineCorrect !== undefined || 
+                  spot.isDestinationCorrect !== undefined) && (
+                  <div className="flex flex-wrap gap-2">
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
+                      ${spot.isTypeCorrect ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+                      {spot.isTypeCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                      <span className="font-medium">Type</span>
+                    </div>
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
+                      ${spot.isAirlineCorrect ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+                      {spot.isAirlineCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                      <span className="font-medium">Airline</span>
+                    </div>
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
+                      ${spot.isDestinationCorrect ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+                      {spot.isDestinationCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                      <span className="font-medium">Destination</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
 
 const UsersModal: React.FC<UsersModalProps> = ({
   isOpen,
@@ -109,12 +234,12 @@ const UsersModal: React.FC<UsersModalProps> = ({
                       </div>
                     </div>
                     {onAction && actionLabel && (
-  <button
-    onClick={() => !user.isFollowing && onAction(user.username)}
-    className={`text-sm ${user.isFollowing ? 'text-gray-400' : 'text-blue-600 hover:text-blue-700'}`}
-  >
-    {typeof actionLabel === 'function' ? actionLabel(user) : actionLabel}
-  </button>
+                      <button
+                        onClick={() => !user.isFollowing && onAction(user.username)}
+                        className={`text-sm ${user.isFollowing ? 'text-gray-400' : 'text-blue-600 hover:text-blue-700'}`}
+                      >
+                        {typeof actionLabel === 'function' ? actionLabel(user) : actionLabel}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -252,15 +377,6 @@ export default function Community() {
     return () => clearInterval(interval);
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Header */}
@@ -299,21 +415,21 @@ export default function Community() {
 
       {/* Followers Modal */}
       <UsersModal
-  isOpen={showFollowers}
-  onClose={() => setShowFollowers(false)}
-  title="Followers"
-  users={followers.map(user => ({
-    ...user,
-    isFollowing: following.some(f => f.username === user.username)
-  }))}
-  onAction={async (username) => {
-    const isFollowing = following.some(user => user.username === username);
-    if (!isFollowing) {
-      await handleFollow(username);
-    }
-  }}
-  actionLabel={(user) => user.isFollowing ? "Following" : "Follow Back"}
-/>
+        isOpen={showFollowers}
+        onClose={() => setShowFollowers(false)}
+        title="Followers"
+        users={followers.map(user => ({
+          ...user,
+          isFollowing: following.some(f => f.username === user.username)
+        }))}
+        onAction={async (username) => {
+          const isFollowing = following.some(user => user.username === username);
+          if (!isFollowing) {
+            await handleFollow(username);
+          }
+        }}
+        actionLabel={(user) => user.isFollowing ? "Following" : "Follow Back"}
+      />
 
       {/* Following Modal */}
       <UsersModal
@@ -419,38 +535,7 @@ export default function Community() {
             </div>
           ) : (
             friendSpots.map((spot) => (
-              <div key={spot._id} className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-4">
-                <div>
-  <div className="flex items-center gap-2 mb-4">
-    <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-      <Users size={16} className="text-blue-500" />
-    </div>
-    <div>
-      <p className="font-medium text-gray-900">@{spot.username}</p>
-      <p className="text-sm text-gray-500">{formatDate(spot.timestamp)}</p>
-    </div>
-  </div>
-  
-  <div className="flex justify-between items-start">
-    <div className="flex-1">
-      <p className="text-gray-900">{spot.flight?.type || 'Unknown Aircraft'}</p>
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <span>{spot.flight?.departureAirport || 'N/A'}</span>
-        <span>→</span>
-        <span>{spot.flight?.arrivalAirport || 'N/A'}</span>
-      </div>
-    </div>
-    <p className="text-sm text-gray-500 flex items-center gap-1 ml-4">
-      <MapPin size={14} />
-      {spot.userId?.location?.city 
-        ? `${spot.userId.location.city}, ${spot.userId.location.country}`
-        : (spot.country || 'Unknown Location')}
-    </p>
-  </div>
-</div>
-                </div>
-              </div>
+              <SpotCard key={spot._id} spot={spot} />
             ))
           )}
         </div>

@@ -192,6 +192,7 @@ router.get('/:userId/friend-spots', async (req, res) => {
     const uniqueUserIds = [...new Set(spots.map(spot => spot.userId._id))];
     await Promise.all(uniqueUserIds.map(updateUserLocation));
 
+    // Re-fetch spots to get updated location information
     const updatedSpots = await Spot.find({
       userId: { $in: user.following }
     })
@@ -202,7 +203,13 @@ router.get('/:userId/friend-spots', async (req, res) => {
     const spotsWithLocation = updatedSpots.map(spot => ({
       ...mapSpotToFrontend(spot),
       username: spot.userId.username,
-      country: spot.userId.location?.country || 'Unknown Location'
+      country: spot.userId.location?.country || 'Unknown Location',
+      guessResult: {
+        isTypeCorrect: spot.isTypeCorrect,
+        isAirlineCorrect: spot.isAirlineCorrect,
+        isDestinationCorrect: spot.isDestinationCorrect,
+        xpEarned: spot.baseXP + (spot.bonusXP || 0)
+      }
     }));
 
     res.json(spotsWithLocation);
