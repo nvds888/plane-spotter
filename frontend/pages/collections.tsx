@@ -157,20 +157,20 @@ const SpotCard = ({ spot }: SpotCardProps) => {
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="grid grid-cols-3 items-center">
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-500 mb-1">From</p>
-                    <p className="font-medium truncate">{spot.flight?.departureAirport || "N/A"}</p>
-                  </div>
-                  <div className="text-center">
-                    <Plane className="text-gray-400 transform -rotate-90 mx-auto" size={20} />
-                  </div>
-                  <div className="min-w-0 text-right">
-                    <p className="text-xs text-gray-500 mb-1">To</p>
-                    <p className="font-medium truncate">{spot.flight?.arrivalAirport || "N/A"}</p>
-                  </div>
-                </div>
-              </div>
+  <div className="grid grid-cols-[1fr,auto,1fr] gap-4 items-center">
+    <div className="min-w-0">
+      <p className="text-xs text-gray-500 mb-1">From</p>
+      <p className="font-medium break-words">{spot.flight?.departureAirport || "N/A"}</p>
+    </div>
+    <div className="flex-shrink-0 text-center">
+      <Plane className="text-gray-400 transform -rotate-90" size={20} />
+    </div>
+    <div className="min-w-0 text-right">
+      <p className="text-xs text-gray-500 mb-1">To</p>
+      <p className="font-medium break-words">{spot.flight?.arrivalAirport || "N/A"}</p>
+    </div>
+  </div>
+</div>
 
               {spot.guessResult && (
                 <div className="flex flex-wrap gap-2">
@@ -421,28 +421,28 @@ export default function Collection() {
             {groupedSpots.map((group) => (
               <div key={group.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <button
-                  onClick={() => toggleGroup(group.id)}
-                  className="w-full p-4 flex items-center justify-between"
-                >
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      {group.title}
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      {group.count} plane{group.count !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                  <motion.div
-                    animate={{ rotate: expandedGroups.has(group.id) ? 180 : 0 }}
-                    className={`p-2 rounded-full ${
-                      expandedGroups.has(group.id) ? "bg-blue-50" : "bg-gray-50"
-                    }`}
-                  >
-                    <ChevronDown className={`${
-                      expandedGroups.has(group.id) ? "text-blue-500" : "text-gray-400"
-                    }`} />
-                  </motion.div>
-                </button>
+  onClick={() => toggleGroup(group.id)}
+  className="w-full p-4 flex items-center justify-between"
+>
+  <div className="grid grid-cols-[1fr,auto] gap-2 items-baseline min-w-0">
+    <h2 className="text-lg font-semibold text-gray-900 truncate">
+      {group.title}
+    </h2>
+    <p className="text-sm text-gray-500 whitespace-nowrap">
+      {group.count} plane{group.count !== 1 ? "s" : ""}
+    </p>
+  </div>
+  <motion.div
+    animate={{ rotate: expandedGroups.has(group.id) ? 180 : 0 }}
+    className={`p-2 rounded-full flex-shrink-0 ml-4 ${
+      expandedGroups.has(group.id) ? "bg-blue-50" : "bg-gray-50"
+    }`}
+  >
+    <ChevronDown className={`${
+      expandedGroups.has(group.id) ? "text-blue-500" : "text-gray-400"
+    }`} />
+  </motion.div>
+</button>
                 
                 <AnimatePresence>
                   {expandedGroups.has(group.id) && (
