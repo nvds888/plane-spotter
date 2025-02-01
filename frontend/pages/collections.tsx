@@ -340,13 +340,13 @@ export default function Collection() {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Fixed Header */}
-<div className="fixed top-0 left-0 right-0 bg-white z-40 shadow-sm">
+<div className="fixed top-0 left-0 right-0 bg-white z-50 shadow-sm">  {/* Changed z-40 to z-50 */}
   <div className="max-w-lg mx-auto px-4">
-    <div className="pt-12 pb-4">  {/* Changed from py-12 to pt-12 pb-4 to match community */}
-      <div className="flex justify-between items-center">  {/* Changed from flex items-center justify-between mb-6 */}
+    <div className="pt-12 pb-4">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">My Collection</h1>
-          <div className="flex gap-4">  {/* Added this div to match community structure */}
+          <div className="flex gap-4">
             <div className="text-sm text-gray-500">View and organize your spotted aircraft</div>
           </div>
         </div>
@@ -358,8 +358,7 @@ export default function Collection() {
         </button>
       </div>
 
-      {/* Search Bar - moved outside the flex container */}
-      <div className="relative mt-4">  {/* Added mt-4 for spacing */}
+      <div className="relative mt-4">
         <input
           type="text"
           placeholder="Search flights, airlines, or airports..."
@@ -369,11 +368,13 @@ export default function Collection() {
         />
       </div>
     </div>
+    {/* Add white background extension to prevent content showing through */}
+    <div className="absolute bottom-0 left-0 right-0 h-4 bg-white" />
   </div>
 </div>
 
-      {/* Main Content with increased top padding for fixed header */}
-      <div className="max-w-lg mx-auto px-4 pt-36">
+{/* Main Content */}
+<div className="max-w-lg mx-auto px-4 pt-40">
       {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
