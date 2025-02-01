@@ -157,17 +157,17 @@ const SpotCard = ({ spot }: SpotCardProps) => {
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="grid grid-cols-3 items-center">
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500 mb-1">From</p>
-                    <p className="font-medium">{spot.flight?.departureAirport || "N/A"}</p>
+                    <p className="font-medium truncate">{spot.flight?.departureAirport || "N/A"}</p>
                   </div>
                   <div className="text-center">
-                    <Plane className="text-gray-400 transform -rotate-90" size={20} />
+                    <Plane className="text-gray-400 transform -rotate-90 mx-auto" size={20} />
                   </div>
-                  <div className="text-right">
+                  <div className="min-w-0 text-right">
                     <p className="text-xs text-gray-500 mb-1">To</p>
-                    <p className="font-medium">{spot.flight?.arrivalAirport || "N/A"}</p>
+                    <p className="font-medium truncate">{spot.flight?.arrivalAirport || "N/A"}</p>
                   </div>
                 </div>
               </div>
@@ -273,27 +273,27 @@ export default function Collection() {
     let grouped: Record<string, Spot[]>
     switch (groupBy) {
       case 'type':
-  grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
-  break
-case 'airline':
-  grouped = _.groupBy(filteredSpots, spot => spot.flight?.operator || 'Unknown')
-  break
-case 'date':
-  grouped = _.groupBy(filteredSpots, spot => {
-    const date = new Date(spot.timestamp)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-  })
-  break
-case 'altitude':
-  grouped = _.groupBy(filteredSpots, spot => {
-    const alt = spot.flight?.alt || 0
-    if (alt < 10000) return 'Low Altitude (0-10,000 ft)'
-    if (alt < 30000) return 'Medium Altitude (10,000-30,000 ft)'
-    return 'High Altitude (30,000+ ft)'
-  })
-  break
-default:
-  grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
+        grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
+        break
+      case 'airline':
+        grouped = _.groupBy(filteredSpots, spot => spot.flight?.operator || 'Unknown')
+        break
+      case 'date':
+        grouped = _.groupBy(filteredSpots, spot => {
+          const date = new Date(spot.timestamp)
+          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+        })
+        break
+      case 'altitude':
+        grouped = _.groupBy(filteredSpots, spot => {
+          const alt = spot.flight?.alt || 0
+          if (alt < 10000) return 'Low Altitude (0-10,000 ft)'
+          if (alt < 30000) return 'Medium Altitude (10,000-30,000 ft)'
+          return 'High Altitude (30,000+ ft)'
+        })
+        break
+      default:
+        grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
     }
 
     return Object.entries(grouped)
@@ -342,9 +342,12 @@ default:
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 bg-white z-40 shadow-sm">
         <div className="max-w-lg mx-auto px-4">
-          <div className="py-4">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-gray-900">My Collection</h1>
+          <div className="py-12">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">My Collection</h1>
+                <p className="text-sm text-gray-500">View and organize your spotted aircraft</p>
+              </div>
               <button
                 onClick={() => setShowFilters(true)}
                 className="p-2 rounded-xl bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors"
@@ -367,9 +370,9 @@ default:
         </div>
       </div>
 
-      {/* Main Content with top padding for fixed header */}
-      <div className="max-w-lg mx-auto px-4 pt-28">
-        {isLoading ? (
+      {/* Main Content with increased top padding for fixed header */}
+      <div className="max-w-lg mx-auto px-4 pt-44">
+      {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <motion.div
