@@ -340,38 +340,40 @@ export default function Collection() {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 bg-white z-40 shadow-sm">
-        <div className="max-w-lg mx-auto px-4">
-          <div className="py-12">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">My Collection</h1>
-                <p className="text-sm text-gray-500">View and organize your spotted aircraft</p>
-              </div>
-              <button
-                onClick={() => setShowFilters(true)}
-                className="p-2 rounded-xl bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors"
-              >
-                <Filter size={20} />
-              </button>
-            </div>
-
-            {/* Search Bar */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search flights, airlines, or airports..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-50 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+<div className="fixed top-0 left-0 right-0 bg-white z-40 shadow-sm">
+  <div className="max-w-lg mx-auto px-4">
+    <div className="pt-12 pb-4">  {/* Changed from py-12 to pt-12 pb-4 to match community */}
+      <div className="flex justify-between items-center">  {/* Changed from flex items-center justify-between mb-6 */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">My Collection</h1>
+          <div className="flex gap-4">  {/* Added this div to match community structure */}
+            <div className="text-sm text-gray-500">View and organize your spotted aircraft</div>
           </div>
         </div>
+        <button
+          onClick={() => setShowFilters(true)}
+          className="p-2 rounded-xl bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors"
+        >
+          <Filter size={20} />
+        </button>
       </div>
 
+      {/* Search Bar - moved outside the flex container */}
+      <div className="relative mt-4">  {/* Added mt-4 for spacing */}
+        <input
+          type="text"
+          placeholder="Search flights, airlines, or airports..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-2 bg-gray-50 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
       {/* Main Content with increased top padding for fixed header */}
-      <div className="max-w-lg mx-auto px-4 pt-44">
+      <div className="max-w-lg mx-auto px-4 pt-36">
       {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
