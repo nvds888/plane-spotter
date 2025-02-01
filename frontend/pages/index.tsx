@@ -289,65 +289,96 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white pb-6 shadow-sm">
-        <div className="max-w-lg mx-auto px-4">
-        <div className="pt-12 pb-4">
-  <div className="flex justify-between items-center">
-    <h1 className="text-2xl font-bold text-gray-900">✈️ Plane Spotter</h1>
-    <div className="flex flex-col items-end gap-2">
-      <div className="text-gray-900 text-sm font-bold">
-        @{session.user.username}
-      </div>
-      <div className="flex gap-3">
-        <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-          Weekly XP: {userXP.weeklyXP}
+  <div className="max-w-lg mx-auto px-4">
+    <div className="pt-12 pb-4">
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">✈️ Plane Spotter</h1>
+          <p className="text-sm text-gray-500 mt-1">Start spotting planes nearby</p>
         </div>
-        <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-sm font-medium">
-          Total XP: {userXP.totalXP}
+        <div className="flex flex-col items-end gap-2">
+          <div className="text-gray-900 font-medium">
+            @{session.user.username}
+          </div>
+          <div className="bg-white shadow-sm rounded-xl border border-gray-100 p-3">
+            <div className="flex gap-4">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-blue-500">{userXP.weeklyXP}</p>
+                <p className="text-xs text-gray-500 mt-1">This Week</p>
+              </div>
+              <div className="w-px bg-gray-100"></div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-amber-500">{userXP.totalXP}</p>
+                <p className="text-xs text-gray-500 mt-1">Total XP</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="max-w-lg mx-auto px-4 py-8 flex-1 flex items-center justify-center" style={{ minHeight: "calc(100vh - 280px)" }}>
-        {isClient && isGeolocationAvailable ? (
-          <div className="flex flex-col items-center">
-            <motion.button
-              onClick={handleSpot}
-              disabled={isLoading}
-              className={`w-48 h-48 rounded-full font-bold shadow-lg flex flex-col items-center justify-center gap-3 ${
-                isLoading ? "bg-gray-100" : "bg-white hover:bg-blue-50"
-              }`}
-              whileTap={{ scale: 0.95 }}
+  {isClient && isGeolocationAvailable ? (
+    <div className="flex flex-col items-center">
+      <motion.button
+        onClick={handleSpot}
+        disabled={isLoading}
+        className="relative group"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className="absolute inset-0 bg-blue-500 rounded-full blur-md group-hover:blur-xl transition-all opacity-20"></div>
+        <div className={`w-56 h-56 rounded-full font-bold shadow-lg flex flex-col items-center justify-center gap-4 
+          ${isLoading ? "bg-gray-100" : "bg-white hover:bg-gradient-to-b hover:from-blue-50 hover:to-white"}
+          relative transition-all duration-200 border-2 ${isLoading ? "border-gray-200" : "border-blue-100 group-hover:border-blue-200"}`}
+        >
+          <div className={`p-6 rounded-full transition-all duration-200
+            ${isLoading ? "bg-gray-200" : "bg-blue-100 group-hover:bg-blue-200"}`}
+          >
+            <MapPin 
+              className={`${isLoading ? "text-gray-400" : "text-blue-500"} 
+              transition-all duration-200 group-hover:scale-110`} 
+              size={40} 
+            />
+          </div>
+          <div className="text-center">
+            <p className={`text-xl font-bold mb-1 
+              ${isLoading ? "text-gray-400" : "text-blue-500"}`}
             >
-              <div className={`p-4 rounded-full ${isLoading ? "bg-gray-200" : "bg-blue-100"}`}>
-                <MapPin className={`${isLoading ? "text-gray-400" : "text-blue-500"}`} size={32} />
-              </div>
-              <span className={`text-lg ${isLoading ? "text-gray-400" : "text-blue-500"}`}>
-                {isLoading ? "Spotting..." : "SPOT PLANE"}
-              </span>
-            </motion.button>
-            
-            {spots.length > 0 && (
-              <div className="mt-6 text-center">
-                <span className="text-gray-500">
-                  You&apos;ve spotted {spots.length} aircraft today
-                </span>
-              </div>
+              {isLoading ? "Spotting..." : "SPOT PLANE"}
+            </p>
+            {!isLoading && (
+              <p className="text-sm text-gray-400">Tap to detect nearby aircraft</p>
             )}
           </div>
-        ) : (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
-            <MapPin className="text-amber-500 mx-auto mb-3" size={24} />
-            <p className="text-amber-700">
-              {isClient ? "Enable GPS to start spotting!" : "Loading..."}
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
+      </motion.button>
+      
+      {spots.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8 text-center bg-white rounded-xl shadow-sm border border-gray-100 px-6 py-4"
+        >
+          <p className="text-gray-600">
+            You&apos;ve spotted <span className="font-bold text-blue-500">{spots.length}</span> aircraft today
+          </p>
+        </motion.div>
+      )}
+    </div>
+  ) : (
+    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+      <MapPin className="text-amber-500 mx-auto mb-3" size={24} />
+      <p className="text-amber-700">
+        {isClient ? "Enable GPS to start spotting!" : "Loading..."}
+      </p>
+    </div>
+  )}
+</div>
+
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
