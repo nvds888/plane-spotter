@@ -1,7 +1,7 @@
 "use client";
 import { MapContainer, TileLayer, Marker, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import L, { type LatLngExpression, LatLngBounds } from "leaflet";
+import { type LatLngExpression, LatLngBounds, DivIcon } from "leaflet";
 import { useEffect } from "react";
 import type { Spot } from "../types/types";
 
@@ -19,14 +19,23 @@ function AutoFitBounds({ positions }: { positions: LatLngExpression[] }) {
   return null;
 }
 
-// Default marker icon configuration
-const DefaultIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+// Create custom plane icon
+const createPlaneIcon = (direction: number = 0, isHighlighted: boolean = false) => {
+  return new DivIcon({
+    html: `
+      <div style="transform: rotate(${direction}deg);">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+          <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" 
+                fill="${isHighlighted ? '#ef4444' : '#3b82f6'}"
+          />
+        </svg>
+      </div>
+    `,
+    className: 'plane-icon',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+};
 
 interface MapProps {
   center: LatLngExpression;
@@ -42,6 +51,21 @@ export default function Map({ center, spots, highlightedSpot }: MapProps) {
       allPositions.push([spot.flight.lat, spot.flight.lon]);
     }
   });
+
+  // Add custom CSS for the plane icon
+  useEffect(() => {
+    // Add styles only if they don't exist
+    if (!document.getElementById('plane-icon-styles')) {
+      const style = document.createElement('style');
+      style.id = 'plane-icon-styles';
+      style.innerHTML = `
+        .plane-icon {
+          transition: transform 0.3s ease-in-out;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   return (
     <MapContainer
@@ -74,6 +98,7 @@ export default function Map({ center, spots, highlightedSpot }: MapProps) {
         ];
 
         const isHighlighted = highlightedSpot?._id === spot._id;
+        const direction = spot.flight?.track || spot.flight?.geography?.direction || 0;
 
         return (
           <div key={spot._id}>
@@ -94,21 +119,10 @@ export default function Map({ center, spots, highlightedSpot }: MapProps) {
             {/* Aircraft marker */}
             <Marker
               position={position}
-              icon={DefaultIcon}
+              icon={createPlaneIcon(direction, isHighlighted)}
               interactive={false}
               keyboard={false}
-            >
-              {isHighlighted && (
-                <CircleMarker
-                  center={position}
-                  radius={12}
-                  color="#ef4444"
-                  fillColor="#ef4444"
-                  fillOpacity={0.4}
-                  interactive={false}
-                />
-              )}
-            </Marker>
+            />
           </div>
         );
       })}

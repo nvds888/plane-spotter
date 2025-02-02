@@ -27,8 +27,16 @@ type Flight = {
   operator: string
   lat: number
   lon: number
-  departureairport?: string  // Add this
-  arrivalairport?: string    // Add this
+  departureairport?: string
+  arrivalairport?: string
+  track?: number
+  geography?: {
+    direction?: number
+    altitude?: number
+    latitude?: number
+    longitude?: number
+    gspeed?: number
+  }
 }
 
 

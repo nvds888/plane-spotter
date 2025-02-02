@@ -1,27 +1,39 @@
 export type Flight = {
-    hex: string;
-    flight: string;
-    type: string;
-    alt: number;
-    speed: number;
-    operator: string;
-    lat: number;
-    lon: number;
-  };
-  
-  export type Spot = {
-    _id: string;
-    userId: string;
-    lat: number;
-    lon: number;
-    timestamp: string;
-    flight?: Flight;
-    guessedType?: string;
-    guessedAltitudeRange?: string;
-    isTypeCorrect?: boolean;
-    isAltitudeCorrect?: boolean;
-    bonusXP?: number;
-  };
+  hex: string
+  flight: string
+  type: string
+  alt: number
+  speed: number
+  operator: string
+  lat: number
+  lon: number
+  departureairport?: string
+  arrivalairport?: string
+  track?: number
+  geography?: {
+    direction?: number
+    altitude?: number
+    latitude?: number
+    longitude?: number
+    gspeed?: number
+  }
+}
+
+export type Spot = {
+  _id: string
+  userId: string
+  lat: number
+  lon: number
+  timestamp: string
+  flight: Flight
+  guessedType?: string
+  guessedAirline?: string
+  guessedDestination?: string
+  isTypeCorrect?: boolean
+  isAirlineCorrect?: boolean
+  isDestinationCorrect?: boolean
+  bonusXP?: number
+}
 
   
   

@@ -43,6 +43,9 @@ const mapSpotToFrontend = (spot) => {
       ),
       lat: spotObj.flight?.geography?.latitude || 0,
       lon: spotObj.flight?.geography?.longitude || 0,
+      geography: {
+        direction: spotObj.flight?.geography?.direction || 0
+      },
       departureAirport: getAirportName(spotObj.flight?.orig_iata) || 'N/A',
       arrivalAirport: getAirportName(spotObj.flight?.dest_iata) || 'N/A'
     }
