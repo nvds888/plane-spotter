@@ -27,8 +27,8 @@ type Flight = {
   operator: string
   lat: number
   lon: number
-  departureairport?: string
-  arrivalairport?: string
+  departureAirport: string  // Changed from departureairport
+  arrivalAirport: string    // Changed from arrivalairport
   track?: number
   geography?: {
     direction?: number
@@ -570,48 +570,48 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
               </div>
               
               <div className="space-y-1 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Type:</span>
-                  <div className="flex items-center gap-1">
-                    <span className={result.isTypeCorrect ? "text-green-600" : "text-red-600"}>
-                      {result.spot.guessedType || '—'}
-                    </span>
-                    <span className="text-gray-400 mx-1">→</span>
-                    <span className="text-gray-900">{result.spot.flight.type}</span>
-                    {result.isTypeCorrect && <span className="text-green-600 ml-1">✓</span>}
-                  </div>
-                </div>
+  <div className="flex items-center justify-between">
+    <span className="text-gray-500">Type:</span>
+    <div className="flex items-center gap-1">
+      <span className={result.isTypeCorrect ? "text-green-600" : "text-red-600"}>
+        {result.spot.guessedType || '—'}
+      </span>
+      <span className="text-gray-400 mx-1">→</span>
+      <span className="text-gray-900">{result.spot.flight.type}</span>
+      {result.isTypeCorrect && <span className="text-green-600 ml-1">✓</span>}
+    </div>
+  </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Airline:</span>
-                  <div className="flex items-center gap-1">
-                    <span className={result.isAirlineCorrect ? "text-green-600" : "text-red-600"}>
-                      {result.spot.guessedAirline || '—'}
-                    </span>
-                    <span className="text-gray-400 mx-1">→</span>
-                    <span className="text-gray-900">{result.spot.flight.operator}</span>
-                    {result.isAirlineCorrect && <span className="text-green-600 ml-1">✓</span>}
-                  </div>
-                </div>
+  <div className="flex items-center justify-between">
+    <span className="text-gray-500">Airline:</span>
+    <div className="flex items-center gap-1">
+      <span className={result.isAirlineCorrect ? "text-green-600" : "text-red-600"}>
+        {result.spot.guessedAirline || '—'}
+      </span>
+      <span className="text-gray-400 mx-1">→</span>
+      <span className="text-gray-900">{result.spot.flight.operator}</span>
+      {result.isAirlineCorrect && <span className="text-green-600 ml-1">✓</span>}
+    </div>
+  </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Destination:</span>
-                  <div className="flex items-center gap-1">
-                    <span className={result.isDestinationCorrect ? "text-green-600" : "text-red-600"}>
-                      {result.spot.guessedDestination || '—'}
-                    </span>
-                    <span className="text-gray-400 mx-1">→</span>
-                    <span className="text-gray-900">{result.spot.flight.arrivalairport}</span>
-                    {result.isDestinationCorrect && <span className="text-green-600 ml-1">✓</span>}
-                  </div>
-                </div>
+  <div className="flex items-center justify-between">
+    <span className="text-gray-500">Destination:</span>
+    <div className="flex items-center gap-1">
+      <span className={result.isDestinationCorrect ? "text-green-600" : "text-red-600"}>
+        {result.spot.guessedDestination || '—'}
+      </span>
+      <span className="text-gray-400 mx-1">→</span>
+      <span className="text-gray-900">{result.spot.flight.arrivalAirport}</span>
+      {result.isDestinationCorrect && <span className="text-green-600 ml-1">✓</span>}
+    </div>
+  </div>
 
-                <div className="flex justify-between text-gray-500 pt-1 border-t border-gray-200">
-                  <span>{result.spot.flight.alt}ft</span>
-                  <span>{result.spot.flight.speed}kts</span>
-                  <span>From: {result.spot.flight.departureairport || '—'}</span>
-                </div>
-              </div>
+  <div className="flex justify-between text-gray-500 pt-1 border-t border-gray-200">
+    <span>{result.spot.flight.alt}ft</span>
+    <span>{result.spot.flight.speed}kts</span>
+    <span>From: {result.spot.flight.departureAirport || '—'}</span>
+  </div>
+</div>
             </motion.div>
           ))}
         </div>
