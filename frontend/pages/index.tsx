@@ -543,7 +543,12 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
           <div className="p-3 bg-green-100 rounded-xl">
             <Trophy className="text-green-500" size={24} />
           </div>
-          <h3 className="text-xl font-bold text-gray-900">Results</h3>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Your Results</h3>
+            <p className="text-sm text-gray-500">
+              {guessResults.length} aircraft spotted
+            </p>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -557,38 +562,108 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
             >
               <div className="flex justify-between items-center mb-3">
                 <span className="font-medium text-gray-900">
-                  Flight Details
+                  Flight {result.spot.flight.flight || 'Unknown'}
                 </span>
                 <span className="text-sm font-medium text-green-600">
                   +{result.xpEarned} XP
                 </span>
               </div>
               
-              <div className="space-y-3">
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Aircraft Type:</span>
-                    <span className={result.isTypeCorrect ? "text-green-600" : "text-red-600"}>
-                      {result.spot.flight?.type} 
-                      {result.isTypeCorrect ? " ✓" : ` (you guessed: ${result.spot.guessedType})`}
+              <div className="space-y-4">
+                {/* Aircraft Type */}
+                <div className="bg-white rounded-lg p-3">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-500">Aircraft Type</span>
+                    <span className="font-medium text-gray-900">
+                      {result.isTypeCorrect ? (
+                        <span className="text-green-600">Correct! ✓</span>
+                      ) : (
+                        <span className="text-red-600">Incorrect ✗</span>
+                      )}
                     </span>
                   </div>
-                  
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Airline:</span>
-                    <span className={result.isAirlineCorrect ? "text-green-600" : "text-red-600"}>
-                      {result.spot.flight?.operator}
-                      {result.isAirlineCorrect ? " ✓" : ` (you guessed: ${result.spot.guessedAirline})`}
+                  <div className="flex flex-col gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Your guess:</span>
+                      <span className={result.isTypeCorrect ? "text-green-600" : "text-gray-900"}>
+                        {result.spot.guessedType}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Actual:</span>
+                      <span className="text-gray-900">{result.spot.flight.type}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Airline */}
+                <div className="bg-white rounded-lg p-3">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-500">Airline</span>
+                    <span className="font-medium text-gray-900">
+                      {result.isAirlineCorrect ? (
+                        <span className="text-green-600">Correct! ✓</span>
+                      ) : (
+                        <span className="text-red-600">Incorrect ✗</span>
+                      )}
                     </span>
                   </div>
-                  
-                  <div className="flex justify-between text-sm">
-  <span className="text-gray-500">Destination:</span>
-  <span className={result.isDestinationCorrect ? "text-green-600" : "text-red-600"}>
-    {result.spot.flight?.arrivalairport}
-    {result.isDestinationCorrect ? " ✓" : ` (you guessed: ${result.spot.guessedDestination})`}
-  </span>
-</div>
+                  <div className="flex flex-col gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Your guess:</span>
+                      <span className={result.isAirlineCorrect ? "text-green-600" : "text-gray-900"}>
+                        {result.spot.guessedAirline}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Actual:</span>
+                      <span className="text-gray-900">{result.spot.flight.operator}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Destination */}
+                <div className="bg-white rounded-lg p-3">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-500">Destination</span>
+                    <span className="font-medium text-gray-900">
+                      {result.isDestinationCorrect ? (
+                        <span className="text-green-600">Correct! ✓</span>
+                      ) : (
+                        <span className="text-red-600">Incorrect ✗</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Your guess:</span>
+                      <span className={result.isDestinationCorrect ? "text-green-600" : "text-gray-900"}>
+                        {result.spot.guessedDestination}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Actual:</span>
+                      <span className="text-gray-900">{result.spot.flight.arrivalairport}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Flight Info */}
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <div className="flex flex-col gap-1 text-xs text-gray-500">
+                    <div className="flex justify-between">
+                      <span>Altitude:</span>
+                      <span>{result.spot.flight.alt} ft</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Speed:</span>
+                      <span>{result.spot.flight.speed} kts</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>From:</span>
+                      <span>{result.spot.flight.departureairport || 'Unknown'}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -600,7 +675,7 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
           className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium mt-6"
           whileTap={{ scale: 0.95 }}
         >
-          Continue
+          Continue Spotting
         </motion.button>
       </motion.div>
     </motion.div>
