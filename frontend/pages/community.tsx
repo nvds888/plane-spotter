@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, Users, MapPin, Plane, House, BookOpen, Trophy, X, CheckCircle, XCircle, ChevronDown } from "lucide-react";
 import Link from "next/link";
+import ProfileModal from "../components/ProfileModal";  
 
 interface Flight {
   hex: string
@@ -66,8 +67,12 @@ interface UsersModalProps {
   onAction?: (username: string) => Promise<void>;
   actionLabel?: string | ((user: UserWithFollowing) => string);
 }
+interface SpotCardProps {
+  spot: Spot;
+  onProfileClick: (userId: string) => void;
+}
 
-const SpotCard = ({ spot }: { spot: Spot }) => {
+const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const totalXP = (spot.baseXP || 0) + (spot.bonusXP || 0);
 
@@ -89,7 +94,12 @@ const SpotCard = ({ spot }: { spot: Spot }) => {
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <p className="font-medium text-gray-900">@{spot.username}</p>
+              <p 
+                className="font-medium text-gray-900 hover:text-blue-600 cursor-pointer"
+                onClick={() => onProfileClick(spot.userId._id)}
+              >
+                @{spot.username}
+              </p>
               {totalXP > 0 && (
                 <span className="text-green-600 text-sm font-medium bg-green-50 px-3 py-1 rounded-full">
                   +{totalXP} XP
@@ -263,6 +273,8 @@ export default function Community() {
   const [following, setFollowing] = useState<User[]>([]);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -441,68 +453,77 @@ export default function Community() {
         actionLabel="Unfollow"
       />
 
-      {/* Add Friend Modal */}
-      <AnimatePresence>
-        {showAddFriend && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white rounded-2xl max-w-md w-full p-6"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
+     {/* Add Friend Modal */}
+<AnimatePresence>
+  {showAddFriend && (
+    <motion.div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="bg-white rounded-2xl max-w-md w-full p-6"
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+      >
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Find User</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Username
+            </label>
+            <input
+              type="text"
+              value={friendUsername}
+              onChange={(e) => setFriendUsername(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter username"
+            />
+          </div>
+          {error && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setShowAddFriend(false);
+                setFriendUsername("");
+                setError("");
+              }}
+              className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Follow User</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    value={friendUsername}
-                    onChange={(e) => setFriendUsername(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter username"
-                  />
-                </div>
-                {error && (
-                  <p className="text-sm text-red-600">{error}</p>
-                )}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowAddFriend(false);
-                      setFriendUsername("");
-                      setError("");
-                    }}
-                    className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <motion.button
-                    onClick={async () => {
-                      await handleFollow(friendUsername);
-                      if (!error) {
-                        setShowAddFriend(false);
-                        setFriendUsername("");
-                      }
-                    }}
-                    className="flex-1 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Follow
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              Cancel
+            </button>
+            <motion.button
+              onClick={async () => {
+                try {
+                  const response = await fetch(
+                    `https://plane-spotter-backend.onrender.com/api/user/find/${friendUsername}`
+                  );
+                  if (!response.ok) {
+                    throw new Error('User not found');
+                  }
+                  const userData = await response.json();
+                  setSelectedUserId(userData._id);
+                  setShowAddFriend(false);
+                  setShowProfileModal(true);
+                } catch (error) {
+                  setError(error instanceof Error ? error.message : 'Failed to find user');
+                }
+              }}
+              className="flex-1 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+              whileTap={{ scale: 0.95 }}
+            >
+              View Profile
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* Global Spot Alert */}
       <AnimatePresence>
@@ -535,11 +556,28 @@ export default function Community() {
             </div>
           ) : (
             friendSpots.map((spot) => (
-              <SpotCard key={spot._id} spot={spot} />
+              <SpotCard 
+                key={spot._id} 
+                spot={spot}
+                onProfileClick={(userId) => {
+                  setSelectedUserId(userId);
+                  setShowProfileModal(true);
+                }}
+              />
             ))
           )}
         </div>
       </div>
+
+{/* Profile Modal */}
+<ProfileModal 
+  isOpen={showProfileModal}
+  onClose={() => {
+    setShowProfileModal(false);
+    setSelectedUserId(null);
+  }}
+  userId={selectedUserId || ''}
+/>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">

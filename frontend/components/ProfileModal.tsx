@@ -1,6 +1,7 @@
 import React, { useState, useEffect, JSX } from 'react';
 import { Award, Plane, Calendar, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSession } from "next-auth/react";
 
 interface Badge {
   id: string;
@@ -35,6 +36,7 @@ interface ProfileModalProps {
 const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Element | null => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const { data: session } = useSession();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -103,20 +105,46 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
             <>
               {/* Header */}
               <div className="p-6 border-b border-gray-100">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Profile</h2>
-                    <p className="text-sm text-gray-500">
-                      Member since {new Date(profileData.joinDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <button 
-                    onClick={onClose}
-                    className="p-2 hover:bg-gray-100 rounded-full"
-                  >
-                    <X size={20} className="text-gray-400" />
-                  </button>
-                </div>
+    <div className="flex justify-between items-start mb-4">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Profile</h2>
+        <p className="text-sm text-gray-500">
+          Member since {new Date(profileData.joinDate).toLocaleDateString()}
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        {session?.user?.id !== userId && profileData && (
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch(
+                  `https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/follow`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: profileData.username })
+                  }
+                );
+                if (!response.ok) throw new Error('Failed to follow user');
+                // Optionally update the UI to show followed state
+              } catch (error) {
+                console.error('Error following user:', error);
+              }
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+          >
+            Follow
+          </button>
+        )}
+        <button 
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 rounded-full"
+        >
+          <X size={20} className="text-gray-400" />
+        </button>
+      </div>
+    </div>
+                
 
                 {/* User Stats */}
                 <div className="grid grid-cols-2 gap-3 mt-6">

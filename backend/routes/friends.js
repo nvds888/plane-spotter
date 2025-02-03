@@ -125,6 +125,22 @@ router.get('/:userId/following', async (req, res) => {
   }
 });
 
+// Find user by username
+router.get('/find/:username', async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({
+      _id: user._id,
+      username: user.username
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Follow a user
 router.post('/:userId/follow', async (req, res) => {
   try {
@@ -245,5 +261,7 @@ router.get('/spots/latest', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 module.exports = router;

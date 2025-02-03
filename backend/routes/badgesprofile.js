@@ -94,6 +94,11 @@ router.get('/:userId', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Initialize badges array if it doesn't exist
+    if (!user.badges) {
+      user.badges = [];
+    }
+
     const spots = await Spot.find({ userId: req.params.userId });
     
     // Update total spots
