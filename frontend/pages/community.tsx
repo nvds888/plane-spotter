@@ -402,7 +402,7 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   };
 
   return (
-    <div className="h-screen w-full flex flex-col">
+    <div className="h-screen w-full bg-white flex flex-col">
       {/* Add Friend Modal */}
       <AnimatePresence>
         {showAddFriend && (
@@ -543,7 +543,7 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
       />
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
         <div className="max-w-lg mx-auto">
           <div className="flex justify-between items-start mb-6">
             <div>
