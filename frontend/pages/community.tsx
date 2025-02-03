@@ -87,22 +87,22 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100">
       <div className="p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-            <Users size={16} className="text-blue-500" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl flex items-center justify-center">
+            <Users size={18} className="text-white" />
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <p 
-                className="font-medium text-gray-900 hover:text-blue-600 cursor-pointer"
+                className="font-medium text-gray-900 hover:text-indigo-600 cursor-pointer"
                 onClick={() => onProfileClick(spot.userId._id)}
               >
                 @{spot.username}
               </p>
               {totalXP > 0 && (
-                <span className="text-green-600 text-sm font-medium bg-green-50 px-3 py-1 rounded-full">
+                <span className="text-emerald-600 text-sm font-medium bg-emerald-50 px-3 py-1 rounded-full">
                   +{totalXP} XP
                 </span>
               )}
@@ -151,13 +151,13 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
             >
               <div className="space-y-4 pt-3 border-t border-gray-100">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-3">
                     <p className="text-xs text-gray-500 mb-1">Altitude</p>
                     <p className="font-medium">
                       {spot.flight?.alt ? `${spot.flight.alt.toLocaleString()} ft` : "N/A"}
                     </p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-3">
                     <p className="text-xs text-gray-500 mb-1">Speed</p>
                     <p className="font-medium">
                       {spot.flight?.speed ? `${spot.flight.speed} kts` : "N/A"}
@@ -170,17 +170,17 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
                   spot.isDestinationCorrect !== undefined) && (
                   <div className="flex flex-wrap gap-2">
                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
-                      ${spot.isTypeCorrect ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+                      ${spot.isTypeCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
                       {spot.isTypeCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
                       <span className="font-medium">Type</span>
                     </div>
                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
-                      ${spot.isAirlineCorrect ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+                      ${spot.isAirlineCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
                       {spot.isAirlineCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
                       <span className="font-medium">Airline</span>
                     </div>
                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
-                      ${spot.isDestinationCorrect ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+                      ${spot.isDestinationCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
                       {spot.isDestinationCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
                       <span className="font-medium">Destination</span>
                     </div>
@@ -195,66 +195,77 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
   );
 };
 
-const UsersModal: React.FC<UsersModalProps> = ({
+const UsersModal = ({
   isOpen,
   onClose,
   title,
   users,
   onAction,
   actionLabel
-}) => (
+}: UsersModalProps) => (
   <AnimatePresence>
     {isOpen && (
       <motion.div
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
         <motion.div
-          className="bg-white rounded-2xl max-w-md w-full p-6"
+          className="bg-gradient-to-b from-white to-blue-50 rounded-3xl max-w-md w-full p-6 shadow-xl"
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 20 }}
         >
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl">
+                <Users className="text-white" size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+            </div>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-full"
+              className="p-2 hover:bg-white/50 rounded-xl transition-colors"
             >
               <X size={20} />
             </button>
           </div>
           <div className="max-h-96 overflow-y-auto">
             {users.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No users found</p>
+              <div className="text-center py-8 bg-white/50 rounded-2xl">
+                <p className="text-gray-500">No users found</p>
+              </div>
             ) : (
-              users.map((user) => (
-                <div
-                  key={user._id}
-                  className="py-3 border-b border-gray-100 last:border-0"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Users size={20} className="text-blue-500" />
-                      </div>
-                      <div>
+              <div className="space-y-2">
+                {users.map((user) => (
+                  <div
+                    key={user._id}
+                    className="bg-white/50 backdrop-blur-sm rounded-2xl p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl flex items-center justify-center">
+                          <Users size={20} className="text-white" />
+                        </div>
                         <p className="font-medium text-gray-900">@{user.username}</p>
                       </div>
+                      {onAction && actionLabel && (
+                        <button
+                          onClick={() => !user.isFollowing && onAction(user.username)}
+                          className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors
+                            ${user.isFollowing 
+                              ? 'bg-gray-100 text-gray-400' 
+                              : 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:from-indigo-700 hover:to-blue-700'
+                            }`}
+                        >
+                          {typeof actionLabel === 'function' ? actionLabel(user) : actionLabel}
+                        </button>
+                      )}
                     </div>
-                    {onAction && actionLabel && (
-                      <button
-                        onClick={() => !user.isFollowing && onAction(user.username)}
-                        className={`text-sm ${user.isFollowing ? 'text-gray-400' : 'text-blue-600 hover:text-blue-700'}`}
-                      >
-                        {typeof actionLabel === 'function' ? actionLabel(user) : actionLabel}
-                      </button>
-                    )}
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </motion.div>
@@ -391,43 +402,114 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
-      {/* Header */}
-      <div className="bg-white pb-6 shadow-sm">
-        <div className="max-w-lg mx-auto px-4">
-          <div className="pt-12 pb-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Community</h1>
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setShowFollowers(true)}
-                    className="text-sm text-gray-600 hover:text-gray-900"
+    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white">
+      {/* Add Friend Modal */}
+      <AnimatePresence>
+        {showAddFriend && (
+          <motion.div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-gradient-to-b from-white to-blue-50 rounded-3xl max-w-md w-full p-6 shadow-xl"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl">
+                  <UserPlus className="text-white" size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Find User</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={friendUsername}
+                    onChange={(e) => setFriendUsername(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter username"
+                  />
+                </div>
+                {error && (
+                  <div className="bg-rose-50 text-rose-500 px-4 py-3 rounded-xl text-sm">
+                    {error}
+                  </div>
+                )}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      setShowAddFriend(false);
+                      setFriendUsername("");
+                      setError("");
+                    }}
+                    className="flex-1 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
                   >
-                    {followers.length} follower{followers.length !== 1 ? 's' : ''}
+                    Cancel
                   </button>
-                  <button 
-                    onClick={() => setShowFollowing(true)}
-                    className="text-sm text-gray-600 hover:text-gray-900"
+                  <motion.button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(
+                          `https://plane-spotter-backend.onrender.com/api/user/find/${friendUsername}`
+                        );
+                        if (!response.ok) {
+                          throw new Error('User not found');
+                        }
+                        const userData = await response.json();
+                        setSelectedUserId(userData._id);
+                        setShowAddFriend(false);
+                        setShowProfileModal(true);
+                        setFriendUsername("");
+                        setError("");
+                      } catch (error) {
+                        setError(error instanceof Error ? error.message : 'Failed to find user');
+                      }
+                    }}
+                    className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors font-medium"
+                    whileTap={{ scale: 0.95 }}
                   >
-                    {following.length} following
-                  </button>
+                    View Profile
+                  </motion.button>
                 </div>
               </div>
-              <motion.button
-                onClick={() => setShowAddFriend(true)}
-                className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors"
-                whileTap={{ scale: 0.95 }}
-              >
-                <UserPlus size={24} />
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Followers Modal */}
-      <UsersModal
+      {/* Global Spot Alert */}
+      <AnimatePresence>
+        {globalSpot && (
+          <motion.div
+            className="fixed top-4 right-4 left-4 z-50"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-4 max-w-lg mx-auto">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl">
+                  <Plane className="text-white" size={16} />
+                </div>
+                <span className="text-gray-600">
+                  {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modals */}
+      <UsersModal 
         isOpen={showFollowers}
         onClose={() => setShowFollowers(false)}
         title="Followers"
@@ -444,7 +526,6 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
         actionLabel={(user) => user.isFollowing ? "Following" : "Follow Back"}
       />
 
-      {/* Following Modal */}
       <UsersModal
         isOpen={showFollowing}
         onClose={() => setShowFollowing(false)}
@@ -454,109 +535,55 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
         actionLabel="Unfollow"
       />
 
-     {/* Add Friend Modal */}
-<AnimatePresence>
-  {showAddFriend && (
-    <motion.div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div
-        className="bg-white rounded-2xl max-w-md w-full p-6"
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-      >
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Find User</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              value={friendUsername}
-              onChange={(e) => setFriendUsername(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter username"
-            />
-          </div>
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
-          <div className="flex gap-3">
-            <button
-              onClick={() => {
-                setShowAddFriend(false);
-                setFriendUsername("");
-                setError("");
-              }}
-              className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
+      <ProfileModal 
+        isOpen={showProfileModal}
+        onClose={() => {
+          setShowProfileModal(false);
+          setSelectedUserId(null);
+        }}
+        userId={selectedUserId || ''}
+      />
+
+      {/* Header */}
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
+        <div className="max-w-lg mx-auto">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-2">Community</h1>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setShowFollowers(true)}
+                  className="text-white/90 text-sm hover:text-white"
+                >
+                  {followers.length} follower{followers.length !== 1 ? 's' : ''}
+                </button>
+                <button 
+                  onClick={() => setShowFollowing(true)}
+                  className="text-white/90 text-sm hover:text-white"
+                >
+                  {following.length} following
+                </button>
+              </div>
+            </div>
             <motion.button
-  onClick={async () => {
-    try {
-      const response = await fetch(
-        `https://plane-spotter-backend.onrender.com/api/user/find/${friendUsername}`
-      );
-      if (!response.ok) {
-        throw new Error('User not found');
-      }
-      const userData = await response.json();
-      setSelectedUserId(userData._id);
-      // After viewing profile, they should be able to follow the user
-      setShowAddFriend(false);
-      setShowProfileModal(true);
-      setFriendUsername(""); // Clear the input
-      setError("");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to find user');
-    }
-  }}
-  className="flex-1 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
-  whileTap={{ scale: 0.95 }}
->
-  View Profile
-</motion.button>
+              onClick={() => setShowAddFriend(true)}
+              className="bg-white/10 p-3 rounded-2xl backdrop-blur-md hover:bg-white/20 transition-colors"
+              whileTap={{ scale: 0.95 }}
+            >
+              <UserPlus className="text-white" size={24} />
+            </motion.button>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
-
-      {/* Global Spot Alert */}
-      <AnimatePresence>
-      {globalSpot && (
-  <motion.div
-    className="fixed top-4 right-4 left-4 z-50"
-    initial={{ opacity: 0, y: -20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -20 }}
-  >
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-      <div className="flex items-center gap-2">
-        <Plane className="text-blue-500" size={16} />
-        <span className="text-sm">
-          {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
-        </span>
-      </div>
-    </div>
-  </motion.div>
-)}
-      </AnimatePresence>
+      </header>
 
       {/* Friend Spots Feed */}
       <div className="max-w-lg mx-auto px-4 py-6">
         <div className="space-y-4">
           {friendSpots.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No spots from people you follow yet.</p>
-              <p className="text-sm text-gray-400 mt-2">Follow more users to see their spots here!</p>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center">
+              <Users size={40} className="text-indigo-600 mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">No spots from people you follow yet.</p>
+              <p className="text-sm text-gray-500 mt-2">Follow more users to see their spots here!</p>
             </div>
           ) : (
             friendSpots.map((spot) => (
@@ -573,47 +600,36 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
         </div>
       </div>
 
-{/* Profile Modal */}
-<ProfileModal 
-  isOpen={showProfileModal}
-  onClose={() => {
-    setShowProfileModal(false);
-    setSelectedUserId(null);
-  }}
-  userId={selectedUserId || ''}
-/>
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div className="max-w-lg mx-auto px-4">
-          <div className="flex justify-around py-3">
-            <Link 
-              href="/" 
-              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
-            >
-              <House size={24} />
-              <span className="text-xs mt-1">Home</span>
+      {/* Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
+        <div className="max-w-lg mx-auto">
+          <div className="flex justify-around py-4">
+            <Link href="/" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+              <House size="24" /> 
+              </div>
+              <span className="text-xs">Home</span>
             </Link>
-            <Link 
-              href="/community" 
-              className="flex flex-col items-center text-blue-600"
-            >
-              <Users size={24} />
-              <span className="text-xs mt-1">Community</span>
+            
+            <Link href="/community" className="flex flex-col items-center gap-1 text-indigo-600">
+              <div className="bg-indigo-50 p-2 rounded-xl">
+                <Users className="w-6 h-6" />
+              </div>
+              <span className="text-xs font-medium">Community</span>
             </Link>
-            <Link 
-              href="/collections" 
-              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
-            >
-              <BookOpen size={24} />
-              <span className="text-xs mt-1">Collection</span>
+            
+            <Link href="/collections" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Collection</span>
             </Link>
-            <Link 
-              href="/achievements" 
-              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
-            >
-              <Trophy size={24} />
-              <span className="text-xs mt-1">Achievements</span>
+            
+            <Link href="/achievements" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <Trophy className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Achievements</span>
             </Link>
           </div>
         </div>
