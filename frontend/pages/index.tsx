@@ -302,7 +302,7 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
 
   if (!session) {
     return (
-      <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      <div className="h-screen w-full bg-white flex flex-col">
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
             <div className="text-center">

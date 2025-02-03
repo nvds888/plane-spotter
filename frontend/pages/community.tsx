@@ -402,7 +402,7 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   };
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white">
+    <div className="h-screen w-full bg-white flex flex-col">
       {/* Add Friend Modal */}
       <AnimatePresence>
         {showAddFriend && (
