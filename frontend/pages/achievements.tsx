@@ -302,7 +302,7 @@ export default function Achievements() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-6 pb-24"> 
         {isLoading && achievements.length === 0 ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin text-indigo-600">
