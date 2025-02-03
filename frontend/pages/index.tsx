@@ -374,11 +374,6 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 relative">
-        {/* Background decoration */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-64 h-64 bg-indigo-100 rounded-full blur-3xl opacity-20"></div>
-          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-blue-100 rounded-full blur-3xl opacity-20"></div>
-        </div>
         
         {/* Spot Button */}
         {isClient && isGeolocationAvailable ? (
