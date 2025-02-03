@@ -6,6 +6,7 @@ const flightRoutes = require('./routes/flights');
 const userRoutes = require('./routes/User');
 const achievementsRouter = require('./routes/achievements');
 const friendRoutes = require('./routes/friends');
+const badgesprofileRoutes = require('./routes/badgesprofile');
 require('dotenv').config();
 
 const app = express();
@@ -24,6 +25,8 @@ app.use('/api/user', friendRoutes);
 
 
 app.use('/api/achievements', achievementsRouter);
+
+app.use('/api/badgesprofile', badgesprofileRoutes);
 
 // Test endpoint for MongoDB connection
 app.get('/api/test-db', async (req, res) => {

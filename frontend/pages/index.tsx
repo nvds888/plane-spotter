@@ -7,6 +7,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { motion, AnimatePresence } from "framer-motion"
 import { Trophy, House, BookOpen, Users, MapPin, Plane } from "lucide-react"
+import ProfileModal from "../components/ProfileModal"
 
 interface AirlineOption {
   code: string;
@@ -81,6 +82,7 @@ export default function Home() {
 const [guessedDestination, setGuessedDestination] = useState("")
 const [airlineOptions, setAirlineOptions] = useState<AirlineOption[]>([]);
 const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]>([]);
+const [showProfileModal, setShowProfileModal] = useState(false)
 
 
   const { coords, isGeolocationAvailable } = useGeolocated({
@@ -302,9 +304,12 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
   <div className="flex justify-between items-center">
     <h1 className="text-2xl font-bold text-gray-900">✈️ Plane Spotter</h1>
     <div className="flex flex-col items-end gap-2">
-      <div className="text-gray-900 text-sm font-bold">
-        @{session.user.username}
-      </div>
+    <button 
+  onClick={() => setShowProfileModal(true)}
+  className="text-gray-900 text-sm font-bold hover:text-blue-600 transition-colors"
+>
+  @{session.user.username}
+</button>
       <div className="flex gap-3">
         <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
           Weekly XP: {userXP.weeklyXP}
@@ -626,6 +631,13 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
     </motion.div>
   )}
 </AnimatePresence>
+
+{/* Profile Modal */}
+<ProfileModal 
+  isOpen={showProfileModal}
+  onClose={() => setShowProfileModal(false)}
+  userId={session.user.id}
+/>
     </div>
   )
 }

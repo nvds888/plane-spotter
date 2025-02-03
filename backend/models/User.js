@@ -12,6 +12,15 @@ const achievementSchema = new mongoose.Schema({
   resetDate: Date
 });
 
+const badgeSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  icon: { type: String, required: true },
+  rarity: { type: String, required: true },
+  earnedAt: { type: Date, default: Date.now }
+});
+
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -67,8 +76,13 @@ const userSchema = new mongoose.Schema({
     coordinates: {
       lat: Number,
       lon: Number
-    }
-  }
+    },
+  },
+  badges: [badgeSchema],
+  currentStreak: { type: Number, default: 0 },
+  longestStreak: { type: Number, default: 0 },
+  lastSpotDate: { type: Date },
+  totalSpots: { type: Number, default: 0 }
 });
 
 userSchema.pre('save', async function (next) {
