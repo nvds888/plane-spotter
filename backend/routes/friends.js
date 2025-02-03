@@ -253,6 +253,7 @@ router.get('/spots/latest', async (req, res) => {
 
     const spotWithLocation = {
       ...mapSpotToFrontend(updatedSpot),
+      city: updatedSpot.userId.location?.city || 'Unknown City',
       country: updatedSpot.userId.location?.country || 'Unknown Location'
     };
 

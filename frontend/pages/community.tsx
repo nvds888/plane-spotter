@@ -37,6 +37,7 @@ interface Spot {
   lat: number
   lon: number
   timestamp: string
+  city?: string
   country?: string
   flight?: Flight
   guessedType?: string
@@ -530,23 +531,23 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
 
       {/* Global Spot Alert */}
       <AnimatePresence>
-        {globalSpot && (
-          <motion.div
-            className="fixed top-4 right-4 left-4 z-50"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-              <div className="flex items-center gap-2">
-                <Plane className="text-blue-500" size={16} />
-                <span className="text-sm">
-                  {globalSpot.flight?.type} spotted in {globalSpot.country || 'Unknown Location'}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
+      {globalSpot && (
+  <motion.div
+    className="fixed top-4 right-4 left-4 z-50"
+    initial={{ opacity: 0, y: -20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+  >
+    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4">
+      <div className="flex items-center gap-2">
+        <Plane className="text-blue-500" size={16} />
+        <span className="text-sm">
+          {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
+        </span>
+      </div>
+    </div>
+  </motion.div>
+)}
       </AnimatePresence>
 
       {/* Friend Spots Feed */}
