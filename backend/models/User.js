@@ -9,7 +9,11 @@ const achievementSchema = new mongoose.Schema({
   target: { type: Number, required: true },
   completed: { type: Boolean, default: false },
   completedAt: Date,
-  resetDate: Date
+  resetDate: Date,
+  completionHistory: [{
+    completedAt: { type: Date, default: Date.now },
+    xpEarned: { type: Number, required: true }
+  }]
 });
 
 const badgeSchema = new mongoose.Schema({

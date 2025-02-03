@@ -14,6 +14,10 @@ type Achievement = {
   completed: boolean;
   completedAt?: Date;
   resetDate: Date;
+  completionHistory?: {
+    completedAt: Date;
+    xpEarned: number;
+  }[];
 };
 
 const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
@@ -107,6 +111,27 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
                 }}
               />
             </div>
+            
+            {achievement.completionHistory && achievement.completionHistory.length > 0 && (
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Completion History</h4>
+                <div className="space-y-2">
+                  {achievement.completionHistory.map((completion, index) => (
+                    <div 
+                      key={index} 
+                      className="flex justify-between items-center text-sm"
+                    >
+                      <span className="text-gray-500">
+                        {new Date(completion.completedAt).toLocaleDateString()}
+                      </span>
+                      <span className="text-green-600 font-medium">
+                        +{completion.xpEarned} XP
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -191,27 +216,38 @@ export default function Achievements() {
         <div className="max-w-lg mx-auto px-4">
           <div className="pt-12 pb-4">
             <h1 className="text-2xl font-bold text-gray-900">Achievements</h1>
-            <p className="text-gray-500 mt-1">
-              {completedCount} of {totalCount} completed
-            </p>
+            <div className="text-gray-500 mt-1 space-y-2">
+              <p>{completedCount} of {totalCount} completed</p>
+              <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <Trophy className="text-blue-500" size={16} />
+                  <span>Daily Achievement: +20 XP</span>
+                </div>
+                <span className="text-gray-300">•</span>
+                <div className="flex items-center gap-2">
+                  <Medal className="text-amber-500" size={16} />
+                  <span>Weekly Achievement: +100 XP</span>
+                </div>
+              </div>
+            </div>
           </div>
-
+  
           <div className="flex gap-4">
-            <button
-              onClick={() => setActiveTab('daily')}
+            <button 
+              onClick={() => setActiveTab('daily')} 
               className={`flex-1 py-2 text-sm font-medium rounded-lg ${
-                activeTab === 'daily'
-                  ? 'bg-blue-50 text-blue-600'
+                activeTab === 'daily' 
+                  ? 'bg-blue-50 text-blue-600' 
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               Daily
             </button>
-            <button
-              onClick={() => setActiveTab('weekly')}
+            <button 
+              onClick={() => setActiveTab('weekly')} 
               className={`flex-1 py-2 text-sm font-medium rounded-lg ${
-                activeTab === 'weekly'
-                  ? 'bg-amber-50 text-amber-600'
+                activeTab === 'weekly' 
+                  ? 'bg-amber-50 text-amber-600' 
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
