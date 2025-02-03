@@ -101,13 +101,15 @@ router.get('/:userId', async (req, res) => {
       if (now >= new Date(achievement.resetDate)) {
         // Before resetting, check if achievement was completed
         if (achievement.completed) {
-          // Log the completed achievement in history
+          const xpEarned = achievement.type === 'daily' ? 20 : 100;
+          
+          // Log the completed achievement in history with explicit XP
           achievement.completionHistory.push({
             completedAt: achievement.completedAt || now,
-            xpEarned: achievement.type === 'daily' ? 20 : 100
+            xpEarned: xpEarned
           });
         }
-
+    
         achievement.progress = 0;
         achievement.completed = false;
         achievement.resetDate = getNextResetDate(achievement.type);
