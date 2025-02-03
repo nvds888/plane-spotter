@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import { Trophy, Medal, Calendar, Star, Home, BookOpen, Users } from "lucide-react";
 import Link from "next/link";
 import confetti from 'canvas-confetti';
+import { motion } from "framer-motion";
 
 type Achievement = {
   _id: string;
@@ -20,7 +21,12 @@ type Achievement = {
   }[];
 };
 
-const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
+interface AchievementCardProps {
+  achievement: Achievement;
+}
+
+
+const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
   useEffect(() => {
     if (achievement.completed) {
       confetti({
@@ -52,12 +58,15 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-3">
-        <div className={`px-3 py-1 rounded-full text-sm ${
+    <motion.div 
+      layout
+      className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className={`px-4 py-1.5 rounded-full text-sm font-medium ${
           achievement.type === 'daily' 
-            ? 'bg-blue-50 text-blue-600' 
-            : 'bg-amber-50 text-amber-600'
+            ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white' 
+            : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
         }`}>
           {achievement.type === 'daily' ? 'Daily' : 'Weekly'}
         </div>
@@ -70,17 +79,17 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
       <div className="flex items-start gap-4">
         <div className={`p-3 rounded-xl ${
           achievement.completed
-            ? 'bg-green-50'
+            ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
             : achievement.type === 'daily'
-            ? 'bg-blue-50'
-            : 'bg-amber-50'
+            ? 'bg-gradient-to-r from-indigo-600 to-blue-600'
+            : 'bg-gradient-to-r from-amber-500 to-orange-500'
         }`}>
           {achievement.completed ? (
-            <Trophy className="text-green-500" size={24} />
+            <Trophy className="text-white" size={24} />
           ) : achievement.type === 'daily' ? (
-            <Calendar className="text-blue-500" size={24} />
+            <Calendar className="text-white" size={24} />
           ) : (
-            <Medal className="text-amber-500" size={24} />
+            <Medal className="text-white" size={24} />
           )}
         </div>
         
@@ -97,18 +106,19 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
                 {achievement.progress}/{achievement.target}
               </span>
             </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div 
-                className={`h-full transition-all duration-500 ${
-                  achievement.completed 
-                    ? 'bg-green-500' 
-                    : achievement.type === 'daily'
-                    ? 'bg-blue-500'
-                    : 'bg-amber-500'
-                }`}
-                style={{ 
+            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ 
                   width: `${Math.min(100, (achievement.progress / achievement.target) * 100)}%`
                 }}
+                className={`h-full transition-all duration-500 ${
+                  achievement.completed 
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500' 
+                    : achievement.type === 'daily'
+                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600'
+                    : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                }`}
               />
             </div>
             
@@ -124,7 +134,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
                       <span className="text-gray-500">
                         {new Date(completion.completedAt).toLocaleDateString()}
                       </span>
-                      <span className="text-green-600 font-medium">
+                      <span className="text-emerald-600 font-medium">
                         +{completion.xpEarned} XP
                       </span>
                     </div>
@@ -135,7 +145,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -200,109 +210,144 @@ export default function Achievements() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center p-6">
-          <Trophy className="mx-auto text-gray-400 mb-4" size={48} />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign In Required</h2>
-          <p className="text-gray-500">Please sign in to view your achievements</p>
+      <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
+            <div className="text-center">
+              <div className="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trophy className="text-indigo-600" size={32} />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">My Achievements</h1>
+              <p className="text-gray-500 mb-6">Sign in to track your progress</p>
+              <div className="space-y-3">
+                <Link
+                  href="/auth/signin"
+                  className="block w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl font-medium"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="block w-full py-3 px-4 bg-white border-2 border-indigo-600 text-indigo-600 rounded-xl font-medium"
+                >
+                  Create Account
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white pb-6 shadow-sm">
-        <div className="max-w-lg mx-auto px-4">
-          <div className="pt-12 pb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Achievements</h1>
-            <div className="text-gray-500 mt-1 space-y-2">
-              <p>{completedCount} of {totalCount} completed</p>
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <Trophy className="text-blue-500" size={16} />
-                  <span>Daily Achievement: +20 XP</span>
-                </div>
-                <span className="text-gray-300">•</span>
-                <div className="flex items-center gap-2">
-                  <Medal className="text-amber-500" size={16} />
-                  <span>Weekly Achievement: +100 XP</span>
-                </div>
+    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white">
+      {/* Premium Header */}
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
+        <div className="max-w-lg mx-auto">
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-md">
+                <Trophy className="text-white w-6 h-6" />
               </div>
+              <h1 className="text-2xl font-bold text-white">Achievements</h1>
+            </div>
+            <div className="bg-white/10 px-4 py-2 rounded-2xl backdrop-blur-md">
+              <span className="text-white/90 text-sm">
+                {completedCount} of {totalCount} completed
+              </span>
             </div>
           </div>
-  
-          <div className="flex gap-4">
+
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
+              <div className="flex items-center gap-2 mb-1">
+                <Trophy className="text-white w-4 h-4" />
+                <span className="text-white/90 text-sm">Daily Achievement</span>
+              </div>
+              <span className="text-lg font-bold text-white">+20 XP</span>
+            </div>
+            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
+              <div className="flex items-center gap-2 mb-1">
+                <Medal className="text-white w-4 h-4" />
+                <span className="text-white/90 text-sm">Weekly Achievement</span>
+              </div>
+              <span className="text-lg font-bold text-white">+100 XP</span>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
             <button 
               onClick={() => setActiveTab('daily')} 
-              className={`flex-1 py-2 text-sm font-medium rounded-lg ${
+              className={`flex-1 py-3 text-sm font-medium rounded-xl transition-colors ${
                 activeTab === 'daily' 
-                  ? 'bg-blue-50 text-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white text-indigo-600' 
+                  : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
               Daily
             </button>
             <button 
               onClick={() => setActiveTab('weekly')} 
-              className={`flex-1 py-2 text-sm font-medium rounded-lg ${
+              className={`flex-1 py-3 text-sm font-medium rounded-xl transition-colors ${
                 activeTab === 'weekly' 
-                  ? 'bg-amber-50 text-amber-600' 
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white text-indigo-600' 
+                  : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
               Weekly
             </button>
           </div>
         </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="max-w-lg mx-auto px-4 py-6">
+        {isLoading && achievements.length === 0 ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin text-indigo-600">
+              <Trophy size={32} />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredAchievements.map(achievement => (
+              <AchievementCard key={achievement._id} achievement={achievement} />
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 max-h-[calc(100vh-300px)] overflow-y-auto">
-  {isLoading && achievements.length === 0 ? (
-    <div className="flex justify-center py-8">
-      <div className="animate-spin text-blue-500">
-        <Trophy size={32} />
-      </div>
-    </div>
-  ) : (
-    <div className="space-y-4">
-      {filteredAchievements.map(achievement => (
-        <AchievementCard key={achievement._id} achievement={achievement} />
-      ))}
-    </div>
-  )}
-</div>
-
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div className="max-w-lg mx-auto px-4">
-          <div className="flex justify-around py-3">
-            <Link 
-              href="/" 
-              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
-            >
-              <Home size={24} />
-              <span className="text-xs mt-1">Home</span>
+      {/* Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
+        <div className="max-w-lg mx-auto">
+          <div className="flex justify-around py-4">
+            <Link href="/" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <Home className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Home</span>
             </Link>
-            <Link 
-              href="/community" 
-              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
-            >
-              <Users size={24} />
-              <span className="text-xs mt-1">Community</span>
+            
+            <Link href="/community" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <Users className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Community</span>
             </Link>
-            <Link 
-              href="/collections" 
-              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
-            >
-              <BookOpen size={24} />
-              <span className="text-xs mt-1">Collection</span>
+            
+            <Link href="/collections" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Collection</span>
             </Link>
-            <Link 
-              href="/achievements" 
-              className="flex flex-col items-center text-blue-600"
-            >
-              <Trophy size={24} />
-              <span className="text-xs mt-1">Achievements</span>
+            
+            <Link href="/achievements" className="flex flex-col items-center gap-1 text-indigo-600">
+              <div className="bg-indigo-50 p-2 rounded-xl">
+                <Trophy className="w-6 h-6" />
+              </div>
+              <span className="text-xs font-medium">Achievements</span>
             </Link>
           </div>
         </div>
