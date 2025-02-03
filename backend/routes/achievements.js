@@ -53,6 +53,7 @@ const defaultAchievements = [
 ];
 
 // Get user's achievements with initialization if needed
+
 router.get('/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -93,6 +94,7 @@ router.get('/:userId', async (req, res) => {
     }
 
     let achievementsUpdated = false;
+    let bonusXPAwarded = 0;
 
     // Update achievements based on calculated stats
     for (let achievement of user.achievements) {
@@ -104,6 +106,7 @@ router.get('/:userId', async (req, res) => {
       }
 
       const oldProgress = achievement.progress;
+      const wasCompleted = achievement.completed;
 
       switch (achievement.name) {
         case 'Daily Spotter':
@@ -111,9 +114,10 @@ router.get('/:userId', async (req, res) => {
           if (achievement.progress !== oldProgress) {
             achievementsUpdated = true;
           }
-          if (dailyStats >= achievement.target && !achievement.completed) {
+          if (dailyStats >= achievement.target && !wasCompleted) {
             achievement.completed = true;
             achievement.completedAt = now;
+            bonusXPAwarded += 20; // Bonus XP for daily achievement
             achievementsUpdated = true;
           }
           break;
@@ -122,9 +126,10 @@ router.get('/:userId', async (req, res) => {
           if (achievement.progress !== oldProgress) {
             achievementsUpdated = true;
           }
-          if (airbusCount >= achievement.target && !achievement.completed) {
+          if (airbusCount >= achievement.target && !wasCompleted) {
             achievement.completed = true;
             achievement.completedAt = now;
+            bonusXPAwarded += 100; // Bonus XP for weekly achievement
             achievementsUpdated = true;
           }
           break;
@@ -133,9 +138,10 @@ router.get('/:userId', async (req, res) => {
           if (achievement.progress !== oldProgress) {
             achievementsUpdated = true;
           }
-          if (a321neoCount >= achievement.target && !achievement.completed) {
+          if (a321neoCount >= achievement.target && !wasCompleted) {
             achievement.completed = true;
             achievement.completedAt = now;
+            bonusXPAwarded += 100; // Bonus XP for weekly achievement
             achievementsUpdated = true;
           }
           break;
@@ -144,6 +150,20 @@ router.get('/:userId', async (req, res) => {
 
     if (achievementsUpdated) {
       user.markModified('achievements');
+      
+      // Award bonus XP if any achievements were newly completed
+      if (bonusXPAwarded > 0) {
+        await User.findByIdAndUpdate(
+          userId,
+          { 
+            $inc: { 
+              totalXP: bonusXPAwarded, 
+              weeklyXP: bonusXPAwarded 
+            } 
+          }
+        );
+      }
+
       await user.save();
     }
 
