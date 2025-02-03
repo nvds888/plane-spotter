@@ -498,21 +498,20 @@ const [showProfileModal, setShowProfileModal] = useState(false)
       {airline.name}
     </option>
   ))}
-  <option value="Other">Other</option>
 </select>
 
-  <select
-    value={guessedDestination}
-    onChange={(e) => setGuessedDestination(e.target.value)}
-    className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-  >
-    <option value="">Select Destination</option>
-    {destinationOptions.map(destination => (
-      <option key={destination.code} value={destination.code}>
-        ({destination.code}) {destination.name}
-      </option>
-    ))}
-  </select>
+<select
+  value={guessedDestination}
+  onChange={(e) => setGuessedDestination(e.target.value)}
+  className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+>
+  <option value="">Select Destination</option>
+  {destinationOptions.map(destination => (
+    <option key={destination.code} value={destination.code}>
+      ({destination.code}) {currentGuessSpot?.flight?.arrivalAirport || destination.name}
+    </option>
+  ))}
+</select>
 </div>
         </div>
 
