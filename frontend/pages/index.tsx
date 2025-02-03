@@ -302,29 +302,30 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
-          <div className="text-center mb-8">
-            <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Plane className="text-blue-500" size={32} />
+      <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
+            <div className="text-center">
+              <div className="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Plane className="text-indigo-600" size={32} />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Plane Spotter</h1>
+              <p className="text-gray-500 mb-6">Join the community of aviation enthusiasts</p>
+              <div className="space-y-3">
+                <Link
+                  href="/auth/signin"
+                  className="block w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl font-medium"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="block w-full py-3 px-4 bg-white border-2 border-indigo-600 text-indigo-600 rounded-xl font-medium"
+                >
+                  Create Account
+                </Link>
+              </div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">✈️ Plane Spotter</h1>
-            <p className="text-gray-500">Join the community of aviation enthusiasts</p>
-          </div>
-          
-          <div className="space-y-4">
-            <Link
-              href="/auth/signin"
-              className="block w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium text-center transition duration-200"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="block w-full py-3 px-4 bg-white border-2 border-blue-500 text-blue-500 hover:bg-blue-50 rounded-xl font-medium text-center transition duration-200"
-            >
-              Create Account
-            </Link>
           </div>
         </div>
       </div>
@@ -332,174 +333,200 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white pb-6 shadow-sm">
-        <div className="max-w-lg mx-auto px-4">
-        <div className="pt-12 pb-4">
-  <div className="flex justify-between items-center">
-    <h1 className="text-2xl font-bold text-gray-900">✈️ Plane Spotter</h1>
-    <div className="flex flex-col items-end gap-2">
-    <button 
-  onClick={() => setShowProfileModal(true)}
-  className="text-gray-900 text-sm font-bold hover:text-blue-600 transition-colors"
->
-  @{session.user.username}
-</button>
-      <div className="flex gap-3">
-        <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-          Weekly XP: {userXP.weeklyXP}
+    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      {/* Premium Header */}
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-md">
+              <Plane className="text-white w-6 h-6" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">Plane Spotter</h1>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <button 
+              onClick={() => setShowProfileModal(true)}
+              className="bg-white/10 px-4 py-1 rounded-full backdrop-blur-md"
+            >
+              <span className="text-white text-sm font-medium">@{session.user.username}</span>
+            </button>
+          </div>
         </div>
-        <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-sm font-medium">
-          Total XP: {userXP.totalXP}
+        
+        {/* XP Display */}
+        <div className="flex gap-3">
+          <div className="flex-1 bg-white/10 rounded-2xl p-4 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-blue-300 rounded-full"></div>
+              <span className="text-white/90 text-sm">Weekly XP</span>
+            </div>
+            <span className="text-2xl font-bold text-white">{userXP.weeklyXP}</span>
+          </div>
+          <div className="flex-1 bg-white/10 rounded-2xl p-4 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-blue-300 rounded-full"></div>
+              <span className="text-white/90 text-sm">Total XP</span>
+            </div>
+            <span className="text-2xl font-bold text-white">{userXP.totalXP}</span>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-        </div>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div className="max-w-lg mx-auto px-4 py-8 flex-1 flex items-center justify-center" style={{ minHeight: "calc(100vh - 280px)" }}>
+      <main className="flex-1 flex flex-col items-center justify-center p-6 relative">
+        {/* Background decoration */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-0 left-1/4 w-64 h-64 bg-indigo-100 rounded-full blur-3xl opacity-20"></div>
+          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-blue-100 rounded-full blur-3xl opacity-20"></div>
+        </div>
+        
+        {/* Spot Button */}
         {isClient && isGeolocationAvailable ? (
-          <div className="flex flex-col items-center">
+          <div className="relative">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
             <motion.button
               onClick={handleSpot}
               disabled={isLoading}
-              className={`w-48 h-48 rounded-full font-bold shadow-lg flex flex-col items-center justify-center gap-3 ${
-                isLoading ? "bg-gray-100" : "bg-white hover:bg-blue-50"
-              }`}
+              className="relative p-1 rounded-full transform transition-all active:scale-95 hover:scale-105"
               whileTap={{ scale: 0.95 }}
             >
-              <div className={`p-4 rounded-full ${isLoading ? "bg-gray-200" : "bg-blue-100"}`}>
-                <MapPin className={`${isLoading ? "text-gray-400" : "text-blue-500"}`} size={32} />
+              <div className="bg-white rounded-full p-1">
+                <div className="w-40 h-40 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 flex items-center justify-center group">
+                  <MapPin className="w-16 h-16 text-white group-hover:scale-110 transition-transform" />
+                </div>
               </div>
-              <span className={`text-lg ${isLoading ? "text-gray-400" : "text-blue-500"}`}>
-                {isLoading ? "Spotting..." : "SPOT PLANE"}
-              </span>
             </motion.button>
-            
-            {spots.length > 0 && (
-              <div className="mt-6 text-center">
-                <span className="text-gray-500">
-                  You&apos;ve spotted {spots.length} aircraft today
-                </span>
-              </div>
-            )}
           </div>
         ) : (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
-            <MapPin className="text-amber-500 mx-auto mb-3" size={24} />
-            <p className="text-amber-700">
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 text-center">
+            <MapPin className="text-indigo-600 mx-auto mb-3" size={24} />
+            <p className="text-gray-600">
               {isClient ? "Enable GPS to start spotting!" : "Loading..."}
             </p>
           </div>
         )}
-      </div>
+        
+        {/* Status Text */}
+        <div className="mt-8 text-center z-10">
+          <span className="text-gray-600 font-medium">Today&apos;s Spotting Stats</span>
+          <div className="mt-2 flex gap-6 text-sm">
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-bold text-indigo-600">{spots.length}</span>
+              <span className="text-gray-500">Spotted</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-bold text-indigo-600">5</span>
+              <span className="text-gray-500">Base XP</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-bold text-indigo-600">15</span>
+              <span className="text-gray-500">Bonus XP</span>
+            </div>
+          </div>
+        </div>
+      </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div className="max-w-lg mx-auto px-4">
-          <div className="flex justify-around py-3">
-            <Link 
-              href="/" 
-              className="flex flex-col items-center text-blue-600"
-            >
-              <House size={24} />
-              <span className="text-xs mt-1">Home</span>
+      {/* Navigation */}
+      <nav className="bg-white border-t border-gray-100">
+        <div className="max-w-screen-xl mx-auto">
+          <div className="flex justify-around py-4">
+            <Link href="/" className="flex flex-col items-center gap-1 text-indigo-600">
+              <div className="bg-indigo-50 p-2 rounded-xl">
+              <House size="24" /> 
+              </div>
+              <span className="text-xs font-medium">Home</span>
             </Link>
-            <Link 
-              href="/community" 
-              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
-            >
-              <Users size={24} />
-              <span className="text-xs mt-1">Community</span>
+            
+            <Link href="/community" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <Users className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Community</span>
             </Link>
-            <Link 
-              href="/collections" 
-              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
-            >
-              <BookOpen size={24} />
-              <span className="text-xs mt-1">Collection</span>
+            
+            <Link href="/collections" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Collection</span>
             </Link>
-            <Link 
-              href="/achievements" 
-              className="flex flex-col items-center text-gray-500 hover:text-gray-700"
-            >
-              <Trophy size={24} />
-              <span className="text-xs mt-1">Achievements</span>
+            
+            <Link href="/achievements" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <Trophy className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Achievements</span>
             </Link>
           </div>
         </div>
       </nav>
 
       {/* Global Spot Alert */}
-    <AnimatePresence>
-      {globalSpot && (
-        <motion.div
-          className="fixed top-4 right-4 left-4 z-50"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-        >
-          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-            <div className="flex items-center gap-2">
-              <Plane className="text-blue-500" size={16} />
-              <span className="text-sm">
-                {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
-              </span>
+      <AnimatePresence>
+        {globalSpot && (
+          <motion.div
+            className="fixed top-4 right-4 left-4 z-50"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-lg shadow-lg p-4">
+              <div className="flex items-center gap-2">
+                <Plane className="text-indigo-600" size={16} />
+                <span className="text-sm">
+                  {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
+                </span>
+              </div>
             </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Guess Modal */}
-<AnimatePresence>
-  {showGuessModal && currentGuessSpot && (
-    <motion.div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div
-        className="bg-white rounded-2xl max-w-md w-full p-6"
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-blue-100 rounded-xl">
-            <Plane className="text-blue-500" size={24} />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-gray-900">What Did You Spot?</h3>
-            <p className="text-sm text-gray-500">
-              {newSpots.length} plane{newSpots.length > 1 ? "s" : ""} left to guess
-            </p>
-          </div>
-        </div>
+      <AnimatePresence>
+        {showGuessModal && currentGuessSpot && (
+          <motion.div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-gradient-to-b from-white to-blue-50 rounded-3xl max-w-md w-full p-6 shadow-xl"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl">
+                  <Plane className="text-white" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">What Did You Spot?</h3>
+                  <p className="text-sm text-gray-500">
+                    {newSpots.length} plane{newSpots.length > 1 ? "s" : ""} left to guess
+                  </p>
+                </div>
+              </div>
 
-        <div className="mb-6">
-          <Map
-            center={coords ? [coords.latitude, coords.longitude] : [0, 0]}
-            spots={newSpots}
-            highlightedSpot={currentGuessSpot}
-          />
-        </div>
+              <div className="mb-6 overflow-hidden rounded-2xl bg-white/50 p-1">
+                <Map
+                  center={coords ? [coords.latitude, coords.longitude] : [0, 0]}
+                  spots={newSpots}
+                  highlightedSpot={currentGuessSpot}
+                />
+              </div>
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Aircraft Type
-            </label>
-            <select 
-  value={guessedType}
-  onChange={(e) => setGuessedType(e.target.value)}
-  className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
->
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Aircraft Type
+                  </label>
+                  <select 
+                    value={guessedType}
+                    onChange={(e) => setGuessedType(e.target.value)}
+                    className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
   <option value="">Select Type</option>
   <option value="A20N">Airbus A320neo</option>
   <option value="A21N">Airbus A321neo</option>
@@ -540,159 +567,175 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Airline
-            </label>
-            <select
-  value={guessedAirline}
-  onChange={(e) => setGuessedAirline(e.target.value)}
-  className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
->
-  <option value="">Select Airline</option>
-  {airlineOptions.map(airline => (
-    <option key={airline.code} value={airline.code}>
-      {airline.name}
-    </option>
-  ))}
-</select>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Airline
+                  </label>
+                  <select
+                    value={guessedAirline}
+                    onChange={(e) => setGuessedAirline(e.target.value)}
+                    className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Airline</option>
+                    {airlineOptions.map(airline => (
+                      <option key={airline.code} value={airline.code}>
+                        {airline.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-Copy<select
-  value={guessedDestination}
-  onChange={(e) => setGuessedDestination(e.target.value)}
-  className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
->
-  <option value="">Select Destination</option>
-  {destinationOptions.map(destination => (
-  <option key={destination.code} value={destination.code}>
-    ({destination.code}) {destination.name}
-  </option>
-))}
-</select>
-</div>
-        </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Destination
+                  </label>
+                  <select
+                    value={guessedDestination}
+                    onChange={(e) => setGuessedDestination(e.target.value)}
+                    className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Destination</option>
+                    {destinationOptions.map(destination => (
+                      <option key={destination.code} value={destination.code}>
+                        ({destination.code}) {destination.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-        <motion.button
-          onClick={handleGuessSubmit}
-          className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium mt-6"
-          whileTap={{ scale: 0.95 }}
-        >
-          Submit Guess
-        </motion.button>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
+              <motion.button
+                onClick={handleGuessSubmit}
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors font-medium mt-6"
+                whileTap={{ scale: 0.95 }}
+              >
+                Submit Guess
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Results Modal */}
-<AnimatePresence>
-  {showResultsModal && (
-    <motion.div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div
-        className="bg-white rounded-2xl max-w-md w-full p-6"
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-green-100 rounded-lg">
-            <Trophy className="text-green-500" size={20} />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">Results</h3>
-            <p className="text-xs text-gray-500">
-              {guessResults.length} aircraft spotted
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-          {guessResults.map((result, index) => (
+      <AnimatePresence>
+        {showResultsModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
             <motion.div
-              key={index}
-              className="bg-gray-50 rounded-lg p-3"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              className="bg-gradient-to-b from-white to-blue-50 rounded-3xl max-w-md w-full p-6 shadow-xl"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
             >
-              <div className="flex justify-between items-center mb-2 text-sm">
-                <span className="font-medium text-gray-900">
-                  {result.spot.flight.flight || 'Unknown Flight'}
-                </span>
-                <span className="text-xs font-medium text-green-600">
-                  +{result.xpEarned} XP
-                </span>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl">
+                  <Trophy className="text-white" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Results</h3>
+                  <p className="text-sm text-gray-500">
+                    {guessResults.length} aircraft spotted
+                  </p>
+                </div>
               </div>
-              
-              <div className="space-y-1 text-xs">
-  <div className="flex items-center justify-between">
-    <span className="text-gray-500">Type:</span>
-    <div className="flex items-center gap-1">
-      <span className={result.isTypeCorrect ? "text-green-600" : "text-red-600"}>
-        {result.spot.guessedType || '—'}
-      </span>
-      <span className="text-gray-400 mx-1">→</span>
-      <span className="text-gray-900">{result.spot.flight.type}</span>
-      {result.isTypeCorrect && <span className="text-green-600 ml-1">✓</span>}
-    </div>
-  </div>
 
-  <div className="flex items-center justify-between">
-    <span className="text-gray-500">Airline:</span>
-    <div className="flex items-center gap-1">
-      <span className={result.isAirlineCorrect ? "text-green-600" : "text-red-600"}>
-        {result.spot.guessedAirline || '—'}
-      </span>
-      <span className="text-gray-400 mx-1">→</span>
-      <span className="text-gray-900">{result.spot.flight.operator}</span>
-      {result.isAirlineCorrect && <span className="text-green-600 ml-1">✓</span>}
-    </div>
-  </div>
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                {guessResults.map((result, index) => (
+                  <motion.div
+                    key={index}
+                    className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-100"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="font-medium text-gray-900">
+                        {result.spot.flight.flight || 'Unknown Flight'}
+                      </span>
+                      <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-sm font-medium">
+                        +{result.xpEarned} XP
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Type:</span>
+                        <div className="flex items-center gap-2">
+                          <span className={result.isTypeCorrect ? "text-green-600" : "text-red-600"}>
+                            {result.spot.guessedType || '—'}
+                          </span>
+                          <span className="text-gray-400">→</span>
+                          <span className="text-gray-900">{result.spot.flight.type}</span>
+                          {result.isTypeCorrect && (
+                            <div className="w-5 h-5 bg-green-50 rounded-full flex items-center justify-center">
+                              <span className="text-green-600">✓</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
-  <div className="flex items-center justify-between">
-    <span className="text-gray-500">Destination:</span>
-    <div className="flex items-center gap-1">
-      <span className={result.isDestinationCorrect ? "text-green-600" : "text-red-600"}>
-        {result.spot.guessedDestination || '—'}
-      </span>
-      <span className="text-gray-400 mx-1">→</span>
-      <span className="text-gray-900">{result.spot.flight.arrivalAirport}</span>
-      {result.isDestinationCorrect && <span className="text-green-600 ml-1">✓</span>}
-    </div>
-  </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Airline:</span>
+                        <div className="flex items-center gap-2">
+                          <span className={result.isAirlineCorrect ? "text-green-600" : "text-red-600"}>
+                            {result.spot.guessedAirline || '—'}
+                          </span>
+                          <span className="text-gray-400">→</span>
+                          <span className="text-gray-900">{result.spot.flight.operator}</span>
+                          {result.isAirlineCorrect && (
+                            <div className="w-5 h-5 bg-green-50 rounded-full flex items-center justify-center">
+                              <span className="text-green-600">✓</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
-  <div className="flex justify-between text-gray-500 pt-1 border-t border-gray-200">
-    <span>{result.spot.flight.alt}ft</span>
-    <span>{result.spot.flight.speed}kts</span>
-    <span>From: {result.spot.flight.departureAirport || '—'}</span>
-  </div>
-</div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Destination:</span>
+                        <div className="flex items-center gap-2">
+                          <span className={result.isDestinationCorrect ? "text-green-600" : "text-red-600"}>
+                            {result.spot.guessedDestination || '—'}
+                          </span>
+                          <span className="text-gray-400">→</span>
+                          <span className="text-gray-900">{result.spot.flight.arrivalAirport}</span>
+                          {result.isDestinationCorrect && (
+                            <div className="w-5 h-5 bg-green-50 rounded-full flex items-center justify-center">
+                              <span className="text-green-600">✓</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between text-gray-500 pt-2 border-t border-gray-100">
+                        <span>{result.spot.flight.alt}ft</span>
+                        <span>{result.spot.flight.speed}kts</span>
+                        <span>From: {result.spot.flight.departureAirport || '—'}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.button
+                onClick={() => setShowResultsModal(false)}
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors font-medium mt-6"
+                whileTap={{ scale: 0.95 }}
+              >
+                Continue
+              </motion.button>
             </motion.div>
-          ))}
-        </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <motion.button
-          onClick={() => setShowResultsModal(false)}
-          className="w-full py-2.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors font-medium mt-4"
-          whileTap={{ scale: 0.95 }}
-        >
-          Continue
-        </motion.button>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
-
-{/* Profile Modal */}
-<ProfileModal 
-  isOpen={showProfileModal}
-  onClose={() => setShowProfileModal(false)}
-  userId={session.user.id}
-/>
+      <ProfileModal 
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        userId={session.user.id}
+      />
     </div>
   )
 }
