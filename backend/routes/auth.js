@@ -48,8 +48,9 @@ router.post('/register', async (req, res) => {
           id: user._id.toString(),
           username: user.username,
           email: user.email,
-          role: user.role || 'user'
-        }
+          role: user.role || 'user',
+          createdAt: user.createdAt
+        },
       });
     } catch (error) {
       console.error('Registration error:', error);
@@ -101,7 +102,8 @@ router.post('/login', async (req, res) => {
           id: user._id.toString(),
           username: user.username,
           email: user.email,
-          role: user.role || 'user'
+          role: user.role || 'user',
+          createdAt: user.createdAt
         }
       });
     } catch (error) {

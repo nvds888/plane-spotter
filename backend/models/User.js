@@ -83,6 +83,9 @@ const userSchema = new mongoose.Schema({
   longestStreak: { type: Number, default: 0 },
   lastSpotDate: { type: Date },
   totalSpots: { type: Number, default: 0 }
+},
+{ 
+  timestamps: true  // This adds createdAt and updatedAt automatically
 });
 
 userSchema.pre('save', async function (next) {
