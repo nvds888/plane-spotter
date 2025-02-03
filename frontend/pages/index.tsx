@@ -333,7 +333,7 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
+    <div className="min-h-screen w-full bg-white flex flex-col">
       {/* Premium Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
         <div className="flex justify-between items-start mb-6">
