@@ -333,16 +333,9 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col" style={{ 
-      paddingTop: 'env(safe-area-inset-top)',
-      paddingBottom: 'env(safe-area-inset-bottom)',
-      height: 'calc(100vh + env(safe-area-inset-top))'
-    }}>
+    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
       {/* Premium Header */}
-      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 px-4 relative" style={{
-  paddingTop: 'calc(2rem + env(safe-area-inset-top))',
-  paddingBottom: '1.5rem'
-}}>
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-3">
             <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-md">
@@ -421,15 +414,20 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
               <span className="text-2xl font-bold text-indigo-600">{spots.length}</span>
               <span className="text-gray-500">Spotted</span>
             </div>
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-bold text-indigo-600">5</span>
+              <span className="text-gray-500">Base XP</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-bold text-indigo-600">15</span>
+              <span className="text-gray-500">Bonus XP</span>
+            </div>
           </div>
         </div>
       </main>
 
       {/* Navigation */}
-      <nav className="bg-white border-t border-gray-100 fixed bottom-0 left-0 right-0" style={{
-  paddingBottom: 'env(safe-area-inset-bottom)',
-  marginBottom: 'calc(-1 * env(safe-area-inset-bottom))'
-}}>
+      <nav className="bg-white border-t border-gray-100">
         <div className="max-w-screen-xl mx-auto">
           <div className="flex justify-around py-4">
             <Link href="/" className="flex flex-col items-center gap-1 text-indigo-600">
@@ -741,5 +739,7 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
     </div>
   )
 }
+
+
 
 
