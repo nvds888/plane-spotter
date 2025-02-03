@@ -40,6 +40,14 @@ type Flight = {
   }
 }
 
+type GlobalSpot = {
+  flight: {
+    type: string;
+  };
+  city: string;
+  country: string;
+}
+
 
 
 type Spot = {
@@ -83,6 +91,7 @@ const [guessedDestination, setGuessedDestination] = useState("")
 const [airlineOptions, setAirlineOptions] = useState<AirlineOption[]>([]);
 const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]>([]);
 const [showProfileModal, setShowProfileModal] = useState(false)
+const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
 
 
   const { coords, isGeolocationAvailable } = useGeolocated({
@@ -126,6 +135,33 @@ const [showProfileModal, setShowProfileModal] = useState(false)
     }
     fetchSpots()
   }, [session])
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+  
+    const subscribeToGlobalSpots = () => {
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch('https://plane-spotter-backend.onrender.com/api/user/spots/latest');
+          const spot = await response.json();
+          
+          if (spot) {
+            setGlobalSpot(spot);
+            setTimeout(() => setGlobalSpot(null), 3000);
+          }
+        } catch (error) {
+          console.error("Failed to fetch global spot:", error);
+        }
+      }, 5000);
+  
+      return () => clearInterval(interval);
+    };
+  
+    const cleanup = subscribeToGlobalSpots();
+    return () => cleanup();
+  }, [session]);
+
+  
 
   const handleSpot = async () => {
     if (!coords || isLoading || !session?.user?.id) return
@@ -398,7 +434,27 @@ const [showProfileModal, setShowProfileModal] = useState(false)
         </div>
       </nav>
 
-      {/* Guess Modal */}
+      {/* Global Spot Alert */}
+    <AnimatePresence>
+      {globalSpot && (
+        <motion.div
+          className="fixed top-4 right-4 left-4 z-50"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+        >
+          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4">
+            <div className="flex items-center gap-2">
+              <Plane className="text-blue-500" size={16} />
+              <span className="text-sm">
+                {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
       {/* Guess Modal */}
 <AnimatePresence>
   {showGuessModal && currentGuessSpot && (
