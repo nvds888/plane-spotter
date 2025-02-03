@@ -486,27 +486,25 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
       </AnimatePresence>
 
       {/* Global Spot Alert */}
-      <AnimatePresence>
-        {globalSpot && (
-          <motion.div
-            className="fixed top-4 right-4 left-4 z-50"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-4 max-w-lg mx-auto">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl">
-                  <Plane className="text-white" size={16} />
-                </div>
-                <span className="text-gray-600">
-                  {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+<AnimatePresence>
+  {globalSpot && (
+    <motion.div
+      className="fixed top-4 right-4 left-4 z-50"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+    >
+      <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-lg shadow-lg p-4">
+        <div className="flex items-center gap-2">
+          <Plane className="text-indigo-600" size={16} />
+          <span className="text-sm">
+            {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* Modals */}
       <UsersModal 
