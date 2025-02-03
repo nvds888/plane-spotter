@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const { getBestAirlineName } = require('../utils/airlineMapping');
+const { getAirportName } = require('../utils/airportMapping.js')
 
 // User-specific cache with Map
 const flightCache = new Map();
