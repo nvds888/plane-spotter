@@ -49,7 +49,16 @@ const defaultAchievements = [
     progress: 0,
     completed: false,
     resetDate: getNextResetDate('weekly')
-  }
+  },
+  {
+    type: 'weekly',
+    name: 'Boeing Expert',
+    description: 'Spot 10 Boeing planes this week',
+    target: 10,
+    progress: 0,
+    completed: false,
+    resetDate: getNextResetDate('weekly')
+  },
 ];
 
 // Get user's achievements with initialization if needed
@@ -79,6 +88,10 @@ router.get('/:userId', async (req, res) => {
     const weeklyStats = spots.filter(spot => 
       new Date(spot.timestamp) >= startOfWeek
     );
+
+    const boeingCount = weeklyStats.filter(spot =>
+      /^B\d+/.test(spot.flight?.type)
+    ).length;
 
     const airbusCount = weeklyStats.filter(spot => 
       /^A\d+/.test(spot.flight?.type)
@@ -150,6 +163,18 @@ router.get('/:userId', async (req, res) => {
             achievementsUpdated = true;
           }
           if (a321neoCount >= achievement.target && !wasCompleted) {
+            achievement.completed = true;
+            achievement.completedAt = now;
+            bonusXPAwarded += 100; // Bonus XP for weekly achievement
+            achievementsUpdated = true;
+          }
+          break;
+          case 'Boeing Expert':
+          achievement.progress = boeingCount;
+          if (achievement.progress !== oldProgress) {
+            achievementsUpdated = true;
+          }
+          if (airbusCount >= achievement.target && !wasCompleted) {
             achievement.completed = true;
             achievement.completedAt = now;
             bonusXPAwarded += 100; // Bonus XP for weekly achievement
