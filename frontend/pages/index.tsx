@@ -302,7 +302,7 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
 
   if (!session) {
     return (
-      <div className="h-screen w-full bg-white flex flex-col">
+      <div className="h-screen w-full flex flex-col">
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
             <div className="text-center">
@@ -335,7 +335,7 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
   return (
     <div className="min-h-screen w-full bg-white flex flex-col">
       {/* Premium Header */}
-      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
+      <header className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-3">
             <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-md">
@@ -373,7 +373,7 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 relative">
+      <main className="flex-1 overflow-y-auto pt-[calc(theme('spacing.8')+theme('spacing.6')+170px)] pb-24">
         
         {/* Spot Button */}
         {isClient && isGeolocationAvailable ? (
@@ -422,7 +422,7 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
       </main>
 
       {/* Navigation */}
-      <nav className="bg-white border-t border-gray-100">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
         <div className="max-w-screen-xl mx-auto">
           <div className="flex justify-around py-4">
             <Link href="/" className="flex flex-col items-center gap-1 text-indigo-600">
