@@ -257,21 +257,21 @@ export default function Achievements() {
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6">
-        {isLoading && achievements.length === 0 ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin text-blue-500">
-              <Trophy size={32} />
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredAchievements.map(achievement => (
-              <AchievementCard key={achievement._id} achievement={achievement} />
-            ))}
-          </div>
-        )}
+      <div className="max-w-lg mx-auto px-4 py-6 max-h-[calc(100vh-300px)] overflow-y-auto">
+  {isLoading && achievements.length === 0 ? (
+    <div className="flex justify-center py-8">
+      <div className="animate-spin text-blue-500">
+        <Trophy size={32} />
       </div>
+    </div>
+  ) : (
+    <div className="space-y-4">
+      {filteredAchievements.map(achievement => (
+        <AchievementCard key={achievement._id} achievement={achievement} />
+      ))}
+    </div>
+  )}
+</div>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
         <div className="max-w-lg mx-auto px-4">
