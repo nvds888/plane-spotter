@@ -500,7 +500,7 @@ const [showProfileModal, setShowProfileModal] = useState(false)
   ))}
 </select>
 
-<select
+Copy<select
   value={guessedDestination}
   onChange={(e) => setGuessedDestination(e.target.value)}
   className="block w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -508,7 +508,7 @@ const [showProfileModal, setShowProfileModal] = useState(false)
   <option value="">Select Destination</option>
   {destinationOptions.map(destination => (
     <option key={destination.code} value={destination.code}>
-      ({destination.code}) {currentGuessSpot?.flight?.arrivalAirport || destination.name}
+      {destination.name}
     </option>
   ))}
 </select>
