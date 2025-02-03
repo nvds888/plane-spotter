@@ -33,10 +33,17 @@ interface ProfileModalProps {
   onClose: () => void;
 }
 
+interface FollowingUser {
+    _id: string;
+    username: string;
+    email: string;
+  }
+
 const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Element | null => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { data: session } = useSession();
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -56,6 +63,26 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
       fetchProfile();
     }
   }, [isOpen, userId]);
+
+  useEffect(() => {
+    if (profileData && session?.user?.id) {
+        const checkFollowStatus = async () => {
+            try {
+              const response = await fetch(
+                `https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/following`
+              );
+              if (!response.ok) throw new Error('Failed to fetch following status');
+              const following: FollowingUser[] = await response.json();
+              setIsFollowing(following.some((followingUser: FollowingUser) => 
+                followingUser.username === profileData.username
+              ));
+            } catch (error) {
+              console.error('Error checking follow status:', error);
+            }
+          };
+      checkFollowStatus();
+    }
+  }, [profileData, session?.user?.id]);
 
   const getRarityColor = (rarity: Badge['rarity']): string => {
     switch (rarity) {
@@ -113,29 +140,33 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
         </p>
       </div>
       <div className="flex items-center gap-3">
-        {session?.user?.id !== userId && profileData && (
-          <button
-            onClick={async () => {
-              try {
-                const response = await fetch(
-                  `https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/follow`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: profileData.username })
-                  }
-                );
-                if (!response.ok) throw new Error('Failed to follow user');
-                // Optionally update the UI to show followed state
-              } catch (error) {
-                console.error('Error following user:', error);
-              }
-            }}
-            className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
-          >
-            Follow
-          </button>
-        )}
+      {session?.user?.id !== userId && profileData && (
+  <button
+    onClick={async () => {
+      try {
+        const response = await fetch(
+          `https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/${isFollowing ? 'unfollow' : 'follow'}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: profileData.username })
+          }
+        );
+        if (!response.ok) throw new Error(`Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);
+        setIsFollowing(!isFollowing);
+      } catch (error) {
+        console.error('Error following/unfollowing user:', error);
+      }
+    }}
+    className={`px-4 py-2 ${
+      isFollowing 
+        ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+        : 'bg-blue-500 text-white hover:bg-blue-600'
+    } rounded-xl transition-colors`}
+  >
+    {isFollowing ? 'Following' : 'Follow'}
+  </button>
+)}
         <button 
           onClick={onClose}
           className="p-2 hover:bg-gray-100 rounded-full"

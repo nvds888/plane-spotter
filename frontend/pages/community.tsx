@@ -497,27 +497,30 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
               Cancel
             </button>
             <motion.button
-              onClick={async () => {
-                try {
-                  const response = await fetch(
-                    `https://plane-spotter-backend.onrender.com/api/user/find/${friendUsername}`
-                  );
-                  if (!response.ok) {
-                    throw new Error('User not found');
-                  }
-                  const userData = await response.json();
-                  setSelectedUserId(userData._id);
-                  setShowAddFriend(false);
-                  setShowProfileModal(true);
-                } catch (error) {
-                  setError(error instanceof Error ? error.message : 'Failed to find user');
-                }
-              }}
-              className="flex-1 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
-              whileTap={{ scale: 0.95 }}
-            >
-              View Profile
-            </motion.button>
+  onClick={async () => {
+    try {
+      const response = await fetch(
+        `https://plane-spotter-backend.onrender.com/api/user/find/${friendUsername}`
+      );
+      if (!response.ok) {
+        throw new Error('User not found');
+      }
+      const userData = await response.json();
+      setSelectedUserId(userData._id);
+      // After viewing profile, they should be able to follow the user
+      setShowAddFriend(false);
+      setShowProfileModal(true);
+      setFriendUsername(""); // Clear the input
+      setError("");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to find user');
+    }
+  }}
+  className="flex-1 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+  whileTap={{ scale: 0.95 }}
+>
+  View Profile
+</motion.button>
           </div>
         </div>
       </motion.div>
