@@ -175,7 +175,8 @@ router.get('/suggestions', async (req, res) => {
       if (flight.dest_iata) {
         destinations.set(flight.dest_iata, {
           code: flight.dest_iata,
-          name: flight.dest_iata
+          // Use getAirportName to get the full airport name
+          name: getAirportName(flight.dest_iata) || flight.dest_iata
         });
       }
     });

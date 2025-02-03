@@ -507,10 +507,10 @@ Copy<select
 >
   <option value="">Select Destination</option>
   {destinationOptions.map(destination => (
-    <option key={destination.code} value={destination.code}>
-      {destination.name}
-    </option>
-  ))}
+  <option key={destination.code} value={destination.code}>
+    ({destination.code}) {destination.name}
+  </option>
+))}
 </select>
 </div>
         </div>
