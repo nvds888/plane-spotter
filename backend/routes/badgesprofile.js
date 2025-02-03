@@ -116,7 +116,7 @@ router.get('/:userId', async (req, res) => {
     // Prepare response data
     const profileData = {
       username: user.username,
-      joinDate: user.createdAt,
+      joinDate: user.createdAt || new Date(),  // Provide a fallback date
       stats: {
         totalSpots: user.totalSpots,
         currentStreak: user.currentStreak,
