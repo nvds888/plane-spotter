@@ -92,7 +92,42 @@ router.post('/', async (req, res) => {
     );
     console.log("Base XP awarded");
 
-    // Map to frontend format before sending response
+    // Map spot for Algorand logging - handle multiple flights in one spot
+    let flightsToLog = [];
+    
+    // If flight is an array, handle multiple flights
+    if (Array.isArray(req.body.flight)) {
+      flightsToLog = req.body.flight.map(f => ({
+        flight: f.flight,
+        operator: f.operator,
+        altitude: f.alt,
+        departure: f.departureAirport,
+        destination: f.arrivalAirport,
+        hex: f.hex
+      }));
+    } else {
+      // Single flight
+      flightsToLog = [{
+        flight: req.body.flight.flight,
+        operator: req.body.flight.operator,
+        altitude: req.body.flight.alt,
+        departure: req.body.flight.departureAirport,
+        destination: req.body.flight.arrivalAirport,
+        hex: req.body.flight.hex
+      }];
+    }
+
+    // Log all flights in this spot as a group transaction
+    const { spawn } = require('child_process');
+    const pythonProcess = spawn('python', [
+      'algorand_logger.py',
+      JSON.stringify(flightsToLog)
+    ]);
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error('Algorand logging error:', data.toString());
+    });
+
     const mappedSpot = mapSpotToFrontend(spot);
     res.status(201).json(mappedSpot);
   } catch (error) {
