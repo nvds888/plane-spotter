@@ -379,7 +379,7 @@ export default function Collection() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-6 mt-[250px] mb-24">
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
