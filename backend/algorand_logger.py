@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Algorand connection details
 ALGOD_ADDRESS = "https://testnet-api.4160.nodely.dev"
 ALGOD_TOKEN = ""  # Your token here
-SENDER_MNEMONIC = "your_mnemonic_here"  # Securely manage this
+SENDER_MNEMONIC = "theme expand floor wrong behave roof skull cattle denial gun trash run spend smooth magic position confirm trigger during riot weird window absent ability buffalo"  # Securely manage this
 
 def log_spot_flights(flights: List[Dict]):
     """Log all flights from a single spot as a single group transaction"""
