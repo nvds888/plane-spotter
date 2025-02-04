@@ -577,28 +577,28 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
       </header>
 
       {/* Friend Spots Feed */}
-      <div className="max-w-lg mx-auto px-4 py-6 mt-[140px] mb-32">
-        <div className="space-y-4">
-          {friendSpots.length === 0 ? (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center">
-              <Users size={40} className="text-indigo-600 mx-auto mb-4" />
-              <p className="text-gray-600 font-medium">No spots from people you follow yet.</p>
-              <p className="text-sm text-gray-500 mt-2">Follow more users to see their spots here!</p>
-            </div>
-          ) : (
-            friendSpots.map((spot) => (
-              <SpotCard 
-                key={spot._id} 
-                spot={spot}
-                onProfileClick={(userId) => {
-                  setSelectedUserId(userId);
-                  setShowProfileModal(true);
-                }}
-              />
-            ))
-          )}
-        </div>
-      </div>
+<div className="max-w-lg mx-auto px-4 py-6 mt-[140px] mb-24">
+  {friendSpots.length === 0 ? (
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center">
+      <Users size={40} className="text-indigo-600 mx-auto mb-4" />
+      <p className="text-gray-600 font-medium">No spots from people you follow yet.</p>
+      <p className="text-sm text-gray-500 mt-2">Follow more users to see their spots here!</p>
+    </div>
+  ) : (
+    <div className="space-y-4">
+      {friendSpots.map((spot) => (
+        <SpotCard 
+          key={spot._id} 
+          spot={spot}
+          onProfileClick={(userId) => {
+            setSelectedUserId(userId);
+            setShowProfileModal(true);
+          }}
+        />
+      ))}
+    </div>
+  )}
+</div>
 
       {/* Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
