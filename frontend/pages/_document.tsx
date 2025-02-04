@@ -8,7 +8,7 @@ export default function Document() {
         <meta name="application-name" content="Plane Spotter" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Plane Spotter" />
-        <meta name="theme-color" content="#3B82F6" />
+        <meta name="theme-color" content="#FFFFFF" />
         <link rel="manifest" href="/manifest.json" />
       </Head>
       <body className="antialiased">
