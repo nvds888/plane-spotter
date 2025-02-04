@@ -67,11 +67,9 @@ router.get('/', async (req, res) => {
 });
 
 // Create new spot
-// In Spot.js, modify the spot creation route:
 router.post('/', async (req, res) => {
   try {
     console.log("Starting spot creation with data:", req.body);
-
     const now = new Date();
     const spotData = {
       userId: req.body.userId,
@@ -82,21 +80,22 @@ router.post('/', async (req, res) => {
       timestamp: now
     };
 
+    // Keep original spot creation logic unchanged
     const spot = await Spot.create(spotData);
     await spot.save();
     console.log("Spot created and saved:", spot);
 
-    // Award base XP
+    // Award base XP - unchanged
     await User.findByIdAndUpdate(
       spot.userId,
       { $inc: { totalXP: 5, weeklyXP: 5 } }
     );
     console.log("Base XP awarded");
 
-    // Prepare flights for Algorand logging
+    // Get flights for Algorand - handle both single and multiple flights
     const flights = Array.isArray(req.body.flight) ? req.body.flight : [req.body.flight];
     
-    // Map all flights in this spot for logging
+    // Map flights for Algorand logging
     const flightsToLog = flights.map(flight => ({
       flight: flight.flight || 'N/A',
       operator: getBestAirlineName(flight.operating_as, flight.painted_as) || 'Unknown',
@@ -110,15 +109,15 @@ router.post('/', async (req, res) => {
     const { spawn } = require('child_process');
     const pythonProcess = spawn('python', [
       'algorand_logger.py',
-      JSON.stringify(flightsToLog)
+      JSON.stringify(flightsToLog)  // Send all flights together
     ]);
-
-    pythonProcess.stderr.on('data', (data) => {
-      console.error('Algorand logging error:', data.toString());
-    });
 
     pythonProcess.stdout.on('data', (data) => {
       console.log('Algorand logging output:', data.toString());
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error('Algorand logging error:', data.toString());
     });
 
     const mappedSpot = mapSpotToFrontend(spot);
