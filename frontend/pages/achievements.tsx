@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from "next-auth/react";
 import { Trophy, Medal, Calendar, Star, Home, BookOpen, Users } from "lucide-react";
