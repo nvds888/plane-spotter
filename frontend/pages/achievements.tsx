@@ -77,25 +77,25 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
       </div>
 
       <div className="flex items-start gap-4">
-        <div className={`p-3 rounded-xl ${
-          achievement.completed
-            ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
-            : achievement.type === 'daily'
-            ? 'bg-gradient-to-r from-indigo-600 to-blue-600'
-            : 'bg-gradient-to-r from-amber-500 to-orange-500'
-        }`}>
-          {achievement.completed ? (
-            <Trophy className="text-white" size={24} />
-          ) : achievement.type === 'daily' ? (
-            <Calendar className="text-white" size={24} />
-          ) : (
-            <Medal className="text-white" size={24} />
-          )}
-        </div>
-        
-        <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">{achievement.name}</h3>
-          <p className="text-sm text-gray-500 mt-1">{achievement.description}</p>
+  <div className={`p-4 rounded-xl ${
+    achievement.completed
+      ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+      : achievement.type === 'daily'
+      ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+      : 'bg-gradient-to-r from-amber-500 to-orange-500'
+  }`}>
+    {achievement.completed ? (
+      <Trophy className="text-white" size={28} />
+    ) : achievement.type === 'daily' ? (
+      <Calendar className="text-white" size={28} />
+    ) : (
+      <Medal className="text-white" size={28} />
+    )}
+  </div>
+  
+  <div className="flex-1">
+    <h3 className="text-lg font-semibold text-gray-900">{achievement.name}</h3>
+    <p className="text-sm text-gray-500 mt-2">{achievement.description}</p>
           
           <div className="mt-4">
             <div className="flex justify-between items-center mb-2">
@@ -263,14 +263,14 @@ export default function Achievements() {
             <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
               <div className="flex items-center gap-2 mb-1">
                 <Trophy className="text-white w-4 h-4" />
-                <span className="text-white/90 text-sm">Daily Achievement</span>
+                <span className="text-white/90 text-sm">Daily</span>
               </div>
               <span className="text-lg font-bold text-white">+20 XP</span>
             </div>
             <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
               <div className="flex items-center gap-2 mb-1">
                 <Medal className="text-white w-4 h-4" />
-                <span className="text-white/90 text-sm">Weekly Achievement</span>
+                <span className="text-white/90 text-sm">Weekly</span>
               </div>
               <span className="text-lg font-bold text-white">+100 XP</span>
             </div>
