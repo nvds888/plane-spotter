@@ -123,27 +123,6 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
                 }`}
               />
             </div>
-            
-            {achievement.completionHistory && achievement.completionHistory.length > 0 ? (
-              <div className="mt-4 border-t border-gray-100 pt-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Completion History</h4>
-                <div className="space-y-2">
-                  {achievement.completionHistory.map((completion, index) => (
-                    <div 
-                      key={index} 
-                      className="flex justify-between items-center text-sm"
-                    >
-                      <span className="text-gray-500">
-                        {new Date(completion.completedAt).toLocaleDateString()}
-                      </span>
-                      <span className="text-emerald-600 font-medium">
-                        +{completion.xpEarned} XP
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </div>
         </div>
       </div>
