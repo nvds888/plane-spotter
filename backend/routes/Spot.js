@@ -5,6 +5,7 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const { getAirportName } = require('../utils/airportMapping');
+const { spawn } = require('child_process');
 
 
 const prepareFlightLoggingData = (flight) => {
