@@ -65,13 +65,13 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
       className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100"
     >
       <div className="flex items-center justify-between mb-4">
-        <div className={`px-4 py-1.5 rounded-full text-sm font-medium ${
-          achievement.type === 'daily' 
-            ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white' 
-            : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-        }`}>
-          {achievement.type === 'daily' ? 'Daily' : 'Weekly'}
-        </div>
+      <div className={`px-4 py-1.5 rounded-full text-sm font-medium min-w-[100px] text-center ${
+  achievement.type === 'daily' 
+    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white' 
+    : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+}`}>
+  {achievement.type === 'daily' ? 'Daily' : 'Weekly'}
+</div>
         <div className="flex items-center gap-2 text-gray-400 text-sm">
           <Star size={14} />
           {timeUntilReset()}
@@ -125,31 +125,25 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
             </div>
             
             {achievement.completionHistory && achievement.completionHistory.length > 0 ? (
-  <div className="mt-4 border-t border-gray-100 pt-4">
-    <h4 className="text-sm font-semibold text-gray-700 mb-2">Completion History</h4>
-    <div className="space-y-2">
-      {achievement.completionHistory.map((completion, index) => (
-        <div 
-          key={index} 
-          className="flex justify-between items-center text-sm"
-        >
-          <span className="text-gray-500">
-            {new Date(completion.completedAt).toLocaleDateString()}
-          </span>
-          <span className="text-emerald-600 font-medium">
-            +{completion.xpEarned} XP
-          </span>
-        </div>
-      ))}
-    </div>
-  </div>
-) : (
-  // Add an empty completion history section if none exists
-  <div className="mt-4 border-t border-gray-100 pt-4">
-    <h4 className="text-sm font-semibold text-gray-700 mb-2">Completion History</h4>
-    <div className="text-sm text-gray-500">No completions yet</div>
-  </div>
-)}
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Completion History</h4>
+                <div className="space-y-2">
+                  {achievement.completionHistory.map((completion, index) => (
+                    <div 
+                      key={index} 
+                      className="flex justify-between items-center text-sm"
+                    >
+                      <span className="text-gray-500">
+                        {new Date(completion.completedAt).toLocaleDateString()}
+                      </span>
+                      <span className="text-emerald-600 font-medium">
+                        +{completion.xpEarned} XP
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
