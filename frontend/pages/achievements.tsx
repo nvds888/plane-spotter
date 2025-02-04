@@ -262,21 +262,21 @@ export default function Achievements() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
-              <div className="flex items-center gap-2 mb-1">
-                <Trophy className="text-white w-4 h-4" />
-                <span className="text-white/90 text-sm">Daily Achievement</span>
-              </div>
-              <span className="text-lg font-bold text-white">+20 XP</span>
-            </div>
-            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
-              <div className="flex items-center gap-2 mb-1">
-                <Medal className="text-white w-4 h-4" />
-                <span className="text-white/90 text-sm">Weekly Achievement</span>
-              </div>
-              <span className="text-lg font-bold text-white">+100 XP</span>
-            </div>
-          </div>
+  <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
+    <div className="flex items-center gap-2 mb-1">
+      <Trophy className="text-white w-4 h-4" />
+      <span className="text-white/90 text-sm w-full">Daily</span>
+    </div>
+    <span className="text-lg font-bold text-white">+20 XP</span>
+  </div>
+  <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
+    <div className="flex items-center gap-2 mb-1">
+      <Medal className="text-white w-4 h-4" />
+      <span className="text-white/90 text-sm">Weekly</span>
+    </div>
+    <span className="text-lg font-bold text-white">+100 XP</span>
+  </div>
+</div>
 
           <div className="flex gap-2">
             <button 
@@ -304,7 +304,7 @@ export default function Achievements() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-lg mx-auto px-4 py-6 mt-[250px] mb-24 flex-1 overflow-y-auto">
+      <div className="max-w-lg mx-auto px-4 py-6 mt-[270px] mb-24 flex-1 overflow-y-auto">
         {isLoading && achievements.length === 0 ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin text-indigo-600">
