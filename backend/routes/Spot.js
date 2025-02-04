@@ -5,25 +5,7 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const { getAirportName } = require('../utils/airportMapping');
-const { spawn } = require('child_process');
 
-
-const prepareFlightLoggingData = (flight) => {
-  // Handle nested flight object or direct flight data
-  const flightData = flight.flight || flight;
-  
-  return {
-    flight: flightData.flight || flightData.flight_number || 'N/A',
-    operator: getBestAirlineName(
-      flightData.operating_as || flightData.airline || flightData.operator,
-      flightData.painted_as
-    ),
-    altitude: flightData.geography?.altitude || flightData.alt || 0,
-    departure: getAirportName(flightData.orig_iata || flightData.departure_airport) || 'N/A',
-    destination: getAirportName(flightData.dest_iata || flightData.arrival_airport) || 'N/A',
-    hex: flightData.system?.hex || flightData.hex || 'N/A'
-  };
-};
 // Helper function to get next reset date in UTC
 function getNextResetDate(type) {
   const now = new Date();
@@ -110,31 +92,40 @@ router.post('/', async (req, res) => {
     );
     console.log("Base XP awarded");
 
-    // Prepare flights for Algorand logging - handle multiple or single flight
-    const flightsToLog = Array.isArray(req.body.flight) 
-      ? req.body.flight.map(prepareFlightLoggingData)
-      : [prepareFlightLoggingData(req.body.flight)];
+    // Map spot for Algorand logging - handle multiple flights in one spot
+    let flightsToLog = [];
+    
+    // If flight is an array, handle multiple flights
+    if (Array.isArray(req.body.flight)) {
+      flightsToLog = req.body.flight.map(f => ({
+        flight: f.flight,
+        operator: f.operator,
+        altitude: f.alt,
+        departure: f.departureAirport,
+        destination: f.arrivalAirport,
+        hex: f.hex
+      }));
+    } else {
+      // Single flight
+      flightsToLog = [{
+        flight: req.body.flight.flight,
+        operator: req.body.flight.operator,
+        altitude: req.body.flight.alt,
+        departure: req.body.flight.departureAirport,
+        destination: req.body.flight.arrivalAirport,
+        hex: req.body.flight.hex
+      }];
+    }
 
-    console.log("Flights prepared for Algorand logging:", flightsToLog);
-
+    // Log all flights in this spot as a group transaction
+    const { spawn } = require('child_process');
     const pythonProcess = spawn('python', [
       'algorand_logger.py',
       JSON.stringify(flightsToLog)
     ]);
 
-    pythonProcess.stdout.on('data', (data) => {
-      console.log('Algorand logger stdout:', data.toString());
-    });
-
     pythonProcess.stderr.on('data', (data) => {
       console.error('Algorand logging error:', data.toString());
-    });
-
-    pythonProcess.on('close', (code) => {
-      console.log('Algorand logging process closed with code:', code);
-      if (code !== 0) {
-        console.error('Algorand logging failed with exit code:', code);
-      }
     });
 
     const mappedSpot = mapSpotToFrontend(spot);
