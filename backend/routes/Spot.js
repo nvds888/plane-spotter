@@ -6,6 +6,11 @@ const mongoose = require('mongoose');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const { getAirportName } = require('../utils/airportMapping');
 
+
+let spotBuffer = [];
+let lastSpotTime = null;
+const BUFFER_WINDOW = 1000; // 1 second window to collect flights from same spot
+
 // Helper function to get next reset date in UTC
 function getNextResetDate(type) {
   const now = new Date();
@@ -67,6 +72,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create new spot
+
 router.post('/', async (req, res) => {
   try {
     console.log("Starting spot creation with data:", req.body);
@@ -92,33 +98,64 @@ router.post('/', async (req, res) => {
     );
     console.log("Base XP awarded");
 
-    // Get flights for Algorand - handle both single and multiple flights
-    const flights = Array.isArray(req.body.flight) ? req.body.flight : [req.body.flight];
-    
-    // Map flights for Algorand logging
-    const flightsToLog = flights.map(flight => ({
-      flight: flight.flight || 'N/A',
-      operator: getBestAirlineName(flight.operating_as, flight.painted_as) || 'Unknown',
-      altitude: flight.geography?.altitude || 0,
-      departure: flight.orig_iata || 'Unknown',
-      destination: flight.dest_iata || 'Unknown',
-      hex: flight.system?.hex || 'N/A'
-    }));
+    // Prepare flight for Algorand
+    const flightToLog = {
+      flight: req.body.flight.flight || 'N/A',
+      operator: getBestAirlineName(req.body.flight.operating_as, req.body.flight.painted_as) || 'Unknown',
+      altitude: req.body.flight.geography?.altitude || 0,
+      departure: req.body.flight.orig_iata || 'Unknown',
+      destination: req.body.flight.dest_iata || 'Unknown',
+      hex: req.body.flight.system?.hex || 'N/A'
+    };
 
-    // Log all flights as a single group transaction
-    const { spawn } = require('child_process');
-    const pythonProcess = spawn('python', [
-      'algorand_logger.py',
-      JSON.stringify(flightsToLog)  // Send all flights together
-    ]);
+    // Buffer logic
+    const currentTime = Date.now();
+    if (lastSpotTime && (currentTime - lastSpotTime) < BUFFER_WINDOW) {
+      // Add to existing spot group
+      spotBuffer.push(flightToLog);
+    } else {
+      // If there are flights in buffer, send them first
+      if (spotBuffer.length > 0) {
+        const { spawn } = require('child_process');
+        const pythonProcess = spawn('python', [
+          'algorand_logger.py',
+          JSON.stringify(spotBuffer)
+        ]);
 
-    pythonProcess.stdout.on('data', (data) => {
-      console.log('Algorand logging output:', data.toString());
-    });
+        pythonProcess.stdout.on('data', (data) => {
+          console.log('Algorand logging output:', data.toString());
+        });
 
-    pythonProcess.stderr.on('data', (data) => {
-      console.error('Algorand logging error:', data.toString());
-    });
+        pythonProcess.stderr.on('data', (data) => {
+          console.error('Algorand logging error:', data.toString());
+        });
+      }
+      
+      // Start new buffer
+      spotBuffer = [flightToLog];
+    }
+    lastSpotTime = currentTime;
+
+    // Set timeout to flush buffer if no new flights come in
+    setTimeout(() => {
+      if (spotBuffer.length > 0 && (Date.now() - lastSpotTime) >= BUFFER_WINDOW) {
+        const { spawn } = require('child_process');
+        const pythonProcess = spawn('python', [
+          'algorand_logger.py',
+          JSON.stringify(spotBuffer)
+        ]);
+
+        pythonProcess.stdout.on('data', (data) => {
+          console.log('Algorand logging output:', data.toString());
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+          console.error('Algorand logging error:', data.toString());
+        });
+        
+        spotBuffer = [];
+      }
+    }, BUFFER_WINDOW);
 
     const mappedSpot = mapSpotToFrontend(spot);
     res.status(201).json(mappedSpot);
