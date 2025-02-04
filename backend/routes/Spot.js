@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
 // Create new spot
 router.post('/', async (req, res) => {
   try {
-    console.log("Starting spot creation with data:", req.body);
+    console.log("Starting spot creation with data:", JSON.stringify(req.body, null, 2));
 
     const now = new Date();
     const spotData = {
@@ -117,19 +117,59 @@ router.post('/', async (req, res) => {
       }];
     }
 
-    // Log all flights in this spot as a group transaction
-    const { spawn } = require('child_process');
-    const pythonProcess = spawn('python', [
-      'algorand_logger.py',
-      JSON.stringify(flightsToLog)
-    ]);
+    console.log("Flights to log to Algorand:", JSON.stringify(flightsToLog, null, 2));
 
-    pythonProcess.stderr.on('data', (data) => {
-      console.error('Algorand logging error:', data.toString());
+    // Log all flights in this spot as a group transaction
+    return new Promise((resolve, reject) => {
+      console.log("Spawning Algorand logging process...");
+      const pythonProcess = spawn('python3', [
+        path.join(__dirname, '..', 'algorand_logger.py'),
+        JSON.stringify(flightsToLog)
+      ]);
+
+      let errorOutput = '';
+      let standardOutput = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        const output = data.toString();
+        standardOutput += output;
+        console.log('Algorand logger stdout:', output);
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        const error = data.toString();
+        errorOutput += error;
+        console.error('Algorand logging error:', error);
+      });
+
+      pythonProcess.on('close', (code) => {
+        console.log('Algorand logging process completed', { 
+          exitCode: code,
+          standardOutput,
+          errorOutput
+        });
+
+        if (code !== 0) {
+          console.error('Algorand logging failed', { 
+            code, 
+            errorOutput 
+          });
+          // Continue with response despite logging failure
+        }
+
+        const mappedSpot = mapSpotToFrontend(spot);
+        res.status(201).json(mappedSpot);
+        resolve();
+      });
+
+      pythonProcess.on('error', (err) => {
+        console.error('Failed to spawn Algorand logging process:', err);
+        const mappedSpot = mapSpotToFrontend(spot);
+        res.status(201).json(mappedSpot);
+        reject(err);
+      });
     });
 
-    const mappedSpot = mapSpotToFrontend(spot);
-    res.status(201).json(mappedSpot);
   } catch (error) {
     console.error('Error in spot creation:', error);
     res.status(400).json({ error: error.message });
