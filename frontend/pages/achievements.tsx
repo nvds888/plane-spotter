@@ -61,9 +61,9 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
 
   return (
     <motion.div 
-      layout
-      className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100"
-    >
+  layout
+  className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100 w-full"
+>
       <div className="flex items-center justify-between mb-4">
       <div className={`px-4 py-1.5 rounded-full text-sm font-medium min-w-[100px] text-center ${
   achievement.type === 'daily' 
