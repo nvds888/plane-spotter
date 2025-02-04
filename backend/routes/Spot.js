@@ -98,22 +98,22 @@ router.post('/', async (req, res) => {
     // If flight is an array, handle multiple flights
     if (Array.isArray(req.body.flight)) {
       flightsToLog = req.body.flight.map(f => ({
-        flight: f.flight,
-        operator: f.operator,
-        altitude: f.alt,
-        departure: f.departureAirport,
-        destination: f.arrivalAirport,
-        hex: f.hex
+        flight: f.flight || 'N/A',
+        operator: getBestAirlineName(f.operating_as, f.painted_as) || 'Unknown',
+        altitude: f.geography?.altitude || 0,
+        departure: f.orig_iata || 'Unknown',
+        destination: f.dest_iata || 'Unknown',
+        hex: f.system?.hex || 'N/A'
       }));
     } else {
       // Single flight
       flightsToLog = [{
-        flight: req.body.flight.flight,
-        operator: req.body.flight.operator,
-        altitude: req.body.flight.alt,
-        departure: req.body.flight.departureAirport,
-        destination: req.body.flight.arrivalAirport,
-        hex: req.body.flight.hex
+        flight: req.body.flight.flight || 'N/A',
+        operator: getBestAirlineName(req.body.flight.operating_as, req.body.flight.painted_as) || 'Unknown',
+        altitude: req.body.flight.geography?.altitude || 0,
+        departure: req.body.flight.orig_iata || 'Unknown',
+        destination: req.body.flight.dest_iata || 'Unknown',
+        hex: req.body.flight.system?.hex || 'N/A'
       }];
     }
 

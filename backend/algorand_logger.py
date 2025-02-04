@@ -13,6 +13,11 @@ SENDER_MNEMONIC = "theme expand floor wrong behave roof skull cattle denial gun 
 def log_spot_flights(flights):
     """Log all flights from a single spot as a group transaction"""
     try:
+        # Add validation
+        if not flights or not isinstance(flights, list):
+            raise ValueError(f"Invalid flights data format: {flights}")
+            
+        print(f"Processing {len(flights)} flights: {json.dumps(flights, indent=2)}")
         # Initialize Algorand client
         algod_client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
         private_key = mnemonic.to_private_key(SENDER_MNEMONIC)
@@ -59,7 +64,10 @@ def log_spot_flights(flights):
         print(f"Successfully logged spot with {len(flights)} flights. Group transaction ID: {tx_id}")
         
     except Exception as e:
-        print(f"Error logging to Algorand: {e}", file=sys.stderr)
+        print(f"Error logging to Algorand: {str(e)}", file=sys.stderr)
+        # Print the full error traceback for debugging
+        import traceback
+        print(traceback.format_exc(), file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":
