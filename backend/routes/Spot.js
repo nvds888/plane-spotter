@@ -67,6 +67,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create new spot
+// In Spot.js, modify the spot creation route:
 router.post('/', async (req, res) => {
   try {
     console.log("Starting spot creation with data:", req.body);
@@ -92,32 +93,20 @@ router.post('/', async (req, res) => {
     );
     console.log("Base XP awarded");
 
-    // Map spot for Algorand logging - handle multiple flights in one spot
-    let flightsToLog = [];
+    // Prepare flights for Algorand logging
+    const flights = Array.isArray(req.body.flight) ? req.body.flight : [req.body.flight];
     
-    // If flight is an array, handle multiple flights
-    if (Array.isArray(req.body.flight)) {
-      flightsToLog = req.body.flight.map(f => ({
-        flight: f.flight || 'N/A',
-        operator: getBestAirlineName(f.operating_as, f.painted_as) || 'Unknown',
-        altitude: f.geography?.altitude || 0,
-        departure: f.orig_iata || 'Unknown',
-        destination: f.dest_iata || 'Unknown',
-        hex: f.system?.hex || 'N/A'
-      }));
-    } else {
-      // Single flight
-      flightsToLog = [{
-        flight: req.body.flight.flight || 'N/A',
-        operator: getBestAirlineName(req.body.flight.operating_as, req.body.flight.painted_as) || 'Unknown',
-        altitude: req.body.flight.geography?.altitude || 0,
-        departure: req.body.flight.orig_iata || 'Unknown',
-        destination: req.body.flight.dest_iata || 'Unknown',
-        hex: req.body.flight.system?.hex || 'N/A'
-      }];
-    }
+    // Map all flights in this spot for logging
+    const flightsToLog = flights.map(flight => ({
+      flight: flight.flight || 'N/A',
+      operator: getBestAirlineName(flight.operating_as, flight.painted_as) || 'Unknown',
+      altitude: flight.geography?.altitude || 0,
+      departure: flight.orig_iata || 'Unknown',
+      destination: flight.dest_iata || 'Unknown',
+      hex: flight.system?.hex || 'N/A'
+    }));
 
-    // Log all flights in this spot as a group transaction
+    // Log all flights as a single group transaction
     const { spawn } = require('child_process');
     const pythonProcess = spawn('python', [
       'algorand_logger.py',
@@ -126,6 +115,10 @@ router.post('/', async (req, res) => {
 
     pythonProcess.stderr.on('data', (data) => {
       console.error('Algorand logging error:', data.toString());
+    });
+
+    pythonProcess.stdout.on('data', (data) => {
+      console.log('Algorand logging output:', data.toString());
     });
 
     const mappedSpot = mapSpotToFrontend(spot);
