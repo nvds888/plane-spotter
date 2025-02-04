@@ -1,9 +1,9 @@
 {
-    "name": "Plane Spotter",
-    "short_name": "Plane Spotter",
-    "description": "Track and identify planes in your area",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#3b82f6"
-  }
+  "name": "Plane Spotter",
+  "short_name": "Plane Spotter",
+  "description": "Track and identify planes in your area",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff"
+}
