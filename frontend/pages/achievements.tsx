@@ -61,17 +61,17 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
 
   return (
     <motion.div 
-  layout
-  className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100 w-full"
->
+      layout
+      className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100 w-full max-w-md mx-auto"
+    >
       <div className="flex items-center justify-between mb-4">
-      <div className={`px-4 py-1.5 rounded-full text-sm font-medium min-w-[100px] text-center ${
-  achievement.type === 'daily' 
-    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white' 
-    : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-}`}>
-  {achievement.type === 'daily' ? 'Daily' : 'Weekly'}
-</div>
+        <div className={`px-4 py-1.5 rounded-full text-sm font-medium min-w-[100px] text-center ${
+          achievement.type === 'daily' 
+            ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white' 
+            : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+        }`}>
+          {achievement.type === 'daily' ? 'Daily' : 'Weekly'}
+        </div>
         <div className="flex items-center gap-2 text-gray-400 text-sm">
           <Star size={14} />
           {timeUntilReset()}
