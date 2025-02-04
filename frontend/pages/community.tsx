@@ -403,6 +403,97 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
 
   return (
     <div className="h-screen w-full bg-white flex flex-col">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10">
+        <div className="max-w-lg mx-auto">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-2">Community</h1>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setShowFollowers(true)}
+                  className="text-white/90 text-sm hover:text-white"
+                >
+                  {followers.length} follower{followers.length !== 1 ? 's' : ''}
+                </button>
+                <button 
+                  onClick={() => setShowFollowing(true)}
+                  className="text-white/90 text-sm hover:text-white"
+                >
+                  {following.length} following
+                </button>
+              </div>
+            </div>
+            <motion.button
+              onClick={() => setShowAddFriend(true)}
+              className="bg-white/10 p-3 rounded-2xl backdrop-blur-md hover:bg-white/20 transition-colors"
+              whileTap={{ scale: 0.95 }}
+            >
+              <UserPlus className="text-white" size={24} />
+            </motion.button>
+          </div>
+        </div>
+      </header>
+
+      {/* Friend Spots Feed */}
+      <div className="max-w-lg mx-auto px-4 py-6 mt-[180px] mb-24 flex-1 overflow-y-auto">
+        <div className="space-y-4">
+          {friendSpots.length === 0 ? (
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center">
+              <Users size={40} className="text-indigo-600 mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">No spots from people you follow yet.</p>
+              <p className="text-sm text-gray-500 mt-2">Follow more users to see their spots here!</p>
+            </div>
+          ) : (
+            friendSpots.map((spot) => (
+              <SpotCard 
+                key={spot._id} 
+                spot={spot}
+                onProfileClick={(userId) => {
+                  setSelectedUserId(userId);
+                  setShowProfileModal(true);
+                }}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
+        <div className="max-w-lg mx-auto">
+          <div className="flex justify-around py-4">
+            <Link href="/" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <House size="24" /> 
+              </div>
+              <span className="text-xs">Home</span>
+            </Link>
+            
+            <Link href="/community" className="flex flex-col items-center gap-1 text-indigo-600">
+              <div className="bg-indigo-50 p-2 rounded-xl">
+                <Users className="w-6 h-6" />
+              </div>
+              <span className="text-xs font-medium">Community</span>
+            </Link>
+            
+            <Link href="/collections" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Collection</span>
+            </Link>
+            
+            <Link href="/achievements" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
+              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
+                <Trophy className="w-6 h-6" />
+              </div>
+              <span className="text-xs">Achievements</span>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* Add Friend Modal */}
       <AnimatePresence>
         {showAddFriend && (
@@ -486,25 +577,25 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
       </AnimatePresence>
 
       {/* Global Spot Alert */}
-<AnimatePresence>
-  {globalSpot && (
-    <motion.div
-      className="fixed top-4 right-4 left-4 z-50"
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-    >
-      <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-lg shadow-lg p-4">
-        <div className="flex items-center gap-2">
-          <Plane className="text-indigo-600" size={16} />
-          <span className="text-sm">
-            {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
-          </span>
-        </div>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+      <AnimatePresence>
+        {globalSpot && (
+          <motion.div
+            className="fixed top-4 right-4 left-4 z-50"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-lg shadow-lg p-4">
+              <div className="flex items-center gap-2">
+                <Plane className="text-indigo-600" size={16} />
+                <span className="text-sm">
+                  {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modals */}
       <UsersModal 
@@ -541,97 +632,6 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
         }}
         userId={selectedUserId || ''}
       />
-
-      {/* Header */}
-      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
-        <div className="max-w-lg mx-auto">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white mb-2">Community</h1>
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => setShowFollowers(true)}
-                  className="text-white/90 text-sm hover:text-white"
-                >
-                  {followers.length} follower{followers.length !== 1 ? 's' : ''}
-                </button>
-                <button 
-                  onClick={() => setShowFollowing(true)}
-                  className="text-white/90 text-sm hover:text-white"
-                >
-                  {following.length} following
-                </button>
-              </div>
-            </div>
-            <motion.button
-              onClick={() => setShowAddFriend(true)}
-              className="bg-white/10 p-3 rounded-2xl backdrop-blur-md hover:bg-white/20 transition-colors"
-              whileTap={{ scale: 0.95 }}
-            >
-              <UserPlus className="text-white" size={24} />
-            </motion.button>
-          </div>
-        </div>
-      </header>
-
-      {/* Friend Spots Feed */}
-      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
-        <div className="space-y-4">
-          {friendSpots.length === 0 ? (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center">
-              <Users size={40} className="text-indigo-600 mx-auto mb-4" />
-              <p className="text-gray-600 font-medium">No spots from people you follow yet.</p>
-              <p className="text-sm text-gray-500 mt-2">Follow more users to see their spots here!</p>
-            </div>
-          ) : (
-            friendSpots.map((spot) => (
-              <SpotCard 
-                key={spot._id} 
-                spot={spot}
-                onProfileClick={(userId) => {
-                  setSelectedUserId(userId);
-                  setShowProfileModal(true);
-                }}
-              />
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
-        <div className="max-w-lg mx-auto">
-          <div className="flex justify-around py-4">
-            <Link href="/" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
-              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
-              <House size="24" /> 
-              </div>
-              <span className="text-xs">Home</span>
-            </Link>
-            
-            <Link href="/community" className="flex flex-col items-center gap-1 text-indigo-600">
-              <div className="bg-indigo-50 p-2 rounded-xl">
-                <Users className="w-6 h-6" />
-              </div>
-              <span className="text-xs font-medium">Community</span>
-            </Link>
-            
-            <Link href="/collections" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
-              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <span className="text-xs">Collection</span>
-            </Link>
-            
-            <Link href="/achievements" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
-              <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
-                <Trophy className="w-6 h-6" />
-              </div>
-              <span className="text-xs">Achievements</span>
-            </Link>
-          </div>
-        </div>
-      </nav>
     </div>
   );
 }

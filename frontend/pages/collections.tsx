@@ -347,9 +347,9 @@ export default function Collection() {
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white">
+    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
       {/* Premium Header */}
-      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4">
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10">
         <div className="max-w-lg mx-auto">
           <div className="flex justify-between items-start mb-6">
             <div className="flex items-center gap-3">
@@ -379,7 +379,7 @@ export default function Collection() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-6 mt-[250px] mb-24 flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
