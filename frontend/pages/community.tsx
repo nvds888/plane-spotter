@@ -577,7 +577,7 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
       </header>
 
       {/* Friend Spots Feed */}
-      <div className="max-w-lg mx-auto px-4 py-6 mt-[140px] mb-32">
+      <div className="max-w-lg mx-auto px-4 py-6 mt-[140px] mb-24">
         <div className="space-y-4">
           {friendSpots.length === 0 ? (
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center">
