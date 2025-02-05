@@ -226,7 +226,7 @@ export default function Achievements() {
       {/* Premium Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10">
         <div className="max-w-lg mx-auto">
-          <div className="flex justify-between items-start mb-6">
+        <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
               <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-md">
                 <Trophy className="text-white w-6 h-6" />
@@ -240,20 +240,17 @@ export default function Achievements() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-6">
-  <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
-    <div className="flex items-center gap-2 mb-1">
-      <Trophy className="text-white w-4 h-4" />
-      <span className="text-white/90 text-sm">Daily</span>
+          <div className="grid grid-cols-2 gap-3 mb-4">  
+  <div className="bg-white/10 rounded-2xl p-3 backdrop-blur-md">  
+    <div className="flex items-center gap-2"> 
+      <span className="text-white/90 text-sm">Daily: +20 XP</span> 
     </div>
-    <span className="text-lg font-bold text-white">+20 XP</span>
   </div>
-  <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md">
-    <div className="flex items-center gap-2 mb-1">
+  <div className="bg-white/10 rounded-2xl p-3 backdrop-blur-md">  
+    <div className="flex items-center gap-2">  
       <Medal className="text-white w-4 h-4" />
-      <span className="text-white/90 text-sm">Weekly</span>
+      <span className="text-white/90 text-sm">Weekly: +100 XP</span> 
     </div>
-    <span className="text-lg font-bold text-white">+100 XP</span>
   </div>
 </div>
 

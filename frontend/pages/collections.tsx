@@ -429,7 +429,7 @@ export default function Collection() {
                 onClick={() => toggleGroup(group.id)}
                 className="w-full p-4 flex items-center justify-between"
               >
-                <div className="w-full grid grid-cols-[1fr,auto] gap-2 items-baseline">
+                <div className="grid grid-cols-[1fr,auto] gap-2 items-baseline" style={{ width: 'calc(100% - 48px)' }}>
                   <h2 className="text-lg font-semibold text-gray-900 truncate">
                     {group.title}
                   </h2>
@@ -439,7 +439,7 @@ export default function Collection() {
                 </div>
                 <motion.div
                   animate={{ rotate: expandedGroups.has(group.id) ? 180 : 0 }}
-                  className={`p-2 rounded-xl flex-shrink-0 ml-4 ${
+                  className={`p-2 rounded-xl flex-shrink-0 ${
                     expandedGroups.has(group.id) 
                       ? "bg-gradient-to-r from-indigo-600 to-blue-600" 
                       : "bg-gray-50"
