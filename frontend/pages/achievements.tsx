@@ -279,8 +279,8 @@ export default function Achievements() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="max-w-lg mx-auto px-4 py-6 mt-[220px] mb-24 flex-1 overflow-y-auto">
+ {/* Main Content */}
+      <div className="max-w-lg min-w-lg mx-auto px-4 py-6 mt-[220px] mb-24 flex-1 overflow-y-auto">
         {isLoading && achievements.length === 0 ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin text-indigo-600">

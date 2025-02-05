@@ -26,7 +26,7 @@ const defaultAchievements = [
   {
     type: 'daily',
     name: 'Daily Spotter',
-    description: 'Spot 2 planes today aviation tracking challenge hidden text hidden text hidden text',
+    description: 'Spot 2 planes today',
     target: 2,
     progress: 0,
     completed: false,
