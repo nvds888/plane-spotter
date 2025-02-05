@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState, useEffect, JSX } from 'react';
 import { Award, Plane, Calendar, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -119,14 +121,46 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
   const getIcon = (iconName: Badge['icon']): JSX.Element => {
     switch (iconName) {
       case 'Plane':
-        return <Plane size={24} />;
+        return <Plane size={32} />;
       case 'Calendar':
-        return <Calendar size={24} />;
+        return <Calendar size={32} />;
       case 'Award':
-        return <Award size={24} />;
+        return <Award size={32} />;
       default:
-        return <Award size={24} />;
+        return <Award size={32} />;
     }
+  };
+
+  const renderBadgeRow = (badges: Badge[], startIndex: number) => {
+    const rowBadges = badges.slice(startIndex, startIndex + 3);
+    const placeholdersNeeded = 3 - rowBadges.length;
+
+    return (
+      <>
+        {rowBadges.map((badge: Badge) => (
+          <div 
+            key={badge.id} 
+            className={`aspect-square bg-gradient-to-r ${getRarityColor(badge.rarity)} rounded-xl p-6 flex flex-col items-center justify-center group cursor-pointer relative`}
+          >
+            <div className="text-white mb-2">
+              {getIcon(badge.icon)}
+            </div>
+            <div className="absolute inset-0 bg-black/80 text-white text-xs p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center">
+              <p className="font-medium">{badge.name}</p>
+              <p className="text-white/80 text-[10px] mt-1">{badge.description}</p>
+            </div>
+          </div>
+        ))}
+        {[...Array(placeholdersNeeded)].map((_, i) => (
+          <div 
+            key={`placeholder-${startIndex}-${i}`} 
+            className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center"
+          >
+            <Award size={32} className="text-gray-300" />
+          </div>
+        ))}
+      </>
+    );
   };
 
   if (!isOpen) return null;
@@ -153,7 +187,7 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 truncate max-w-[250px]">
-                      @{profileData.username} Profile
+                      @{profileData.username}
                     </h2>
                     <div className="flex gap-4 text-sm text-gray-500 mb-1 mt-2">
                       <span>{profileData.stats.followers} followers</span>
@@ -249,30 +283,18 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Badges</h3>
                 <div className="overflow-y-auto max-h-48 pr-2">
+                  {/* First row with earned badges and placeholders */}
                   <div className="grid grid-cols-3 gap-4 mb-4">
-                    {profileData.badges.map((badge: Badge) => (
-                      <div 
-                        key={badge.id} 
-                        className={`aspect-square bg-gradient-to-r ${getRarityColor(badge.rarity)} rounded-xl p-4 flex flex-col items-center justify-center group cursor-pointer relative`}
-                      >
-                        <div className="text-white mb-1">
-                          {getIcon(badge.icon)}
-                        </div>
-                        <div className="absolute inset-0 bg-black/80 text-white text-xs p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center">
-                          <p className="font-medium">{badge.name}</p>
-                          <p className="text-white/80 text-[10px] mt-1">{badge.description}</p>
-                        </div>
-                      </div>
-                    ))}
+                    {renderBadgeRow(profileData.badges, 0)}
                   </div>
-                  {/* Two rows of placeholder badges */}
+                  {/* Additional placeholder rows */}
                   <div className="grid grid-cols-3 gap-4">
                     {[...Array(6)].map((_, i) => (
                       <div 
-                        key={`placeholder-${i}`} 
+                        key={`future-placeholder-${i}`} 
                         className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center"
                       >
-                        <Award size={24} className="text-gray-300" />
+                        <Award size={32} className="text-gray-300" />
                       </div>
                     ))}
                   </div>

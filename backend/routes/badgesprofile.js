@@ -5,7 +5,6 @@ const User = require('../models/User');
 const Spot = require('../models/Spot');
 
 // Helper function to get next reset date in UTC (reused from achievements.js)
-// Helper function to get next reset date in UTC
 function getNextResetDate(type) {
   const now = new Date();
   if (type === 'daily') {
@@ -15,31 +14,34 @@ function getNextResetDate(type) {
   }
 }
 
-// Modified updateStreak function to use getNextResetDate
+// Fixed updateStreak function
 async function updateStreak(user) {
   const now = new Date();
-  const lastResetDate = getNextResetDate('daily');
   const lastSpotDate = user.lastSpotDate ? new Date(user.lastSpotDate) : null;
 
   // If there's no last spot date, this is the first spot
   if (!lastSpotDate) {
     user.currentStreak = 1;
+    user.lastSpotDate = now;
     return;
   }
 
-  // Check if we've passed the reset time
-  if (now >= lastResetDate) {
-    // Check if the last spot was before the previous reset
-    const previousReset = new Date(lastResetDate);
-    previousReset.setDate(previousReset.getDate() - 1);
-    
-    if (lastSpotDate < previousReset) {
-      // More than a day has passed, reset streak
-      user.currentStreak = 1;
-    } else {
-      // Within the window, increment streak
-      user.currentStreak += 1;
-    }
+  // Convert dates to UTC midnight for accurate day comparison
+  const nowUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const lastSpotUTC = new Date(Date.UTC(lastSpotDate.getUTCFullYear(), lastSpotDate.getUTCMonth(), lastSpotDate.getUTCDate()));
+
+  // Calculate the difference in days
+  const diffDays = Math.floor((nowUTC - lastSpotUTC) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    // Same day, don't update streak
+    return;
+  } else if (diffDays === 1) {
+    // Next day, increment streak
+    user.currentStreak += 1;
+  } else {
+    // More than one day has passed, reset streak
+    user.currentStreak = 1;
   }
 
   // Update longest streak if current streak is longer
@@ -47,6 +49,7 @@ async function updateStreak(user) {
     user.longestStreak = user.currentStreak;
   }
 
+  // Update last spot date
   user.lastSpotDate = now;
 }
 
