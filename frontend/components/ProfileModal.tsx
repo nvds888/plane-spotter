@@ -18,6 +18,8 @@ interface ProfileStats {
   longestStreak: number;
   followers: number;
   following: number;
+  weeklyXP: number;
+  totalXP: number;
 }
 
 interface ProfileData {
@@ -34,10 +36,10 @@ interface ProfileModalProps {
 }
 
 interface FollowingUser {
-    _id: string;
-    username: string;
-    email: string;
-  }
+  _id: string;
+  username: string;
+  email: string;
+}
 
 const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Element | null => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -66,20 +68,20 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
 
   useEffect(() => {
     if (profileData && session?.user?.id) {
-        const checkFollowStatus = async () => {
-            try {
-              const response = await fetch(
-                `https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/following`
-              );
-              if (!response.ok) throw new Error('Failed to fetch following status');
-              const following: FollowingUser[] = await response.json();
-              setIsFollowing(following.some((followingUser: FollowingUser) => 
-                followingUser.username === profileData.username
-              ));
-            } catch (error) {
-              console.error('Error checking follow status:', error);
-            }
-          };
+      const checkFollowStatus = async () => {
+        try {
+          const response = await fetch(
+            `https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/following`
+          );
+          if (!response.ok) throw new Error('Failed to fetch following status');
+          const following: FollowingUser[] = await response.json();
+          setIsFollowing(following.some((followingUser: FollowingUser) => 
+            followingUser.username === profileData.username
+          ));
+        } catch (error) {
+          console.error('Error checking follow status:', error);
+        }
+      };
       checkFollowStatus();
     }
   }, [profileData, session?.user?.id]);
@@ -130,78 +132,90 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
             <div className="p-6 text-center">Loading...</div>
           ) : profileData ? (
             <>
-              {/* Header */}
+              {/* Header and Stats */}
               <div className="p-6 border-b border-gray-100">
-    <div className="flex justify-between items-start mb-4">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Profile</h2>
-        <p className="text-sm text-gray-500">
-          Member since {new Date(profileData.joinDate).toLocaleDateString()}
-        </p>
-      </div>
-      <div className="flex items-center gap-3">
-      {session?.user?.id !== userId && profileData && (
-  <button
-    onClick={async () => {
-      try {
-        const response = await fetch(
-          `https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/${isFollowing ? 'unfollow' : 'follow'}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: profileData.username })
-          }
-        );
-        if (!response.ok) throw new Error(`Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);
-        setIsFollowing(!isFollowing);
-      } catch (error) {
-        console.error('Error following/unfollowing user:', error);
-      }
-    }}
-    className={`px-4 py-2 ${
-      isFollowing 
-        ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
-        : 'bg-blue-500 text-white hover:bg-blue-600'
-    } rounded-xl transition-colors`}
-  >
-    {isFollowing ? 'Following' : 'Follow'}
-  </button>
-)}
-        <button 
-          onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-full"
-        >
-          <X size={20} className="text-gray-400" />
-        </button>
-      </div>
-    </div>
-                
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">@{profileData.username}&apos;s Profile</h2>
+                    <p className="text-sm text-gray-500">
+                      Member since {new Date(profileData.joinDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {session?.user?.id !== userId && profileData && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(
+                              `https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/${isFollowing ? 'unfollow' : 'follow'}`,
+                              {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ username: profileData.username })
+                              }
+                            );
+                            if (!response.ok) throw new Error(`Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);
+                            setIsFollowing(!isFollowing);
+                          } catch (error) {
+                            console.error('Error following/unfollowing user:', error);
+                          }
+                        }}
+                        className={`px-4 py-2 ${
+                          isFollowing 
+                            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        } rounded-xl transition-colors`}
+                      >
+                        {isFollowing ? 'Following' : 'Follow'}
+                      </button>
+                    )}
+                    <button 
+                      onClick={onClose}
+                      className="p-2 hover:bg-gray-100 rounded-full"
+                    >
+                      <X size={20} className="text-gray-400" />
+                    </button>
+                  </div>
+                </div>
 
-                {/* User Stats */}
-                <div className="grid grid-cols-2 gap-3 mt-6">
-                  <div className="bg-indigo-50 rounded-xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-indigo-100 rounded-lg">
-                        <Plane className="text-indigo-600" size={20} />
-                      </div>
+                {/* XP Stats */}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-300 rounded-full"></div>
+                      <span className="text-white/90 text-sm">Weekly XP</span>
+                    </div>
+                    <span className="text-xl font-bold text-white">{profileData.stats.weeklyXP}</span>
+                  </div>
+                  <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-300 rounded-full"></div>
+                      <span className="text-white/90 text-sm">Total XP</span>
+                    </div>
+                    <span className="text-xl font-bold text-white">{profileData.stats.totalXP}</span>
+                  </div>
+                </div>
+
+                {/* Compact Stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-indigo-50 rounded-xl p-3">
+                    <div className="flex items-center gap-2">
+                      <Plane className="text-indigo-600" size={16} />
                       <div>
-                        <p className="text-sm text-indigo-600">Total Spots</p>
-                        <p className="text-xl font-bold text-indigo-700">
+                        <p className="text-xs text-indigo-600">Total Spots</p>
+                        <p className="text-lg font-bold text-indigo-700">
                           {profileData.stats.totalSpots}
                         </p>
                       </div>
                     </div>
                   </div>
-
-                  <div className="bg-blue-50 rounded-xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <Calendar className="text-blue-600" size={20} />
-                      </div>
+                  <div className="bg-blue-50 rounded-xl p-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="text-blue-600" size={16} />
                       <div>
-                        <p className="text-sm text-blue-600">Current Streak</p>
-                        <p className="text-xl font-bold text-blue-700">
-                          {profileData.stats.currentStreak} days
+                        <p className="text-xs text-blue-600">Current Streak</p>
+                        <p className="text-lg font-bold text-blue-700">
+                          {profileData.stats.currentStreak}d
                         </p>
                       </div>
                     </div>
@@ -218,32 +232,31 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                 </div>
               </div>
 
-              {/* Badges */}
+              {/* Badges Grid */}
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Badges</h3>
-                <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-3">
                   {profileData.badges.map((badge: Badge) => (
-                    <div key={badge.id} className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl bg-gradient-to-r ${getRarityColor(badge.rarity)}`}>
-                        <div className="text-white">
-                          {getIcon(badge.icon)}
-                        </div>
+                    <div 
+                      key={badge.id} 
+                      className={`aspect-square bg-gradient-to-r ${getRarityColor(badge.rarity)} rounded-xl p-3 flex flex-col items-center justify-center group cursor-pointer relative`}
+                    >
+                      <div className="text-white mb-1">
+                        {getIcon(badge.icon)}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-gray-900">{badge.name}</h4>
-                          <span className={`text-xs px-2 py-1 rounded-full capitalize
-                            ${badge.rarity === 'legendary' ? 'bg-amber-100 text-amber-700' :
-                              badge.rarity === 'epic' ? 'bg-purple-100 text-purple-700' :
-                              'bg-blue-100 text-blue-700'}`}>
-                            {badge.rarity}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-1">{badge.description}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          Earned {new Date(badge.earnedAt).toLocaleDateString()}
-                        </p>
+                      <div className="absolute inset-0 bg-black/80 text-white text-xs p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center">
+                        <p className="font-medium">{badge.name}</p>
+                        <p className="text-white/80 text-[10px] mt-1">{badge.description}</p>
                       </div>
+                    </div>
+                  ))}
+                  {/* Placeholder badges */}
+                  {[...Array(8 - (profileData.badges.length || 0))].map((_, i) => (
+                    <div 
+                      key={`placeholder-${i}`} 
+                      className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center"
+                    >
+                      <Award size={20} className="text-gray-300" />
                     </div>
                   ))}
                 </div>
