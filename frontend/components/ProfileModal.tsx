@@ -18,8 +18,11 @@ interface ProfileStats {
   longestStreak: number;
   followers: number;
   following: number;
-  weeklyXP: number;
+}
+
+interface UserXP {
   totalXP: number;
+  weeklyXP: number;
 }
 
 interface ProfileData {
@@ -46,6 +49,7 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
   const [loading, setLoading] = useState<boolean>(true);
   const { data: session } = useSession();
   const [isFollowing, setIsFollowing] = useState<boolean>(false);
+  const [userXP, setUserXP] = useState<UserXP>({ totalXP: 0, weeklyXP: 0 });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -61,8 +65,21 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
       }
     };
 
+    const fetchUserXP = async () => {
+      if (!userId) return;
+      try {
+        const response = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${userId}/xp`);
+        if (!response.ok) throw new Error('Failed to fetch XP');
+        const data = await response.json();
+        setUserXP(data);
+      } catch (error) {
+        console.error('Error fetching XP:', error);
+      }
+    };
+
     if (isOpen && userId) {
       fetchProfile();
+      fetchUserXP();
     }
   }, [isOpen, userId]);
 
@@ -102,13 +119,13 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
   const getIcon = (iconName: Badge['icon']): JSX.Element => {
     switch (iconName) {
       case 'Plane':
-        return <Plane size={20} />;
+        return <Plane size={24} />;
       case 'Calendar':
-        return <Calendar size={20} />;
+        return <Calendar size={24} />;
       case 'Award':
-        return <Award size={20} />;
+        return <Award size={24} />;
       default:
-        return <Award size={20} />;
+        return <Award size={24} />;
     }
   };
 
@@ -132,11 +149,16 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
             <div className="p-6 text-center">Loading...</div>
           ) : profileData ? (
             <>
-              {/* Header and Stats */}
               <div className="p-6 border-b border-gray-100">
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">@{profileData.username}&apos;s Profile</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 truncate max-w-[250px]">
+                      @{profileData.username} Profile
+                    </h2>
+                    <div className="flex gap-4 text-sm text-gray-500 mb-1 mt-2">
+                      <span>{profileData.stats.followers} followers</span>
+                      <span>{profileData.stats.following} following</span>
+                    </div>
                     <p className="text-sm text-gray-500">
                       Member since {new Date(profileData.joinDate).toLocaleDateString()}
                     </p>
@@ -179,20 +201,20 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                 </div>
 
                 {/* XP Stats */}
-                <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="grid grid-cols-2 gap-3 mt-6 mb-3">
                   <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl p-3">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-blue-300 rounded-full"></div>
                       <span className="text-white/90 text-sm">Weekly XP</span>
                     </div>
-                    <span className="text-xl font-bold text-white">{profileData.stats.weeklyXP}</span>
+                    <span className="text-xl font-bold text-white">{userXP.weeklyXP}</span>
                   </div>
                   <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl p-3">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-blue-300 rounded-full"></div>
                       <span className="text-white/90 text-sm">Total XP</span>
                     </div>
-                    <span className="text-xl font-bold text-white">{profileData.stats.totalXP}</span>
+                    <span className="text-xl font-bold text-white">{userXP.totalXP}</span>
                   </div>
                 </div>
 
@@ -221,44 +243,39 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                     </div>
                   </div>
                 </div>
-
-                <div className="flex gap-4 mt-4">
-                  <button className="text-sm text-gray-500">
-                    {profileData.stats.followers} followers
-                  </button>
-                  <button className="text-sm text-gray-500">
-                    {profileData.stats.following} following
-                  </button>
-                </div>
               </div>
 
-              {/* Badges Grid */}
+              {/* Badges */}
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Badges</h3>
-                <div className="grid grid-cols-4 gap-3">
-                  {profileData.badges.map((badge: Badge) => (
-                    <div 
-                      key={badge.id} 
-                      className={`aspect-square bg-gradient-to-r ${getRarityColor(badge.rarity)} rounded-xl p-3 flex flex-col items-center justify-center group cursor-pointer relative`}
-                    >
-                      <div className="text-white mb-1">
-                        {getIcon(badge.icon)}
+                <div className="overflow-y-auto max-h-48 pr-2">
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    {profileData.badges.map((badge: Badge) => (
+                      <div 
+                        key={badge.id} 
+                        className={`aspect-square bg-gradient-to-r ${getRarityColor(badge.rarity)} rounded-xl p-4 flex flex-col items-center justify-center group cursor-pointer relative`}
+                      >
+                        <div className="text-white mb-1">
+                          {getIcon(badge.icon)}
+                        </div>
+                        <div className="absolute inset-0 bg-black/80 text-white text-xs p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center">
+                          <p className="font-medium">{badge.name}</p>
+                          <p className="text-white/80 text-[10px] mt-1">{badge.description}</p>
+                        </div>
                       </div>
-                      <div className="absolute inset-0 bg-black/80 text-white text-xs p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center">
-                        <p className="font-medium">{badge.name}</p>
-                        <p className="text-white/80 text-[10px] mt-1">{badge.description}</p>
+                    ))}
+                  </div>
+                  {/* Two rows of placeholder badges */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {[...Array(6)].map((_, i) => (
+                      <div 
+                        key={`placeholder-${i}`} 
+                        className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center"
+                      >
+                        <Award size={24} className="text-gray-300" />
                       </div>
-                    </div>
-                  ))}
-                  {/* Placeholder badges */}
-                  {[...Array(8 - (profileData.badges.length || 0))].map((_, i) => (
-                    <div 
-                      key={`placeholder-${i}`} 
-                      className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center"
-                    >
-                      <Award size={20} className="text-gray-300" />
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </>
