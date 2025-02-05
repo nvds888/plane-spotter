@@ -507,7 +507,6 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
               <div className="mb-6 overflow-hidden rounded-2xl bg-white/50 p-1">
   {currentGuessSpot && coords && (
     <Map
-      key={currentGuessSpot._id}
       center={[coords.latitude, coords.longitude]}
       spots={newSpots}
       highlightedSpot={currentGuessSpot}

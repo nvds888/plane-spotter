@@ -1,9 +1,9 @@
 "use client";
 
+import React, { useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { type LatLngExpression, LatLngBounds, DivIcon } from "leaflet";
-import { useEffect } from "react";
 import type { Spot } from "../types/types";
 
 // Auto-fit component
@@ -44,14 +44,17 @@ interface MapProps {
   highlightedSpot: Spot | null;
 }
 
-export default function Map({ center, spots, highlightedSpot }: MapProps) {
+const Map: React.FC<MapProps> = React.memo(({ center, spots, highlightedSpot }) => {
   // Collect all positions for bounds calculation
-  const allPositions: LatLngExpression[] = [center];
-  spots.forEach(spot => {
-    if (spot.flight?.lat && spot.flight?.lon) {
-      allPositions.push([spot.flight.lat, spot.flight.lon]);
-    }
-  });
+  const allPositions: LatLngExpression[] = useMemo(() => {
+    const positions: LatLngExpression[] = [center];
+    spots.forEach(spot => {
+      if (spot.flight?.lat && spot.flight?.lon) {
+        positions.push([spot.flight.lat, spot.flight.lon]);
+      }
+    });
+    return positions;
+  }, [center, spots]);
 
   // Add custom CSS for the plane icon
   useEffect(() => {
@@ -129,4 +132,8 @@ export default function Map({ center, spots, highlightedSpot }: MapProps) {
       })}
     </MapContainer>
   );
-}
+});
+
+Map.displayName = 'Map';
+
+export default Map;
