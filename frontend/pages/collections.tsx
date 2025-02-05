@@ -429,7 +429,7 @@ export default function Collection() {
   onClick={() => toggleGroup(group.id)}
   className="w-full p-4 flex items-center justify-between"
 >
-<div className="grid grid-cols-[1fr,auto] gap-2 items-baseline min-w-[440px] max-w-[440px]">
+<div className="grid grid-cols-[1fr,auto] gap-2 items-baseline min-w-[290px] max-w-[290px]">
     <h2 className="text-lg font-semibold text-gray-900 truncate">
       {group.title}
     </h2>
