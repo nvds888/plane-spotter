@@ -425,49 +425,49 @@ export default function Collection() {
           <div className="space-y-6">
             {groupedSpots.map((group) => (
               <div key={group.id} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm overflow-hidden">
-                <button
-  onClick={() => toggleGroup(group.id)}
-  className="w-full p-4 flex items-center justify-between"
->
-<div className="grid grid-cols-[1fr,auto] gap-2 items-baseline min-w-[290px] max-w-[290px]">
-    <h2 className="text-lg font-semibold text-gray-900 truncate">
-      {group.title}
-    </h2>
-    <p className="text-sm text-gray-500 whitespace-nowrap">
-      {group.count} plane{group.count !== 1 ? "s" : ""}
-    </p>
-  </div>
-  <motion.div
-    animate={{ rotate: expandedGroups.has(group.id) ? 180 : 0 }}
-    className={`p-2 rounded-xl flex-shrink-0 ml-4 ${
-      expandedGroups.has(group.id) 
-        ? "bg-gradient-to-r from-indigo-600 to-blue-600" 
-        : "bg-gray-50"
-    }`}
-  >
-    <ChevronDown className={`${
-      expandedGroups.has(group.id) ? "text-white" : "text-gray-400"
-    }`} />
-  </motion.div>
-</button>
-                
-                <AnimatePresence>
-                  {expandedGroups.has(group.id) && (
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: "auto" }}
-                      exit={{ height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="p-4 space-y-3 border-t border-gray-100">
-                        {group.spots.map((spot) => (
-                          <SpotCard key={spot._id} spot={spot} />
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <button
+                onClick={() => toggleGroup(group.id)}
+                className="w-full p-4 flex items-center justify-between"
+              >
+                <div className="w-full grid grid-cols-[1fr,auto] gap-2 items-baseline">
+                  <h2 className="text-lg font-semibold text-gray-900 truncate">
+                    {group.title}
+                  </h2>
+                  <p className="text-sm text-gray-500 whitespace-nowrap">
+                    {group.count} plane{group.count !== 1 ? "s" : ""}
+                  </p>
+                </div>
+                <motion.div
+                  animate={{ rotate: expandedGroups.has(group.id) ? 180 : 0 }}
+                  className={`p-2 rounded-xl flex-shrink-0 ml-4 ${
+                    expandedGroups.has(group.id) 
+                      ? "bg-gradient-to-r from-indigo-600 to-blue-600" 
+                      : "bg-gray-50"
+                  }`}
+                >
+                  <ChevronDown className={`${
+                    expandedGroups.has(group.id) ? "text-white" : "text-gray-400"
+                  }`} />
+                </motion.div>
+              </button>
+              
+              <AnimatePresence>
+                {expandedGroups.has(group.id) && (
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: "auto" }}
+                    exit={{ height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-4 space-y-3 border-t border-gray-100">
+                      {group.spots.map((spot) => (
+                        <SpotCard key={spot._id} spot={spot} />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             ))}
           </div>
         )}
