@@ -152,7 +152,7 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
         } catch (error) {
           console.error("Failed to fetch global spot:", error);
         }
-      }, 5000);
+      }, 8000);
   
       return () => clearInterval(interval);
     };
