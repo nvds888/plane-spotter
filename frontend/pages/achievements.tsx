@@ -78,8 +78,8 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
         </div>
       </div>
 
-      <div className="flex items-start gap-4 min-h-[120px]"> {/* Added min-height */}
-        <div className={`p-3 rounded-xl flex-shrink-0 ${
+      <div className="flex items-start gap-4">
+        <div className={`p-3 rounded-xl ${
           achievement.completed
             ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
             : achievement.type === 'daily'
@@ -95,9 +95,9 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
           )}
         </div>
         
-        <div className="flex-1 min-w-0"> {/* Added min-w-0 to prevent overflow */}
-          <h3 className="font-semibold text-gray-900 line-clamp-2">{achievement.name}</h3>
-          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{achievement.description}</p>
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900">{achievement.name}</h3>
+          <p className="text-sm text-gray-500 mt-1">{achievement.description}</p>
           
           <div className="mt-4">
             <div className="flex justify-between items-center mb-2">
