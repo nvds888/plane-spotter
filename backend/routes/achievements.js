@@ -26,7 +26,7 @@ const defaultAchievements = [
   {
     type: 'daily',
     name: 'Daily Spotter',
-    description: 'Spot 2 planes today',
+    description: 'Spot 2 planes today for XP',
     target: 2,
     progress: 0,
     completed: false,
