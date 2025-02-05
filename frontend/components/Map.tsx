@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { type LatLngExpression, LatLngBounds, DivIcon } from "leaflet";
+import { useEffect } from "react";
 import type { Spot } from "../types/types";
 
 // Auto-fit component
@@ -39,22 +39,19 @@ const createPlaneIcon = (direction: number = 0, isHighlighted: boolean = false) 
 };
 
 interface MapProps {
-  center: [number, number];
+  center: LatLngExpression;
   spots: Spot[];
   highlightedSpot: Spot | null;
 }
 
-const Map: React.FC<MapProps> = React.memo(({ center, spots, highlightedSpot }) => {
+export default function Map({ center, spots, highlightedSpot }: MapProps) {
   // Collect all positions for bounds calculation
-  const allPositions: LatLngExpression[] = React.useMemo(() => {
-    const positions: LatLngExpression[] = [center];
-    spots.forEach(spot => {
-      if (spot.flight?.lat && spot.flight?.lon) {
-        positions.push([spot.flight.lat, spot.flight.lon]);
-      }
-    });
-    return positions;
-  }, [center, spots]);
+  const allPositions: LatLngExpression[] = [center];
+  spots.forEach(spot => {
+    if (spot.flight?.lat && spot.flight?.lon) {
+      allPositions.push([spot.flight.lat, spot.flight.lon]);
+    }
+  });
 
   // Add custom CSS for the plane icon
   useEffect(() => {
@@ -132,16 +129,4 @@ const Map: React.FC<MapProps> = React.memo(({ center, spots, highlightedSpot }) 
       })}
     </MapContainer>
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison function to prevent re-renders
-  return (
-    prevProps.center[0] === nextProps.center[0] &&
-    prevProps.center[1] === nextProps.center[1] &&
-    prevProps.spots.length === nextProps.spots.length &&
-    prevProps.highlightedSpot?._id === nextProps.highlightedSpot?._id
-  );
-});
-
-Map.displayName = 'Map';
-
-export default Map;
+}
