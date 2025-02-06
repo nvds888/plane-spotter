@@ -5,6 +5,7 @@ const { getBestAirlineName } = require('../utils/airlineMapping');
 const axios = require('axios');
 
 const ANALYSIS_RADIUS = 200;
+const ANALYSIS_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 function calculateBoundingBox(lat, lon, distance) {
   const latDelta = distance / 111.32;
@@ -18,14 +19,69 @@ function calculateBoundingBox(lat, lon, distance) {
   };
 }
 
+async function reverseGeocode(lat, lon) {
+  try {
+    const response = await axios.get(
+      `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${process.env.OPENCAGE_API_KEY}&language=en`
+    );
+
+    if (response.data.results && response.data.results.length > 0) {
+      const result = response.data.results[0];
+      return {
+        address: result.formatted,
+        city: result.components.city || result.components.town || result.components.village,
+        country: result.components.country
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return null;
+  }
+}
+
+// Get saved location stats first
+router.get('/:userId', async (req, res) => {
+  try {
+    const stats = await LocationStats.find({ userId: req.params.userId })
+      .sort({ lastUpdated: -1 })
+      .limit(1);
+    
+    res.json(stats[0] || null);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch location stats' });
+  }
+});
+
 router.post('/analyze', async (req, res) => {
   const { userId, lat, lon } = req.body;
   const parsedLat = parseFloat(lat);
   const parsedLon = parseFloat(lon);
 
   try {
+    // Check if user has analyzed recently
+    const lastAnalysis = await LocationStats.findOne({ userId })
+      .sort({ lastAnalysis: -1 });
+
+    if (lastAnalysis) {
+      const timeSinceLastAnalysis = Date.now() - lastAnalysis.lastAnalysis.getTime();
+      if (timeSinceLastAnalysis < ANALYSIS_COOLDOWN) {
+        const hoursRemaining = Math.ceil((ANALYSIS_COOLDOWN - timeSinceLastAnalysis) / (1000 * 60 * 60));
+        return res.status(429).json({ 
+          error: 'Rate limit exceeded',
+          message: `Please wait ${hoursRemaining} hours before analyzing again`,
+          nextAnalysisTime: new Date(lastAnalysis.lastAnalysis.getTime() + ANALYSIS_COOLDOWN)
+        });
+      }
+    }
+
+    // Get location info
+    const locationInfo = await reverseGeocode(parsedLat, parsedLon);
+    
+    // Calculate bounding box for 200km radius
     const bbox = calculateBoundingBox(parsedLat, parsedLon, ANALYSIS_RADIUS);
     
+    // Make API call to get current flights
     const config = {
       method: 'get',
       url: `https://fr24api.flightradar24.com/api/live/flight-positions/full?bounds=${bbox.north},${bbox.south},${bbox.west},${bbox.east}`,
@@ -36,12 +92,10 @@ router.post('/analyze', async (req, res) => {
       }
     };
 
-    console.log('Making API request for flight analysis...');
     const response = await axios.request(config);
     const flights = response.data.data || [];
-    console.log(`Found ${flights.length} flights in the area`);
 
-    // Count frequencies
+    // Process frequencies
     const airlineFrequency = {};
     const aircraftTypeFrequency = {};
 
@@ -56,7 +110,6 @@ router.post('/analyze', async (req, res) => {
       }
     });
 
-    // Get top 5 for each category
     const topAirlines = Object.entries(airlineFrequency)
       .sort(([,a], [,b]) => b - a)
       .slice(0, 5)
@@ -67,7 +120,7 @@ router.post('/analyze', async (req, res) => {
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
 
-    // Save or update location stats
+    // Save analysis
     const locationStats = await LocationStats.findOneAndUpdate(
       {
         userId,
@@ -78,7 +131,13 @@ router.post('/analyze', async (req, res) => {
         $set: {
           topAirlines,
           topAircraftTypes,
-          lastUpdated: new Date()
+          lastAnalysis: new Date(),
+          lastUpdated: new Date(),
+          location: {
+            latitude: parsedLat,
+            longitude: parsedLon,
+            ...locationInfo
+          }
         }
       },
       { upsert: true, new: true }
@@ -95,18 +154,6 @@ router.post('/analyze', async (req, res) => {
   } catch (error) {
     console.error('Error analyzing location stats:', error);
     res.status(500).json({ error: 'Failed to analyze location stats' });
-  }
-});
-
-router.get('/:userId', async (req, res) => {
-  try {
-    const stats = await LocationStats.find({ userId: req.params.userId })
-      .sort({ lastUpdated: -1 })
-      .limit(1);
-    
-    res.json(stats[0] || null);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch location stats' });
   }
 });
 

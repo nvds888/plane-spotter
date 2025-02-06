@@ -13,14 +13,17 @@ const locationStatsSchema = new mongoose.Schema({
   },
   location: {
     latitude: { type: Number, required: true },
-    longitude: { type: Number, required: true }
+    longitude: { type: Number, required: true },
+    address: { type: String },
+    city: { type: String },
+    country: { type: String }
   },
   topAirlines: [frequencyItemSchema],
   topAircraftTypes: [frequencyItemSchema],
+  lastAnalysis: { type: Date, default: Date.now },
   lastUpdated: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-// Index for querying by userId and location
 locationStatsSchema.index({ userId: 1, 'location.latitude': 1, 'location.longitude': 1 });
 
 module.exports = mongoose.model('LocationStats', locationStatsSchema);
