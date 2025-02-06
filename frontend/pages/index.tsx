@@ -8,6 +8,7 @@ import dynamic from "next/dynamic"
 import { motion, AnimatePresence } from "framer-motion"
 import { Trophy, House, BookOpen, Users, MapPin, Plane } from "lucide-react"
 import ProfileModal from "../components/ProfileModal"
+import LocationStatsModal from "../components/LocationStatsModal"
 
 interface AirlineOption {
   code: string;
@@ -92,6 +93,7 @@ const [airlineOptions, setAirlineOptions] = useState<AirlineOption[]>([]);
 const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]>([]);
 const [showProfileModal, setShowProfileModal] = useState(false)
 const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
+const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
 
 
   const { coords, isGeolocationAvailable } = useGeolocated({
@@ -400,6 +402,23 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
             </p>
           </div>
         )}
+
+        {/* Add this right after the spot button div in the main content section */}
+{isClient && isGeolocationAvailable && (
+  <div className="fixed right-4 top-1/2 -translate-y-1/2 z-20">
+    <motion.button
+      onClick={() => setShowLocationStatsModal(true)}
+      className="bg-white shadow-lg rounded-l-xl p-3 hover:bg-gray-50 transition-colors group relative"
+      whileHover={{ x: -5 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      <div className="absolute right-full top-1/2 -translate-y-1/2 bg-white px-2 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity mr-2 whitespace-nowrap">
+        <span className="text-xs text-gray-600">Analyze Area</span>
+      </div>
+      <MapPin className="w-5 h-5 text-indigo-600" />
+    </motion.button>
+  </div>
+)}
         
         {/* Status Text */}
         <div className="mt-8 text-center z-10">
@@ -733,6 +752,15 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
         onClose={() => setShowProfileModal(false)}
         userId={session.user.id}
       />
+
+<LocationStatsModal 
+  isOpen={showLocationStatsModal}
+  onClose={() => setShowLocationStatsModal(false)}
+  currentLocation={coords ? {
+    latitude: coords.latitude,
+    longitude: coords.longitude
+  } : null}
+/>
     </div>
   )
 }

@@ -7,6 +7,7 @@ const userRoutes = require('./routes/User');
 const achievementsRouter = require('./routes/achievements');
 const friendRoutes = require('./routes/friends');
 const badgesprofileRoutes = require('./routes/badgesprofile');
+const locationStatsRoutes = require('./routes/locationStats');
 require('dotenv').config();
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(express.json());
 
 app.use('/api/user', friendRoutes);
 
+app.use('/api/location-stats', locationStatsRoutes);
 
 app.use('/api/achievements', achievementsRouter);
 
