@@ -4,7 +4,6 @@ const LocationStats = require('../models/LocationStats');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const axios = require('axios');
 
-// Search radius for analysis (200km)
 const ANALYSIS_RADIUS = 200;
 
 function calculateBoundingBox(lat, lon, distance) {
@@ -25,10 +24,8 @@ router.post('/analyze', async (req, res) => {
   const parsedLon = parseFloat(lon);
 
   try {
-    // Calculate bounding box for 200km radius
     const bbox = calculateBoundingBox(parsedLat, parsedLon, ANALYSIS_RADIUS);
     
-    // Make API call to get current flights in the area
     const config = {
       method: 'get',
       url: `https://fr24api.flightradar24.com/api/live/flight-positions/full?bounds=${bbox.north},${bbox.south},${bbox.west},${bbox.east}`,
@@ -49,13 +46,11 @@ router.post('/analyze', async (req, res) => {
     const aircraftTypeFrequency = {};
 
     flights.forEach(flight => {
-      // Count airlines using proper name mapping
       const airline = getBestAirlineName(flight.operating_as, flight.painted_as);
       if (airline && airline !== 'Unknown') {
         airlineFrequency[airline] = (airlineFrequency[airline] || 0) + 1;
       }
 
-      // Count aircraft types (exclude empty or invalid types)
       if (flight.type && flight.type !== 'N/A' && flight.type.length > 2) {
         aircraftTypeFrequency[flight.type] = (aircraftTypeFrequency[flight.type] || 0) + 1;
       }
@@ -65,20 +60,12 @@ router.post('/analyze', async (req, res) => {
     const topAirlines = Object.entries(airlineFrequency)
       .sort(([,a], [,b]) => b - a)
       .slice(0, 5)
-      .map(([name, count]) => ({ 
-        name, 
-        count,
-        percentage: Math.round((count / flights.length) * 100)
-      }));
+      .map(([name, count]) => ({ name, count }));
 
     const topAircraftTypes = Object.entries(aircraftTypeFrequency)
       .sort(([,a], [,b]) => b - a)
       .slice(0, 5)
-      .map(([name, count]) => ({ 
-        name, 
-        count,
-        percentage: Math.round((count / flights.length) * 100)
-      }));
+      .map(([name, count]) => ({ name, count }));
 
     // Save or update location stats
     const locationStats = await LocationStats.findOneAndUpdate(
@@ -97,14 +84,12 @@ router.post('/analyze', async (req, res) => {
       { upsert: true, new: true }
     );
 
-    // Return response with additional metadata
     res.json({
       ...locationStats.toObject(),
       metadata: {
         totalFlightsAnalyzed: flights.length,
         timeOfAnalysis: new Date().toISOString(),
-        radiusKm: ANALYSIS_RADIUS,
-        bounds: bbox
+        radiusKm: ANALYSIS_RADIUS
       }
     });
   } catch (error) {
@@ -113,7 +98,6 @@ router.post('/analyze', async (req, res) => {
   }
 });
 
-// Get saved location stats
 router.get('/:userId', async (req, res) => {
   try {
     const stats = await LocationStats.find({ userId: req.params.userId })
