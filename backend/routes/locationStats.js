@@ -3,9 +3,23 @@ const router = express.Router();
 const LocationStats = require('../models/LocationStats');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const axios = require('axios');
+const NodeGeocoder = require('node-geocoder');
 
 const ANALYSIS_RADIUS = 200;
 const ANALYSIS_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// Initialize geocoder (same as friends route)
+const geocoder = NodeGeocoder({
+  provider: 'openstreetmap',
+  httpAdapter: 'fetch',
+  apiVersion: '2.5',
+  formatter: null,
+  timeout: 5000,
+  https: true,
+  headers: {
+    'User-Agent': 'PlaneSpotter/1.0 (your@email.com)',
+  }
+});
 
 function calculateBoundingBox(lat, lon, distance) {
   const latDelta = distance / 111.32;
@@ -19,20 +33,7 @@ function calculateBoundingBox(lat, lon, distance) {
   };
 }
 
-async function getLocationInfo(lat, lon) {
-  try {
-    const response = await axios.get(
-      `https://data.vatsim.net/v3/geo/position/${lat}/${lon}`
-    );
-    return {
-      city: response.data.city,
-      country: response.data.country
-    };
-  } catch (error) {
-    console.error('Error getting location info:', error);
-    return null;
-  }
-}
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 router.post('/analyze', async (req, res) => {
   const { userId, lat, lon } = req.body;
@@ -56,8 +57,22 @@ router.post('/analyze', async (req, res) => {
       }
     }
 
-    // Get location info using the same API as friends route
-    const locationInfo = await getLocationInfo(parsedLat, parsedLon);
+    // Get location info using OpenStreetMap geocoder
+    await delay(1000); // Same delay as friends route to avoid rate limiting
+    let locationInfo = { city: 'Unknown City', country: 'Unknown Location' };
+    
+    try {
+      const location = await geocoder.reverse({ lat: parsedLat, lon: parsedLon });
+      if (location && location[0]) {
+        locationInfo = {
+          city: location[0].city || 'Unknown City',
+          country: location[0].country || 'Unknown Location'
+        };
+      }
+    } catch (geocodeError) {
+      console.error('Geocoding error:', geocodeError);
+      // Continue with default location info
+    }
     
     // Get flights data
     const bbox = calculateBoundingBox(parsedLat, parsedLon, ANALYSIS_RADIUS);
@@ -116,8 +131,8 @@ router.post('/analyze', async (req, res) => {
           location: {
             latitude: parsedLat,
             longitude: parsedLon,
-            city: locationInfo?.city || null,
-            country: locationInfo?.country || null
+            city: locationInfo.city,
+            country: locationInfo.country
           }
         }
       },
