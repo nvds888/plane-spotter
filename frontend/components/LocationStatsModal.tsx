@@ -19,7 +19,7 @@ interface LocationStats {
   topAircraftTypes: FrequencyItem[];
   metadata?: {
     totalFlightsAnalyzed: number;
-    timeWindowStart: string;
+    timeOfAnalysis: string;
     radiusKm: number;
   };
 }
@@ -40,15 +40,10 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
   const { data: session } = useSession();
 
   const analyzeFlight = async (): Promise<void> => {
-    if (!currentLocation || !session?.user?.id) {
-      console.log('Missing required data:', { currentLocation, userId: session?.user?.id });
-      return;
-    }
+    if (!currentLocation || !session?.user?.id) return;
     
     setLoading(true);
     try {
-      console.log('Starting analysis with:', { currentLocation, userId: session.user.id });
-      
       const response = await fetch('https://plane-spotter-backend.onrender.com/api/location-stats/analyze', {
         method: 'POST',
         headers: {
@@ -61,12 +56,8 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to analyze location');
-      }
-      
+      if (!response.ok) throw new Error('Failed to analyze location');
       const data = await response.json();
-      console.log('Received stats:', data);
       setStats(data);
     } catch (error) {
       console.error('Error analyzing location:', error);
@@ -86,16 +77,17 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
         exit={{ opacity: 0 }}
       >
         <motion.div
-          className="bg-white rounded-2xl max-w-lg w-full"
+          className="bg-white rounded-2xl max-w-md w-full"
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 20 }}
         >
-          <div className="p-6 border-b border-gray-100">
+          <div className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Location Analysis
-              </h2>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Area Analysis</h2>
+                <p className="text-sm text-gray-500 mt-1">Most common in your area</p>
+              </div>
               <button 
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded-full"
@@ -105,87 +97,64 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
             </div>
 
             {!stats ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">
-                  Analyze flights in your area to see which airlines and aircraft types are most common.
-                </p>
+              <div className="py-8">
                 <button
-                  onClick={() => {
-                    console.log('Analyze button clicked');
-                    analyzeFlight();
-                  }}
+                  onClick={analyzeFlight}
                   disabled={loading}
-                  className="bg-blue-500 text-white px-6 py-2 rounded-xl hover:bg-blue-600 transition-colors disabled:bg-blue-300 flex items-center justify-center gap-2 mx-auto"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
-                      <Loader2 size={20} className="animate-spin" />
-                      Analyzing...
+                      <Loader2 size={18} className="animate-spin" />
+                      <span>Analyzing Area...</span>
                     </>
                   ) : (
                     <>
-                      <Plane size={20} />
-                      Analyze Area
+                      <Plane size={18} />
+                      <span>Analyze Area</span>
                     </>
                   )}
                 </button>
               </div>
             ) : (
-              <div className="py-4">
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-sm text-gray-500">
-                    Last updated: {new Date(stats.lastUpdated).toLocaleString()}
-                  </p>
+              <div>
+                <div className="flex justify-end mb-4">
                   <button
                     onClick={analyzeFlight}
                     disabled={loading}
-                    className="text-blue-500 hover:text-blue-600 flex items-center gap-1 text-sm"
+                    className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-sm"
                   >
-                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                    <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                     Refresh
                   </button>
                 </div>
 
-                {stats.metadata && (
-                  <div className="mb-4 p-4 bg-blue-50 rounded-xl">
-                    <p className="text-sm text-blue-600">
-                      Analyzed {stats.metadata.totalFlightsAnalyzed} flights within {stats.metadata.radiusKm}km radius
-                    </p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Top Airlines */}
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                      Top Airlines
-                    </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Airlines */}
+                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-indigo-900 mb-3">Top Airlines</h3>
                     <div className="space-y-2">
-                      {stats.topAirlines.map((airline: FrequencyItem) => (
+                      {stats.topAirlines.map((airline) => (
                         <div 
                           key={airline.name}
-                          className="flex justify-between items-center bg-white p-3 rounded-lg"
+                          className="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg text-sm"
                         >
-                          <span className="font-medium">{airline.name}</span>
-                          <span className="text-gray-500">{airline.count} flights</span>
+                          {airline.name}
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Top Aircraft Types */}
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                      Top Aircraft Types
-                    </h3>
+                  {/* Aircraft Types */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-indigo-900 mb-3">Top Aircraft</h3>
                     <div className="space-y-2">
-                      {stats.topAircraftTypes.map((aircraft: FrequencyItem) => (
+                      {stats.topAircraftTypes.map((aircraft) => (
                         <div 
                           key={aircraft.name}
-                          className="flex justify-between items-center bg-white p-3 rounded-lg"
+                          className="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg text-sm"
                         >
-                          <span className="font-medium">{aircraft.name}</span>
-                          <span className="text-gray-500">{aircraft.count} flights</span>
+                          {aircraft.name}
                         </div>
                       ))}
                     </div>
