@@ -86,7 +86,7 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Area Analysis</h2>
-                <p className="text-sm text-gray-500 mt-1">Most common in your area</p>
+                <p className="text-sm text-gray-500 mt-1">Current aircraft traffic patterns</p>
               </div>
               <button 
                 onClick={onClose}
@@ -129,32 +129,46 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   {/* Airlines */}
-                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-4">
-                    <h3 className="text-sm font-semibold text-indigo-900 mb-3">Top Airlines</h3>
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900">
+                      Most Frequent Airlines
+                    </h3>
                     <div className="space-y-2">
-                      {stats.topAirlines.map((airline) => (
+                      {stats.topAirlines.map((airline, index) => (
                         <div 
                           key={airline.name}
-                          className="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg text-sm"
+                          className="bg-gradient-to-r from-indigo-50 to-blue-50 px-3 py-2 rounded-lg h-10 flex items-center"
                         >
-                          {airline.name}
+                          <span className="w-6 text-indigo-600 font-medium">
+                            {index + 1}.
+                          </span>
+                          <span className="text-sm text-gray-900 truncate">
+                            {airline.name}
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Aircraft Types */}
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4">
-                    <h3 className="text-sm font-semibold text-indigo-900 mb-3">Top Aircraft</h3>
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900">
+                      Most Frequent Aircraft
+                    </h3>
                     <div className="space-y-2">
-                      {stats.topAircraftTypes.map((aircraft) => (
+                      {stats.topAircraftTypes.map((aircraft, index) => (
                         <div 
                           key={aircraft.name}
-                          className="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg text-sm"
+                          className="bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-2 rounded-lg h-10 flex items-center"
                         >
-                          {aircraft.name}
+                          <span className="w-6 text-indigo-600 font-medium">
+                            {index + 1}.
+                          </span>
+                          <span className="text-sm text-gray-900 truncate">
+                            {aircraft.name}
+                          </span>
                         </div>
                       ))}
                     </div>
