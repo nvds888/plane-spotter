@@ -17,6 +17,11 @@ interface LocationStats {
   lastUpdated: string;
   topAirlines: FrequencyItem[];
   topAircraftTypes: FrequencyItem[];
+  metadata?: {
+    totalFlightsAnalyzed: number;
+    timeWindowStart: string;
+    radiusKm: number;
+  };
 }
 
 interface LocationStatsModalProps {
@@ -35,10 +40,15 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
   const { data: session } = useSession();
 
   const analyzeFlight = async (): Promise<void> => {
-    if (!currentLocation || !session?.user?.id) return;
+    if (!currentLocation || !session?.user?.id) {
+      console.log('Missing required data:', { currentLocation, userId: session?.user?.id });
+      return;
+    }
     
     setLoading(true);
     try {
+      console.log('Starting analysis with:', { currentLocation, userId: session.user.id });
+      
       const response = await fetch('https://plane-spotter-backend.onrender.com/api/location-stats/analyze', {
         method: 'POST',
         headers: {
@@ -51,8 +61,12 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
         })
       });
 
-      if (!response.ok) throw new Error('Failed to analyze location');
-      const data: LocationStats = await response.json();
+      if (!response.ok) {
+        throw new Error('Failed to analyze location');
+      }
+      
+      const data = await response.json();
+      console.log('Received stats:', data);
       setStats(data);
     } catch (error) {
       console.error('Error analyzing location:', error);
@@ -96,7 +110,10 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
                   Analyze flights in your area to see which airlines and aircraft types are most common.
                 </p>
                 <button
-                  onClick={analyzeFlight}
+                  onClick={() => {
+                    console.log('Analyze button clicked');
+                    analyzeFlight();
+                  }}
                   disabled={loading}
                   className="bg-blue-500 text-white px-6 py-2 rounded-xl hover:bg-blue-600 transition-colors disabled:bg-blue-300 flex items-center justify-center gap-2 mx-auto"
                 >
@@ -128,6 +145,14 @@ const LocationStatsModal: React.FC<LocationStatsModalProps> = ({
                     Refresh
                   </button>
                 </div>
+
+                {stats.metadata && (
+                  <div className="mb-4 p-4 bg-blue-50 rounded-xl">
+                    <p className="text-sm text-blue-600">
+                      Analyzed {stats.metadata.totalFlightsAnalyzed} flights within {stats.metadata.radiusKm}km radius
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Top Airlines */}
