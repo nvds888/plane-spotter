@@ -19,39 +19,20 @@ function calculateBoundingBox(lat, lon, distance) {
   };
 }
 
-async function reverseGeocode(lat, lon) {
+async function getLocationInfo(lat, lon) {
   try {
     const response = await axios.get(
-      `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${process.env.OPENCAGE_API_KEY}&language=en`
+      `https://data.vatsim.net/v3/geo/position/${lat}/${lon}`
     );
-
-    if (response.data.results && response.data.results.length > 0) {
-      const result = response.data.results[0];
-      return {
-        address: result.formatted,
-        city: result.components.city || result.components.town || result.components.village,
-        country: result.components.country
-      };
-    }
-    return null;
+    return {
+      city: response.data.city,
+      country: response.data.country
+    };
   } catch (error) {
-    console.error('Geocoding error:', error);
+    console.error('Error getting location info:', error);
     return null;
   }
 }
-
-// Get saved location stats first
-router.get('/:userId', async (req, res) => {
-  try {
-    const stats = await LocationStats.find({ userId: req.params.userId })
-      .sort({ lastUpdated: -1 })
-      .limit(1);
-    
-    res.json(stats[0] || null);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch location stats' });
-  }
-});
 
 router.post('/analyze', async (req, res) => {
   const { userId, lat, lon } = req.body;
@@ -75,13 +56,12 @@ router.post('/analyze', async (req, res) => {
       }
     }
 
-    // Get location info
-    const locationInfo = await reverseGeocode(parsedLat, parsedLon);
+    // Get location info using the same API as friends route
+    const locationInfo = await getLocationInfo(parsedLat, parsedLon);
     
-    // Calculate bounding box for 200km radius
+    // Get flights data
     const bbox = calculateBoundingBox(parsedLat, parsedLon, ANALYSIS_RADIUS);
     
-    // Make API call to get current flights
     const config = {
       method: 'get',
       url: `https://fr24api.flightradar24.com/api/live/flight-positions/full?bounds=${bbox.north},${bbox.south},${bbox.west},${bbox.east}`,
@@ -120,7 +100,7 @@ router.post('/analyze', async (req, res) => {
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
 
-    // Save analysis
+    // Save analysis with location info
     const locationStats = await LocationStats.findOneAndUpdate(
       {
         userId,
@@ -136,7 +116,8 @@ router.post('/analyze', async (req, res) => {
           location: {
             latitude: parsedLat,
             longitude: parsedLon,
-            ...locationInfo
+            city: locationInfo?.city || null,
+            country: locationInfo?.country || null
           }
         }
       },
@@ -154,6 +135,18 @@ router.post('/analyze', async (req, res) => {
   } catch (error) {
     console.error('Error analyzing location stats:', error);
     res.status(500).json({ error: 'Failed to analyze location stats' });
+  }
+});
+
+router.get('/:userId', async (req, res) => {
+  try {
+    const stats = await LocationStats.find({ userId: req.params.userId })
+      .sort({ lastUpdated: -1 })
+      .limit(1);
+    
+    res.json(stats[0] || null);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch location stats' });
   }
 });
 
