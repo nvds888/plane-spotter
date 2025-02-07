@@ -2,6 +2,43 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const { spawn } = require('child_process');
+const path = require('path');
+
+// Helper function to create Algorand wallet
+const createAlgorandWallet = () => {
+  return new Promise((resolve, reject) => {
+    const pythonProcess = spawn('python3', [path.join(__dirname, '../scripts/create_wallet.py')]);
+    
+    let result = '';
+    
+    pythonProcess.stdout.on('data', (data) => {
+      result += data.toString();
+    });
+    
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Python Error: ${data}`);
+    });
+    
+    pythonProcess.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error('Failed to create Algorand wallet'));
+        return;
+      }
+      
+      try {
+        const walletData = JSON.parse(result);
+        if (!walletData.success) {
+          reject(new Error(walletData.error || 'Failed to create Algorand wallet'));
+          return;
+        }
+        resolve(walletData.address);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+};
 
 // Register a new user
 router.post('/register', async (req, res) => {
@@ -40,8 +77,18 @@ router.post('/register', async (req, res) => {
           error: 'Email already exists'
         });
       }
+
+      // Create Algorand wallet
+      const algorandAddress = await createAlgorandWallet();
   
-      const user = await User.create({ username, email, password });
+      // Create user with Algorand address
+      const user = await User.create({ 
+        username, 
+        email, 
+        password,
+        algorandAddress 
+      });
+
       res.status(201).json({
         success: true,
         user: {
@@ -49,6 +96,7 @@ router.post('/register', async (req, res) => {
           username: user.username,
           email: user.email,
           role: user.role || 'user',
+          algorandAddress: user.algorandAddress,
           createdAt: user.createdAt
         },
       });
@@ -60,59 +108,3 @@ router.post('/register', async (req, res) => {
       });
     }
 });
-
-// Login user
-router.post('/login', async (req, res) => {
-    try {
-      const { login, password } = req.body; // login can be email or username
-
-      if (!login || !password) {
-        return res.status(400).json({
-          success: false,
-          error: 'Login credentials and password are required'
-        });
-      }
-
-      // Find user by email or username
-      const user = await User.findOne({
-        $or: [
-          { email: login },
-          { username: login }
-        ]
-      }).select('+password');
-
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid credentials'
-        });
-      }
-  
-      const valid = await bcrypt.compare(password, user.password);
-      if (!valid) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid credentials'
-        });
-      }
-  
-      res.status(200).json({
-        success: true,
-        user: {
-          id: user._id.toString(),
-          username: user.username,
-          email: user.email,
-          role: user.role || 'user',
-          createdAt: user.createdAt
-        }
-      });
-    } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error'
-      });
-    }
-});
-
-module.exports = router;

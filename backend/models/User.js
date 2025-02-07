@@ -54,6 +54,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     minLength: [8, 'Password must be at least 8 characters long']
   },
+  algorandAddress: {
+    type: String,
+    unique: true,
+    sparse: true  // Allows null values while maintaining uniqueness
+  },
   role: { type: String, default: 'user' },
   spots: [{
     type: mongoose.Schema.Types.ObjectId,
