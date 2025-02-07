@@ -7,11 +7,10 @@ const { getBestAirlineName } = require('../utils/airlineMapping');
 const { getAirportName } = require('../utils/airportMapping');
 
 let spotBuffer = [];
-let spotIdBuffer = []; // Added to track spot IDs
+let spotIdBuffer = [];
 let lastSpotTime = null;
 const BUFFER_WINDOW = 1000; // 1 second window to collect flights from same spot
 
-// Helper function to get next reset date in UTC
 function getNextResetDate(type) {
   const now = new Date();
   
@@ -29,9 +28,7 @@ function getNextResetDate(type) {
   }
 }
 
-// Helper function to map spot to frontend format
 const mapSpotToFrontend = (spot) => {
-  // Handle both mongoose documents and plain objects
   const spotObj = spot.toObject ? spot.toObject() : spot;
 
   return {
@@ -57,7 +54,6 @@ const mapSpotToFrontend = (spot) => {
   };
 };
 
-// Get user's spots
 router.get('/', async (req, res) => {
   try {
     const user = await User.findById(req.query.userId)
@@ -71,13 +67,64 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Create new spot
+async function processAlgorandTransaction(spotIds, buffer) {
+  const { spawn } = require('child_process');
+  console.log('Processing Algorand transaction for spots:', spotIds);
+  
+  return new Promise((resolve, reject) => {
+    const pythonProcess = spawn('python', [
+      'algorand_logger.py',
+      JSON.stringify(buffer)
+    ]);
+
+    pythonProcess.stdout.on('data', async (data) => {
+      const output = data.toString();
+      console.log('Algorand logging output:', output);
+      
+      const groupIdMatch = output.match(/Group transaction ID: (\w+)/);
+      if (groupIdMatch && groupIdMatch[1]) {
+        const groupId = groupIdMatch[1];
+        console.log('Found group ID:', groupId);
+        console.log('Updating spots with IDs:', spotIds);
+        
+        try {
+          const bulkOps = spotIds.map(spotId => ({
+            updateOne: {
+              filter: { _id: spotId },
+              update: { $set: { algorandGroupId: groupId } },
+              upsert: false
+            }
+          }));
+
+          const result = await Spot.bulkWrite(bulkOps);
+          console.log('Bulk update result:', result);
+          resolve(result);
+        } catch (error) {
+          console.error('Error updating spots:', error);
+          reject(error);
+        }
+      }
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error('Algorand logging error:', data.toString());
+      reject(new Error(data.toString()));
+    });
+
+    pythonProcess.on('error', (error) => {
+      console.error('Python process error:', error);
+      reject(error);
+    });
+  });
+}
+
 router.post('/', async (req, res) => {
+  let currentSpotIds = [];  // Track IDs for this request
+  
   try {
     console.log("Starting spot creation with data:", req.body);
     const now = new Date();
     
-    // First get the user's Algorand address
     const user = await User.findById(req.body.userId);
     if (!user || !user.algorandAddress) {
       throw new Error('User not found or has no Algorand address');
@@ -95,6 +142,7 @@ router.post('/', async (req, res) => {
     const spot = await Spot.create(spotData);
     await spot.save();
     console.log("Spot created and saved:", spot);
+    currentSpotIds.push(spot._id);
 
     await User.findByIdAndUpdate(
       spot.userId,
@@ -102,7 +150,6 @@ router.post('/', async (req, res) => {
     );
     console.log("Base XP awarded");
 
-    // Prepare flight for Algorand with user's address
     const flightToLog = {
       flight: req.body.flight.flight || 'N/A',
       operator: req.body.flight.operating_as || req.body.flight.painted_as || 'Unknown',
@@ -117,102 +164,34 @@ router.post('/', async (req, res) => {
       }
     };
 
-    // Buffer logic
     const currentTime = Date.now();
     if (lastSpotTime && (currentTime - lastSpotTime) < BUFFER_WINDOW) {
+      console.log("Adding to existing buffer");
       spotBuffer.push(flightToLog);
-      spotIdBuffer.push(spot._id);
+      spotIdBuffer = [...spotIdBuffer, ...currentSpotIds];
+      console.log("Current spotIdBuffer:", spotIdBuffer);
     } else {
+      console.log("Creating new buffer");
       if (spotBuffer.length > 0) {
-        const { spawn } = require('child_process');
-        const pythonProcess = spawn('python', [
-          'algorand_logger.py',
-          JSON.stringify(spotBuffer)
-        ]);
-
-        pythonProcess.stdout.on('data', async (data) => {
-          const output = data.toString();
-          console.log('Algorand logging output:', output);
-          
-          // Extract group ID from the output using regex
-          const groupIdMatch = output.match(/Group transaction ID: (\w+)/);
-          if (groupIdMatch && groupIdMatch[1]) {
-            const groupId = groupIdMatch[1];
-            try {
-              // Add more detailed logging
-              console.log('Attempting to update spots with IDs:', spotIdBuffer);
-              
-              // Use Promise.all to update all spots and wait for completion
-              const updateResults = await Promise.all(
-                spotIdBuffer.map(async (spotId) => {
-                  const result = await Spot.findByIdAndUpdate(
-                    spotId,
-                    { algorandGroupId: groupId },
-                    { new: true } // Return updated document
-                  );
-                  console.log(`Update result for spot ${spotId}:`, result);
-                  return result;
-                })
-              );
-              
-              console.log('Update completed for all spots:', updateResults);
-            } catch (error) {
-              console.error('Error updating spots with Algorand group ID:', error);
-              // Log more details about the error
-              console.error('Full error details:', {
-                error: error.message,
-                stack: error.stack,
-                spotIds: spotIdBuffer,
-                groupId: groupId
-              });
-            }
-          }
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-          console.error('Algorand logging error:', data.toString());
-        });
+        try {
+          await processAlgorandTransaction([...spotIdBuffer], [...spotBuffer]);
+        } catch (error) {
+          console.error('Error processing Algorand transaction:', error);
+        }
       }
       spotBuffer = [flightToLog];
-      spotIdBuffer = [spot._id];
+      spotIdBuffer = [...currentSpotIds];
+      console.log("New spotIdBuffer:", spotIdBuffer);
     }
     lastSpotTime = currentTime;
 
-    // Set timeout to flush buffer if no new flights come in
-    setTimeout(() => {
+    setTimeout(async () => {
       if (spotBuffer.length > 0 && (Date.now() - lastSpotTime) >= BUFFER_WINDOW) {
-        const { spawn } = require('child_process');
-        const pythonProcess = spawn('python', [
-          'algorand_logger.py',
-          JSON.stringify(spotBuffer)
-        ]);
-
-        pythonProcess.stdout.on('data', async (data) => {
-          const output = data.toString();
-          console.log('Algorand logging output:', output);
-          
-          // Extract group ID from the output using regex
-          const groupIdMatch = output.match(/Group transaction ID: (\w+)/);
-          if (groupIdMatch && groupIdMatch[1]) {
-            const groupId = groupIdMatch[1];
-            try {
-              // Update all spots in the buffer with the group ID
-              for (const spotId of spotIdBuffer) {
-                await Spot.findByIdAndUpdate(spotId, {
-                  algorandGroupId: groupId
-                });
-              }
-              console.log('Updated spots with Algorand group ID:', groupId);
-            } catch (error) {
-              console.error('Error updating spots with Algorand group ID:', error);
-            }
-          }
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-          console.error('Algorand logging error:', data.toString());
-        });
-        
+        try {
+          await processAlgorandTransaction([...spotIdBuffer], [...spotBuffer]);
+        } catch (error) {
+          console.error('Error processing Algorand transaction in timeout:', error);
+        }
         spotBuffer = [];
         spotIdBuffer = [];
       }
@@ -226,7 +205,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Handle guesses
 router.patch('/:id/guess', async (req, res) => {
   try {
     const spot = await Spot.findById(req.params.id);
@@ -283,7 +261,6 @@ router.patch('/:id/guess', async (req, res) => {
   }
 });
 
-// Get grouped spots
 router.get('/all', async (req, res) => {
   try {
     const { userId } = req.query;
