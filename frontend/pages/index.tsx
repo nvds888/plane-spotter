@@ -593,10 +593,10 @@ const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
                   >
                     <option value="">Select Airline</option>
                     {airlineOptions.map(airline => (
-                      <option key={airline.code} value={airline.code}>
-                        {airline.name}
-                      </option>
-                    ))}
+  <option key={airline.code} value={airline.code}>
+    ({airline.code}) {airline.name}
+  </option>
+))}
                   </select>
                 </div>
 

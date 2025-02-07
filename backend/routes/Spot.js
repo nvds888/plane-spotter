@@ -108,12 +108,16 @@ router.post('/', async (req, res) => {
     // Prepare flight for Algorand with user's address
     const flightToLog = {
       flight: req.body.flight.flight || 'N/A',
-      operator: getBestAirlineName(req.body.flight.operating_as, req.body.flight.painted_as) || 'Unknown',
+      operator: req.body.flight.operating_as || req.body.flight.painted_as || 'Unknown',
       altitude: req.body.flight.geography?.altitude || 0,
       departure: req.body.flight.orig_iata || 'Unknown',
       destination: req.body.flight.dest_iata || 'Unknown',
       hex: req.body.flight.system?.hex || 'N/A',
-      userAddress: user.algorandAddress  // Add user's Algorand address
+      userAddress: user.algorandAddress,
+      coordinates: {
+        lat: req.body.flight.geography?.latitude || 0,
+        lon: req.body.flight.geography?.longitude || 0
+      }
     };
 
     // Buffer logic
