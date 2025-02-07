@@ -18,6 +18,16 @@ def log_spot_flights(flights):
             raise ValueError(f"Invalid flights data format: {flights}")
             
         print(f"Processing {len(flights)} flights: {json.dumps(flights, indent=2)}")
+        
+        # Validate that all flights have the same user address
+        user_addresses = set(flight.get('userAddress') for flight in flights)
+        if len(user_addresses) != 1:
+            raise ValueError("All flights in a group must be from the same user")
+        
+        receiver_address = flights[0]['userAddress']
+        if not receiver_address:
+            raise ValueError("User Algorand address is required")
+            
         # Initialize Algorand client
         algod_client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
         private_key = mnemonic.to_private_key(SENDER_MNEMONIC)
@@ -40,11 +50,11 @@ def log_spot_flights(flights):
             }
             memo_bytes = base64.b64encode(json.dumps(memo).encode()).decode()
 
-            # Create transaction
+            # Create transaction - now sending to user's address
             txn = transaction.PaymentTxn(
                 sender=sender,
                 sp=params,
-                receiver=sender,  # Send to self
+                receiver=receiver_address,  # Send to user's address
                 amt=0,  # 0 Algo transaction
                 note=memo_bytes.encode()
             )
@@ -61,7 +71,7 @@ def log_spot_flights(flights):
         
         # Wait for confirmation
         transaction.wait_for_confirmation(algod_client, tx_id)
-        print(f"Successfully logged spot with {len(flights)} flights. Group transaction ID: {tx_id}")
+        print(f"Successfully logged spot with {len(flights)} flights to user {receiver_address}. Group transaction ID: {tx_id}")
         
     except Exception as e:
         print(f"Error logging to Algorand: {str(e)}", file=sys.stderr)

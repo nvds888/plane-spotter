@@ -73,10 +73,19 @@ router.get('/', async (req, res) => {
 
 // Create new spot
 
+// In Spot.js - Update the spot creation endpoint
+
 router.post('/', async (req, res) => {
   try {
     console.log("Starting spot creation with data:", req.body);
     const now = new Date();
+    
+    // First get the user's Algorand address
+    const user = await User.findById(req.body.userId);
+    if (!user || !user.algorandAddress) {
+      throw new Error('User not found or has no Algorand address');
+    }
+
     const spotData = {
       userId: req.body.userId,
       lat: req.body.lat,
@@ -86,35 +95,32 @@ router.post('/', async (req, res) => {
       timestamp: now
     };
 
-    // Keep original spot creation logic unchanged
     const spot = await Spot.create(spotData);
     await spot.save();
     console.log("Spot created and saved:", spot);
 
-    // Award base XP - unchanged
     await User.findByIdAndUpdate(
       spot.userId,
       { $inc: { totalXP: 5, weeklyXP: 5 } }
     );
     console.log("Base XP awarded");
 
-    // Prepare flight for Algorand
+    // Prepare flight for Algorand with user's address
     const flightToLog = {
       flight: req.body.flight.flight || 'N/A',
       operator: getBestAirlineName(req.body.flight.operating_as, req.body.flight.painted_as) || 'Unknown',
       altitude: req.body.flight.geography?.altitude || 0,
       departure: req.body.flight.orig_iata || 'Unknown',
       destination: req.body.flight.dest_iata || 'Unknown',
-      hex: req.body.flight.system?.hex || 'N/A'
+      hex: req.body.flight.system?.hex || 'N/A',
+      userAddress: user.algorandAddress  // Add user's Algorand address
     };
 
     // Buffer logic
     const currentTime = Date.now();
     if (lastSpotTime && (currentTime - lastSpotTime) < BUFFER_WINDOW) {
-      // Add to existing spot group
       spotBuffer.push(flightToLog);
     } else {
-      // If there are flights in buffer, send them first
       if (spotBuffer.length > 0) {
         const { spawn } = require('child_process');
         const pythonProcess = spawn('python', [
@@ -130,8 +136,6 @@ router.post('/', async (req, res) => {
           console.error('Algorand logging error:', data.toString());
         });
       }
-      
-      // Start new buffer
       spotBuffer = [flightToLog];
     }
     lastSpotTime = currentTime;
