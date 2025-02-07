@@ -139,15 +139,32 @@ router.post('/', async (req, res) => {
           if (groupIdMatch && groupIdMatch[1]) {
             const groupId = groupIdMatch[1];
             try {
-              // Update all spots in the buffer with the group ID
-              for (const spotId of spotIdBuffer) {
-                await Spot.findByIdAndUpdate(spotId, {
-                  algorandGroupId: groupId
-                });
-              }
-              console.log('Updated spots with Algorand group ID:', groupId);
+              // Add more detailed logging
+              console.log('Attempting to update spots with IDs:', spotIdBuffer);
+              
+              // Use Promise.all to update all spots and wait for completion
+              const updateResults = await Promise.all(
+                spotIdBuffer.map(async (spotId) => {
+                  const result = await Spot.findByIdAndUpdate(
+                    spotId,
+                    { algorandGroupId: groupId },
+                    { new: true } // Return updated document
+                  );
+                  console.log(`Update result for spot ${spotId}:`, result);
+                  return result;
+                })
+              );
+              
+              console.log('Update completed for all spots:', updateResults);
             } catch (error) {
               console.error('Error updating spots with Algorand group ID:', error);
+              // Log more details about the error
+              console.error('Full error details:', {
+                error: error.message,
+                stack: error.stack,
+                spotIds: spotIdBuffer,
+                groupId: groupId
+              });
             }
           }
         });
