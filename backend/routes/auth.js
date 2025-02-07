@@ -96,7 +96,6 @@ router.post('/register', async (req, res) => {
           username: user.username,
           email: user.email,
           role: user.role || 'user',
-          algorandAddress: user.algorandAddress,
           createdAt: user.createdAt
         },
       });
