@@ -8,7 +8,7 @@ const path = require('path');
 // Helper function to create Algorand wallet
 const createAlgorandWallet = () => {
   return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python3', [path.join(__dirname, '../scripts/create_wallet.py')]);
+    const pythonProcess = spawn('python3', [path.join(__dirname, '../create_wallet.py')]);
     
     let result = '';
     
