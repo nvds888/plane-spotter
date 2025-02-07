@@ -6,8 +6,8 @@ const mongoose = require('mongoose');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const { getAirportName } = require('../utils/airportMapping');
 
-
 let spotBuffer = [];
+let spotIdBuffer = []; // Added to track spot IDs
 let lastSpotTime = null;
 const BUFFER_WINDOW = 1000; // 1 second window to collect flights from same spot
 
@@ -72,9 +72,6 @@ router.get('/', async (req, res) => {
 });
 
 // Create new spot
-
-// In Spot.js - Update the spot creation endpoint
-
 router.post('/', async (req, res) => {
   try {
     console.log("Starting spot creation with data:", req.body);
@@ -124,6 +121,7 @@ router.post('/', async (req, res) => {
     const currentTime = Date.now();
     if (lastSpotTime && (currentTime - lastSpotTime) < BUFFER_WINDOW) {
       spotBuffer.push(flightToLog);
+      spotIdBuffer.push(spot._id);
     } else {
       if (spotBuffer.length > 0) {
         const { spawn } = require('child_process');
@@ -132,8 +130,26 @@ router.post('/', async (req, res) => {
           JSON.stringify(spotBuffer)
         ]);
 
-        pythonProcess.stdout.on('data', (data) => {
-          console.log('Algorand logging output:', data.toString());
+        pythonProcess.stdout.on('data', async (data) => {
+          const output = data.toString();
+          console.log('Algorand logging output:', output);
+          
+          // Extract group ID from the output using regex
+          const groupIdMatch = output.match(/Group transaction ID: (\w+)/);
+          if (groupIdMatch && groupIdMatch[1]) {
+            const groupId = groupIdMatch[1];
+            try {
+              // Update all spots in the buffer with the group ID
+              for (const spotId of spotIdBuffer) {
+                await Spot.findByIdAndUpdate(spotId, {
+                  algorandGroupId: groupId
+                });
+              }
+              console.log('Updated spots with Algorand group ID:', groupId);
+            } catch (error) {
+              console.error('Error updating spots with Algorand group ID:', error);
+            }
+          }
         });
 
         pythonProcess.stderr.on('data', (data) => {
@@ -141,6 +157,7 @@ router.post('/', async (req, res) => {
         });
       }
       spotBuffer = [flightToLog];
+      spotIdBuffer = [spot._id];
     }
     lastSpotTime = currentTime;
 
@@ -153,8 +170,26 @@ router.post('/', async (req, res) => {
           JSON.stringify(spotBuffer)
         ]);
 
-        pythonProcess.stdout.on('data', (data) => {
-          console.log('Algorand logging output:', data.toString());
+        pythonProcess.stdout.on('data', async (data) => {
+          const output = data.toString();
+          console.log('Algorand logging output:', output);
+          
+          // Extract group ID from the output using regex
+          const groupIdMatch = output.match(/Group transaction ID: (\w+)/);
+          if (groupIdMatch && groupIdMatch[1]) {
+            const groupId = groupIdMatch[1];
+            try {
+              // Update all spots in the buffer with the group ID
+              for (const spotId of spotIdBuffer) {
+                await Spot.findByIdAndUpdate(spotId, {
+                  algorandGroupId: groupId
+                });
+              }
+              console.log('Updated spots with Algorand group ID:', groupId);
+            } catch (error) {
+              console.error('Error updating spots with Algorand group ID:', error);
+            }
+          }
         });
 
         pythonProcess.stderr.on('data', (data) => {
@@ -162,6 +197,7 @@ router.post('/', async (req, res) => {
         });
         
         spotBuffer = [];
+        spotIdBuffer = [];
       }
     }, BUFFER_WINDOW);
 
@@ -173,19 +209,15 @@ router.post('/', async (req, res) => {
   }
 });
 
-
 // Handle guesses
 router.patch('/:id/guess', async (req, res) => {
   try {
     const spot = await Spot.findById(req.params.id);
     
-    // Calculate correctness using FlightRadar24 data structure
     const isTypeCorrect = req.body.guessedType === spot.flight?.type;
     const isAirlineCorrect = req.body.guessedAirline === (spot.flight?.operating_as || spot.flight?.painted_as);
-    // Always use IATA codes for destination comparison
     const isDestinationCorrect = req.body.guessedDestination === spot.flight?.dest_iata;
 
-    // Log the comparison values for debugging
     console.log('Guess comparison:', {
       type: {
         guessed: req.body.guessedType,
@@ -204,7 +236,6 @@ router.patch('/:id/guess', async (req, res) => {
       }
     });
 
-    // Calculate bonus XP - 10 points for each correct guess
     const bonusXP = (isTypeCorrect ? 10 : 0) + 
                     (isAirlineCorrect ? 10 : 0) + 
                     (isDestinationCorrect ? 10 : 0);
@@ -223,13 +254,11 @@ router.patch('/:id/guess', async (req, res) => {
       { new: true }
     );
 
-    // Award XP to user
     await User.findByIdAndUpdate(
       spot.userId,
       { $inc: { totalXP: bonusXP, weeklyXP: bonusXP } }
     );
 
-    // Map to frontend format before sending response
     const mappedSpot = mapSpotToFrontend(updatedSpot);
     res.json(mappedSpot);
   } catch (error) {

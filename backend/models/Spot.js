@@ -43,6 +43,7 @@ const spotSchema = new mongoose.Schema({
   isTypeCorrect: Boolean,
   bonusXP: { type: Number, default: 0 },
   baseXP: { type: Number, default: 5 },
+  algorandGroupId: String
 });
 
 spotSchema.index({ userId: 1, timestamp: -1 });
