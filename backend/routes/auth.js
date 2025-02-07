@@ -108,4 +108,57 @@ router.post('/register', async (req, res) => {
     }
 });
 
+router.post('/login', async (req, res) => {
+  try {
+    const { login, password } = req.body; // login can be email or username
+
+    if (!login || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Login credentials and password are required'
+      });
+    }
+
+    // Find user by email or username
+    const user = await User.findOne({
+      $or: [
+        { email: login },
+        { username: login }
+      ]
+    }).select('+password');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id.toString(),
+        username: user.username,
+        email: user.email,
+        role: user.role || 'user',
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
 module.exports = router;
