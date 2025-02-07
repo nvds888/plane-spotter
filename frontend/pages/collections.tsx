@@ -432,12 +432,15 @@ export default function Collection() {
                 <div className="grid grid-cols-[1fr,auto] gap-2 items-baseline" style={{ width: 'calc(100% - 48px)' }}>
                   <h2 className="text-lg font-semibold text-gray-900 truncate">
                     {group.title}
-                    {(groupBy === 'type' || groupBy === 'date') && (
-                      <span className="opacity-0">
-                        {/* Add invisible padding text */}
-                        Boeing 777-300ER Dreamliner Extra Long Aircraft Name
-                      </span>
-                    )}
+                    {(groupBy === 'type' || groupBy === 'date' || groupBy === 'airline') && (
+  <span className="opacity-0">
+    {/* Add invisible padding text */}
+    {groupBy === 'airline' 
+      ? 'Emirates Airlines International Extra Long Name'
+      : 'Boeing 777-300ER Dreamliner Extra Long Aircraft'
+    }
+  </span>
+)}
                   </h2>
                   <p className="text-sm text-gray-500 whitespace-nowrap">
                     {group.count} plane{group.count !== 1 ? "s" : ""}
