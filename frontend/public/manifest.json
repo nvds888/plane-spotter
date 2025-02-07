@@ -1,11 +1,14 @@
 {
-  "name": "Plane Spotter",
-  "short_name": "Plane Spotter",
+  "name": "Planeify",
+  "short_name": "Planeify",
   "description": "Track and identify planes in your area",
   "start_url": "/",
+  "id": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "display_override": ["window-controls-overlay"],
+  "background_color": "#4F46E5",
+  "theme_color": "#4F46E5",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
