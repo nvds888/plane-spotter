@@ -111,8 +111,19 @@ router.get('/:userId', async (req, res) => {
     const uniqueDailyAirlines = new Set(
       spots
         .filter(spot => new Date(spot.timestamp) >= startOfToday)
-        .map(spot => spot.flight?.operator)
-        .filter(Boolean)
+        .map(spot => {
+          // Check operating_as first, then painted_as
+          if (spot.flight?.operating_as) return spot.flight.operating_as;
+          if (spot.flight?.painted_as) return spot.flight.painted_as;
+          // If neither exists, try to extract airline from flight number
+          if (spot.flight?.flight) {
+            // Most flight numbers start with airline code (2-3 letters)
+            const airlineCode = spot.flight.flight.match(/^[A-Z]{2,3}/)?.[0];
+            return airlineCode;
+          }
+          return null;
+        })
+        .filter(Boolean) // Remove null/undefined values
     ).size;
 
     // Initialize or update achievements
