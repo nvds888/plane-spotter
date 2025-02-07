@@ -159,16 +159,16 @@ router.get('/suggestions', async (req, res) => {
   try {
     const flights = await fetchFlightData(userId, lat, lon);
 
-    // Extract unique airlines and destinations
+    // Extract unique airlines, destinations, and aircraft types
     const airlines = new Map();
     const destinations = new Map();
+    const aircraftTypes = new Map();
 
     flights.forEach(flight => {
       const airlineCode = flight.operating_as || flight.painted_as;
       if (airlineCode) {
         airlines.set(airlineCode, {
           code: airlineCode,
-          // Use the airline mapping function here
           name: getBestAirlineName(flight.operating_as, flight.painted_as)
         });
       }
@@ -176,15 +176,63 @@ router.get('/suggestions', async (req, res) => {
       if (flight.dest_iata) {
         destinations.set(flight.dest_iata, {
           code: flight.dest_iata,
-          // Use getAirportName to get the full airport name
           name: getAirportName(flight.dest_iata) || flight.dest_iata
+        });
+      }
+
+      // Add aircraft type mapping
+      if (flight.type) {
+        // Create a human-readable name for the aircraft type
+        let typeName = flight.type;
+        const typeMapping = {
+          'A20N': 'Airbus A320neo',
+          'A21N': 'Airbus A321neo',
+          'A318': 'Airbus A318',
+          'A319': 'Airbus A319',
+          'A320': 'Airbus A320',
+          'A321': 'Airbus A321',
+          'A332': 'Airbus A330-200',
+          'A333': 'Airbus A330-300',
+          'A338': 'Airbus A330-800neo',
+          'A339': 'Airbus A330-900neo',
+          'A359': 'Airbus A350-900',
+          'A35K': 'Airbus A350-1000',
+          'A388': 'Airbus A380-800',
+          'B737': 'Boeing 737',
+          'B738': 'Boeing 737-800',
+          'B739': 'Boeing 737-900',
+          'B38M': 'Boeing 737 MAX 8',
+          'B39M': 'Boeing 737 MAX 9',
+          'B744': 'Boeing 747-400',
+          'B748': 'Boeing 747-8',
+          'B752': 'Boeing 757-200',
+          'B753': 'Boeing 757-300',
+          'B762': 'Boeing 767-200',
+          'B763': 'Boeing 767-300',
+          'B764': 'Boeing 767-400',
+          'B772': 'Boeing 777-200',
+          'B773': 'Boeing 777-300',
+          'B77W': 'Boeing 777-300ER',
+          'B788': 'Boeing 787-8',
+          'B789': 'Boeing 787-9',
+          'B78X': 'Boeing 787-10',
+          'E190': 'Embraer E190',
+          'E195': 'Embraer E195',
+          'E290': 'Embraer E190-E2',
+          'E295': 'Embraer E195-E2'
+        };
+        
+        aircraftTypes.set(flight.type, {
+          code: flight.type,
+          name: typeMapping[flight.type] || flight.type
         });
       }
     });
 
     const result = {
       airlines: Array.from(airlines.values()),
-      destinations: Array.from(destinations.values())
+      destinations: Array.from(destinations.values()),
+      aircraftTypes: Array.from(aircraftTypes.values())
     };
 
     res.status(200).json(result);
