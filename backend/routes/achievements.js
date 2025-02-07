@@ -33,6 +33,15 @@ const defaultAchievements = [
     resetDate: getNextResetDate('daily')
   },
   {
+    type: 'daily',
+    name: 'Airline Collector',
+    description: 'Spot aircraft from 4 different airlines today',
+    target: 4,
+    progress: 0,
+    completed: false,
+    resetDate: getNextResetDate('daily')
+  },
+  {
     type: 'weekly',
     name: 'Airbus Expert',
     description: 'Spot 10 Airbus planes this week',
@@ -60,8 +69,6 @@ const defaultAchievements = [
     resetDate: getNextResetDate('weekly')
   },
 ];
-
-// Get user's achievements with initialization if needed
 
 router.get('/:userId', async (req, res) => {
   try {
@@ -101,6 +108,13 @@ router.get('/:userId', async (req, res) => {
       spot.flight?.type === 'A21N'
     ).length;
 
+    const uniqueDailyAirlines = new Set(
+      spots
+        .filter(spot => new Date(spot.timestamp) >= startOfToday)
+        .map(spot => spot.flight?.operator)
+        .filter(Boolean)
+    ).size;
+
     // Initialize or update achievements
     if (!user.achievements || user.achievements.length === 0) {
       user.achievements = defaultAchievements;
@@ -112,11 +126,8 @@ router.get('/:userId', async (req, res) => {
     // Update achievements based on calculated stats
     for (let achievement of user.achievements) {
       if (now >= new Date(achievement.resetDate)) {
-        // Before resetting, check if achievement was completed
         if (achievement.completed) {
           const xpEarned = achievement.type === 'daily' ? 20 : 100;
-          
-          // Log the completed achievement in history with explicit XP
           achievement.completionHistory.push({
             completedAt: achievement.completedAt || now,
             xpEarned: xpEarned
@@ -141,7 +152,19 @@ router.get('/:userId', async (req, res) => {
           if (dailyStats >= achievement.target && !wasCompleted) {
             achievement.completed = true;
             achievement.completedAt = now;
-            bonusXPAwarded += 20; // Bonus XP for daily achievement
+            bonusXPAwarded += 20;
+            achievementsUpdated = true;
+          }
+          break;
+        case 'Airline Collector':
+          achievement.progress = uniqueDailyAirlines;
+          if (achievement.progress !== oldProgress) {
+            achievementsUpdated = true;
+          }
+          if (uniqueDailyAirlines >= achievement.target && !wasCompleted) {
+            achievement.completed = true;
+            achievement.completedAt = now;
+            bonusXPAwarded += 20;
             achievementsUpdated = true;
           }
           break;
@@ -153,7 +176,7 @@ router.get('/:userId', async (req, res) => {
           if (airbusCount >= achievement.target && !wasCompleted) {
             achievement.completed = true;
             achievement.completedAt = now;
-            bonusXPAwarded += 100; // Bonus XP for weekly achievement
+            bonusXPAwarded += 100;
             achievementsUpdated = true;
           }
           break;
@@ -165,19 +188,19 @@ router.get('/:userId', async (req, res) => {
           if (a321neoCount >= achievement.target && !wasCompleted) {
             achievement.completed = true;
             achievement.completedAt = now;
-            bonusXPAwarded += 100; // Bonus XP for weekly achievement
+            bonusXPAwarded += 100;
             achievementsUpdated = true;
           }
           break;
-          case 'Boeing Expert':
+        case 'Boeing Expert':
           achievement.progress = boeingCount;
           if (achievement.progress !== oldProgress) {
             achievementsUpdated = true;
           }
-          if (airbusCount >= achievement.target && !wasCompleted) {
+          if (boeingCount >= achievement.target && !wasCompleted) {
             achievement.completed = true;
             achievement.completedAt = now;
-            bonusXPAwarded += 100; // Bonus XP for weekly achievement
+            bonusXPAwarded += 100;
             achievementsUpdated = true;
           }
           break;
@@ -187,7 +210,6 @@ router.get('/:userId', async (req, res) => {
     if (achievementsUpdated) {
       user.markModified('achievements');
       
-      // Award bonus XP if any achievements were newly completed
       if (bonusXPAwarded > 0) {
         await User.findByIdAndUpdate(
           userId,
