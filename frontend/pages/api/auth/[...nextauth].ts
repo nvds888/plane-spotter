@@ -7,6 +7,7 @@ declare module "next-auth" {
     id: string
     role: string
     username?: string
+    algorandAddress?: string 
   }
   
   interface Session {
@@ -15,6 +16,7 @@ declare module "next-auth" {
       email?: string
       username?: string
       role: string
+      algorandAddress?: string
     }
   }
 }
@@ -24,6 +26,7 @@ declare module "next-auth/jwt" {
     id: string
     role: string
     username?: string
+    algorandAddress?: string 
   }
 }
 
@@ -95,6 +98,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.username = user.username;
+        token.algorandAddress = user.algorandAddress; 
       }
       return token;
     },
@@ -103,6 +107,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.username = token.username;
+        session.user.algorandAddress = token.algorandAddress;
       }
       return session;
     }
