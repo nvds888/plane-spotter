@@ -16,5 +16,14 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/header-theme.png",
+      "sizes": "640x80",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Planeify Header"
+    }
   ]
 }
