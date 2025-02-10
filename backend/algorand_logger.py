@@ -8,7 +8,9 @@ import sys
 # Algorand connection details
 ALGOD_ADDRESS = "https://testnet-api.4160.nodely.dev"
 ALGOD_TOKEN = ""  # Your token here
-SENDER_MNEMONIC = "theme expand floor wrong behave roof skull cattle denial gun trash run spend smooth magic position confirm trigger during riot weird window absent ability buffalo"  # Your mnemonic phrase
+SENDER_MNEMONIC = os.environ.get('ALGORAND_MNEMONIC')
+if not SENDER_MNEMONIC:
+    raise ValueError("ALGORAND_MNEMONIC environment variable is not set")
 
 def log_spot_flights(flights):
     """Log all flights from a single spot as a group transaction"""
