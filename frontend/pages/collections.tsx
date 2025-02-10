@@ -60,7 +60,7 @@ const GroupFilter = ({ value, onChange, onClose }: GroupFilterProps) => {
   ]
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-end">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-end">
       <motion.div 
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
@@ -521,11 +521,11 @@ export default function Collection() {
       <AnimatePresence>
         {showFilters && (
           <motion.div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
+          className="fixed inset-0 bg-black/60 z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
             <GroupFilter
               value={groupBy}
               onChange={setGroupBy}

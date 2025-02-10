@@ -248,7 +248,7 @@ export default function Achievements() {
   </div>
   <div className="bg-white/10 rounded-2xl p-3 backdrop-blur-md">  
     <div className="flex items-center gap-2">  
-      <Medal className="text-white w-4 h-4" />
+
       <span className="text-white/90 text-sm">Weekly: +100 XP</span> 
     </div>
   </div>
