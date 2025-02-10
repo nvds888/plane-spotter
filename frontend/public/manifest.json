@@ -5,6 +5,7 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#4F46E5",
+  "theme_color": "#4F46E5",
   "display_override": ["standalone", "fullscreen"],
   "orientation": "portrait",
   "prefer_related_applications": false,
@@ -14,15 +15,6 @@
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/header-theme.png",
-      "sizes": "640x80",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Planeify Header"
     }
   ]
 }
