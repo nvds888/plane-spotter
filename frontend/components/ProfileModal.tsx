@@ -56,7 +56,7 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`https://plane-spotter-backend.onrender.com/api/badgesprofile/${userId}`);
+        const response = await fetch(`https://plane-spotter-backend.onrender.com/api/badges/${userId}`);
         if (!response.ok) throw new Error('Failed to fetch profile');
         const data = await response.json();
         setProfileData(data);
