@@ -118,11 +118,12 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
 
   useEffect(() => setIsClient(true), [])
 
+  
   useEffect(() => {
     if (showSplashScreen) {
       const timer = setTimeout(() => {
         setShowSplashScreen(false);
-      }, 3000);  // Increased to 3 seconds
+      }, 3000);  
       
       return () => clearTimeout(timer);
     }
@@ -210,7 +211,7 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
       }
   
       const savedSpots: Spot[] = []
-let isFirstSpot = true  // Add this flag
+let isFirstSpot = true  
 
 for (const flight of flights) {
   const requestBody = {
@@ -218,7 +219,7 @@ for (const flight of flights) {
     lat: coords.latitude,
     lon: coords.longitude,
     flight,
-    isFirstSpot  // Add this to the request
+    isFirstSpot  
   }
 
   const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
