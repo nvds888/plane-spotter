@@ -4,7 +4,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Spot = require('../models/Spot');
 
-// Helper function to get next reset date in UTC (reused from achievements.js)
+// Helper function to get next reset date in UTC
 function getNextResetDate(type) {
   const now = new Date();
   if (type === 'daily') {
@@ -40,7 +40,9 @@ async function updateStreak(user) {
     // Next day, increment streak
     user.currentStreak += 1;
   } else {
-    // More than one day has passed, reset streak
+    // More than one day has passed, reset streak to 0 FIRST
+    user.currentStreak = 0;
+    // Then set it to 1 since they're spotting today
     user.currentStreak = 1;
   }
 
@@ -51,6 +53,33 @@ async function updateStreak(user) {
 
   // Update last spot date
   user.lastSpotDate = now;
+}
+
+async function checkAndResetStaleStreak(user) {
+  if (!user.lastSpotDate) return false;
+
+  const now = new Date();
+  // Quick check - if last spot was less than 24 hours ago, no need to do further calculations
+  if ((now - new Date(user.lastSpotDate)) < 24 * 60 * 60 * 1000) {
+    return false;
+  }
+
+  // Get the next reset time (UTC midnight)
+  const nextReset = getNextResetDate('daily');
+  // Get previous reset time
+  const previousReset = new Date(nextReset);
+  previousReset.setUTCHours(previousReset.getUTCHours() - 24);
+  
+  const lastSpotTime = new Date(user.lastSpotDate);
+
+  // Only reset streak if:
+  // 1. Their last spot was before the previous reset AND
+  // 2. We've passed the current day's reset time
+  if (lastSpotTime < previousReset && now > nextReset) {
+    user.currentStreak = 0;
+    return true;
+  }
+  return false;
 }
 
 // Helper function to check and award badges
@@ -107,8 +136,11 @@ router.get('/:userId', async (req, res) => {
     // Update total spots
     user.totalSpots = spots.length;
 
-    // Update streak if needed
-    await updateStreak(user);
+    // Check and reset stale streak - only if significant time has passed
+    const wasStreakReset = await checkAndResetStaleStreak(user);
+    if (wasStreakReset) {
+      await user.save();
+    }
 
     // Check and award any new badges
     const newBadges = await checkAndAwardBadges(user);
@@ -119,7 +151,7 @@ router.get('/:userId', async (req, res) => {
     // Prepare response data
     const profileData = {
       username: user.username,
-      joinDate: user.createdAt || new Date(),  // Provide a fallback date
+      joinDate: user.createdAt || new Date(),
       stats: {
         totalSpots: user.totalSpots,
         currentStreak: user.currentStreak,
@@ -138,4 +170,7 @@ router.get('/:userId', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = {
+  router,
+  updateStreak
+};

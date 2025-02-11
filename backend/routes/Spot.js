@@ -5,6 +5,7 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const { getAirportName } = require('../utils/airportMapping');
+const { updateStreak } = require('./badgesprofile');  
 
 let spotBuffer = [];
 let spotIdBuffer = [];
@@ -141,6 +142,8 @@ router.post('/', async (req, res) => {
 
     const spot = await Spot.create(spotData);
     await spot.save();
+    await updateStreak(user, now);
+await user.save();
     console.log("Spot created and saved:", spot);
     currentSpotIds.push(spot._id);
 
