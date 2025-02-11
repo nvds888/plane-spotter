@@ -150,24 +150,26 @@ router.post('/', async (req, res) => {
       timestamp: now
     };
 
-    const spot = await Spot.create(spotData);
-    await spot.save();
-    await updateStreak(user, now);
-    await user.save();
-    console.log("Spot created and saved:", spot);
-    currentSpotIds.push(spot._id);
+    // In Spot.js, change the user update part after spot creation:
+const spot = await Spot.create(spotData);
+await spot.save();
+await updateStreak(user, now);
+await user.save();
+console.log("Spot created and saved:", spot);
+currentSpotIds.push(spot._id);
 
-    // Update user XP and decrease spots remaining if not premium
-    await User.findByIdAndUpdate(
-      spot.userId,
-      { 
-        $inc: { 
-          totalXP: 5, 
-          weeklyXP: 5,
-          ...(user.premium ? {} : { spotsRemaining: -1 })  // Decrease spots only for non-premium users
-        } 
-      }
-    );
+// Update user XP and decrease spots remaining by EXACTLY 1 (not using $inc for spotsRemaining)
+await User.findByIdAndUpdate(
+  spot.userId,
+  { 
+    $inc: { 
+      totalXP: 5, 
+      weeklyXP: 5
+    },
+    // If not premium, subtract exactly 1 from current spotsRemaining
+    ...(user.premium ? {} : { spotsRemaining: user.spotsRemaining - 1 })
+  }
+);
     console.log("Base XP awarded");
 
     const flightToLog = {
