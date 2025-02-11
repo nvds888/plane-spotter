@@ -9,19 +9,19 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onAnimationComplete }) => {
     return (
-      <motion.div 
+        <motion.div 
         className="fixed inset-0 z-[9999] bg-gradient-to-r from-indigo-600 to-blue-600 flex items-center justify-center"
         initial={{ opacity: 1 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.8 }}  // Increased exit duration
         onAnimationComplete={onAnimationComplete}
       >
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ 
-            duration: 0.5, 
+            duration: 1,    // Increased duration
             type: "spring", 
             damping: 10, 
             stiffness: 100 

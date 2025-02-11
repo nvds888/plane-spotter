@@ -122,16 +122,16 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
     if (showSplashScreen) {
       const timer = setTimeout(() => {
         setShowSplashScreen(false);
-      }, 2500); 
+      }, 3000);  // Increased to 3 seconds
       
       return () => clearTimeout(timer);
     }
   }, [showSplashScreen]);
   
   const handleSplashScreenComplete = () => {
-    setShowSplashScreen(false); 
+    // Don't set showSplashScreen here, let the timer handle it
+    console.log('Animation completed');
   };
-
   useEffect(() => {
     const fetchUserXP = async () => {
       if (!session?.user?.id) return
