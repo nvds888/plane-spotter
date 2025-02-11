@@ -28,7 +28,7 @@ app.use('/api/location-stats', locationStatsRoutes);
 
 app.use('/api/achievements', achievementsRouter);
 
-app.use('/api/badgesprofile', badgesprofileRoutes);
+app.use('/badges', require('./routes/badgesprofile').router);
 
 // Test endpoint for MongoDB connection
 app.get('/api/test-db', async (req, res) => {
