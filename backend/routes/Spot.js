@@ -166,8 +166,10 @@ await User.findByIdAndUpdate(
       totalXP: 5, 
       weeklyXP: 5
     },
-    // If not premium, subtract exactly 1 from current spotsRemaining
-    ...(user.premium ? {} : { spotsRemaining: user.spotsRemaining - 1 })
+    // Only decrease spotsRemaining if this is the first spot in a group
+    ...(user.premium ? {} : req.body.isFirstSpot ? { 
+      spotsRemaining: user.spotsRemaining - 1 
+    } : {})
   }
 );
     console.log("Base XP awarded");

@@ -210,28 +210,33 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
       }
   
       const savedSpots: Spot[] = []
-      for (const flight of flights) {
-        const requestBody = {
-          userId: session.user.id,
-          lat: coords.latitude,
-          lon: coords.longitude,
-          flight
-        }
-  
-        const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
-        })
-  
-        if (!spotResponse.ok) {
-          const errorResponse = await spotResponse.json()
-          throw new Error(errorResponse.error || "Failed to save spot")
-        }
-  
-        const newSpot: Spot = await spotResponse.json()
-        savedSpots.push(newSpot)
-      }
+let isFirstSpot = true  // Add this flag
+
+for (const flight of flights) {
+  const requestBody = {
+    userId: session.user.id,
+    lat: coords.latitude,
+    lon: coords.longitude,
+    flight,
+    isFirstSpot  // Add this to the request
+  }
+
+  const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody),
+  })
+
+  isFirstSpot = false  // Set to false after first iteration
+
+  if (!spotResponse.ok) {
+    const errorResponse = await spotResponse.json()
+    throw new Error(errorResponse.error || "Failed to save spot")
+  }
+
+  const newSpot: Spot = await spotResponse.json()
+  savedSpots.push(newSpot)
+}
   
       alert(`Spotted ${savedSpots.length} flights!`)
   
