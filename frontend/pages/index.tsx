@@ -83,7 +83,6 @@ type GuessResult = {
 
 export default function Home() {
   const { data: session } = useSession()
-  const [spots, setSpots] = useState<Spot[]>([])
   const [isClient, setIsClient] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [newSpots, setNewSpots] = useState<Spot[]>([])
@@ -101,6 +100,8 @@ const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]
 const [showProfileModal, setShowProfileModal] = useState(false)
 const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
 const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
+const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
+  const [spotLimit, setSpotLimit] = useState<number>(4)
 
 
   const { coords, isGeolocationAvailable } = useGeolocated({
@@ -119,31 +120,27 @@ const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
     const fetchUserXP = async () => {
       if (!session?.user?.id) return
       try {
-        const response = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`)
-        if (!response.ok) throw new Error("Failed to fetch XP")
-        const data = await response.json()
-        setUserXP(data)
+        // Fetch both XP and user data
+        const [xpResponse, userResponse] = await Promise.all([
+          fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`),
+          fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}`)
+        ]);
+  
+        if (!xpResponse.ok) throw new Error("Failed to fetch XP")
+        if (!userResponse.ok) throw new Error("Failed to fetch user data")
+  
+        const xpData = await xpResponse.json()
+        const userData = await userResponse.json()
+        setUserXP(xpData)
+        setSpotsRemaining(userData.spotsRemaining)
+        setSpotLimit(userData.dailySpotLimit)
       } catch (error) {
-        console.error("Failed to fetch XP:", error)
+        console.error("Failed to fetch user data:", error)
       }
     }
     fetchUserXP()
   }, [session])
 
-  useEffect(() => {
-    const fetchSpots = async () => {
-      if (!session?.user?.id) return
-      try {
-        const response = await fetch(`https://plane-spotter-backend.onrender.com/api/spot?userId=${session.user.id}`)
-        if (!response.ok) throw new Error("Failed to fetch spots")
-        const data: Spot[] = await response.json()
-        setSpots(data)
-      } catch (error) {
-        console.error("Failed to fetch spots:", error)
-      }
-    }
-    fetchSpots()
-  }, [session])
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -174,6 +171,10 @@ const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
 
   const handleSpot = async () => {
     if (!coords || isLoading || !session?.user?.id) return
+    if (spotsRemaining <= 0) {
+      alert("You've reached your daily spot limit! Upgrade to premium for unlimited spots.")
+      return
+    }
     setIsLoading(true)
   
     try {
@@ -216,12 +217,15 @@ const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
         savedSpots.push(newSpot)
       }
   
-      setSpots((prev) => [...prev, ...savedSpots])
       alert(`Spotted ${savedSpots.length} flights!`)
   
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`)
       const xpData = await xpResponse.json()
       setUserXP(xpData)
+
+const userResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}`);
+const userData = await userResponse.json();
+setSpotsRemaining(userData.spotsRemaining);
   
       if (savedSpots.length > 0) {
         setNewSpots(savedSpots)
@@ -410,7 +414,15 @@ const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
           </div>
         )}
 
-        {/* Add this right after the spot button div in the main content section */}
+        {/* Spots Remaining Counter */}
+<div className="mt-4 text-center">
+  <span className="text-sm text-gray-500">Available Spots</span>
+  <div className="text-2xl font-bold text-indigo-600">
+    {spotsRemaining}/{spotLimit}
+  </div>
+</div>
+
+        {/* analyze area */}
 {isClient && isGeolocationAvailable && (
   <div className="fixed right-4 top-1/2 -translate-y-1/2 z-20">
     <motion.button
@@ -426,26 +438,7 @@ const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
     </motion.button>
   </div>
 )}
-        
-        {/* Status Text */}
-        <div className="mt-8 text-center z-10">
-          <span className="text-gray-600 font-medium">Today&apos;s Spotting Stats</span>
-          <div className="mt-2 flex gap-6 text-sm">
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-bold text-indigo-600">{spots.length}</span>
-              <span className="text-gray-500">Spotted</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-bold text-indigo-600">5</span>
-              <span className="text-gray-500">Base XP</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-bold text-indigo-600">15</span>
-              <span className="text-gray-500">Bonus XP</span>
-            </div>
-          </div>
-        </div>
-      </main>
+ </main>       
 
       {/* Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">

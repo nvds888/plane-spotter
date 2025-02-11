@@ -127,8 +127,18 @@ router.post('/', async (req, res) => {
     const now = new Date();
     
     const user = await User.findById(req.body.userId);
-    if (!user || !user.algorandAddress) {
-      throw new Error('User not found or has no Algorand address');
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Check spot limit for non-premium users
+    if (!user.premium && user.spotsRemaining <= 0) {
+      throw new Error('Daily spot limit reached');
+    }
+
+    // Verify algorand address
+    if (!user.algorandAddress) {
+      throw new Error('No Algorand address found');
     }
 
     const spotData = {
@@ -143,13 +153,20 @@ router.post('/', async (req, res) => {
     const spot = await Spot.create(spotData);
     await spot.save();
     await updateStreak(user, now);
-await user.save();
+    await user.save();
     console.log("Spot created and saved:", spot);
     currentSpotIds.push(spot._id);
 
+    // Update user XP and decrease spots remaining if not premium
     await User.findByIdAndUpdate(
       spot.userId,
-      { $inc: { totalXP: 5, weeklyXP: 5 } }
+      { 
+        $inc: { 
+          totalXP: 5, 
+          weeklyXP: 5,
+          ...(user.premium ? {} : { spotsRemaining: -1 })  // Decrease spots only for non-premium users
+        } 
+      }
     );
     console.log("Base XP awarded");
 

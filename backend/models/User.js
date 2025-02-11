@@ -64,6 +64,18 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Spot'
   }],
+  premium: {
+    type: Boolean,
+    default: false
+  },
+  dailySpotLimit: {
+    type: Number,
+    default: 4  // Default limit for free users
+  },
+  spotsRemaining: {
+    type: Number,
+    default: 4  // Initialize with daily limit
+  },
   totalXP: { type: Number, default: 0 },
   weeklyXP: { type: Number, default: 0 },
   achievements: [achievementSchema],
