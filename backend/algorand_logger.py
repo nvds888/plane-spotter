@@ -4,6 +4,7 @@ from algosdk.v2client import algod
 import json
 import base64
 import sys
+import os
 
 # Algorand connection details
 ALGOD_ADDRESS = "https://testnet-api.4160.nodely.dev"
