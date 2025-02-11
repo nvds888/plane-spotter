@@ -10,11 +10,12 @@ function getNextResetDate(type) {
   
   if (type === 'daily') {
     const nextDay = new Date(now);
-    nextDay.setUTCHours(24, 0, 0, 0);
+    nextDay.setUTCDate(now.getUTCDate() + 1);  // Explicitly add one day
+    nextDay.setUTCHours(0, 0, 0, 0);           // Reset to midnight UTC
     return nextDay;
   } else if (type === 'weekly') {
     const currentDay = now.getUTCDay();
-    const daysUntilMonday = currentDay === 0 ? 1 : 1 + 7 - currentDay;
+    const daysUntilMonday = currentDay === 0 ? 1 : (8 - currentDay);
     const nextMonday = new Date(now);
     nextMonday.setUTCDate(now.getUTCDate() + daysUntilMonday);
     nextMonday.setUTCHours(0, 0, 0, 0);
