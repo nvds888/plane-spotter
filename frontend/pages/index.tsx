@@ -338,7 +338,9 @@ setSpotsRemaining(userData.spotsRemaining);
             isVisible={true}
             onAnimationComplete={handleSplashScreenComplete}
           />
-        ) : !session ? (
+        ) : (
+          <>
+        {!session ? (
           <div className="h-screen w-full bg-white flex flex-col">
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
@@ -753,10 +755,11 @@ setSpotsRemaining(userData.spotsRemaining);
           longitude: coords.longitude
         } : null}
       />
-      </div>
-        )
-      }
-    </AnimatePresence>
-  </div>
-);
+       </div>
+            )}
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 } 
