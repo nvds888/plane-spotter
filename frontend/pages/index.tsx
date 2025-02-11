@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Trophy, House, BookOpen, Users, MapPin, Plane } from "lucide-react"
 import ProfileModal from "../components/ProfileModal"
 import LocationStatsModal from "../components/LocationStatsModal"
+import SplashScreen from "../components/SplashScreen"
 
 
 interface AircraftTypeOption {
@@ -84,6 +85,7 @@ type GuessResult = {
 export default function Home() {
   const { data: session } = useSession()
   const [isClient, setIsClient] = useState(false)
+  const [showSplashScreen, setShowSplashScreen] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [newSpots, setNewSpots] = useState<Spot[]>([])
   const [showGuessModal, setShowGuessModal] = useState(false)
@@ -115,6 +117,20 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
   })
 
   useEffect(() => setIsClient(true), [])
+
+  useEffect(() => {
+    if (showSplashScreen) {
+      const timer = setTimeout(() => {
+        setShowSplashScreen(false);
+      }, 2500); 
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showSplashScreen]);
+  
+  const handleSplashScreenComplete = () => {
+    console.log('Splash screen animation completed');
+  };
 
   useEffect(() => {
     const fetchUserXP = async () => {
@@ -346,7 +362,15 @@ setSpotsRemaining(userData.spotsRemaining);
   }
 
   return (
-    <div className="min-h-screen w-full bg-white flex flex-col">
+    <div className="relative">
+      <AnimatePresence mode="wait">
+        {showSplashScreen ? (
+          <SplashScreen
+            isVisible={true}
+            onAnimationComplete={handleSplashScreenComplete}
+          />
+        ) : (
+          <div className="min-h-screen w-full bg-white flex flex-col"> 
       {/* Premium Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10">
         <div className="flex justify-between items-start mb-6">
@@ -717,28 +741,25 @@ setSpotsRemaining(userData.spotsRemaining);
         )}
       </AnimatePresence>
 
+
       <ProfileModal 
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         userId={session.user.id}
       />
 
-<LocationStatsModal 
-  isOpen={showLocationStatsModal}
-  onClose={() => setShowLocationStatsModal(false)}
-  currentLocation={coords ? {
-    latitude: coords.latitude,
-    longitude: coords.longitude
-  } : null}
-/>
-    </div>
-  )
-}
-
-
-
-
-
-
-
-
+      <LocationStatsModal 
+        isOpen={showLocationStatsModal}
+        onClose={() => setShowLocationStatsModal(false)}
+        currentLocation={coords ? {
+          latitude: coords.latitude,
+          longitude: coords.longitude
+        } : null}
+      />
+      </div>
+        )
+      }
+    </AnimatePresence>
+  </div>
+);
+} 
