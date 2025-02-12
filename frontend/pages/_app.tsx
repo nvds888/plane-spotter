@@ -1,19 +1,26 @@
 // pages/_app.tsx
-import { SessionProvider } from 'next-auth/react';
+import { SessionProvider, useSession } from 'next-auth/react';
 import type { AppProps } from 'next/app';
 import { useState, useEffect } from 'react';
 import SplashScreen from '../components/SplashScreen';
 import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
+  const { data: session } = useSession();
   const [showSplashScreen, setShowSplashScreen] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplashScreen(false);
     }, 3000);
+  
+    // If session is already present, immediately hide splash screen
+    if (session) {
+      setShowSplashScreen(false);
+    }
+  
     return () => clearTimeout(timer);
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
