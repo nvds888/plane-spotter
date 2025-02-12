@@ -354,7 +354,7 @@ setSpotsRemaining(userData.spotsRemaining);
   return (
     <div className="min-h-screen w-full bg-white flex flex-col">
      {/* Premium Header */}
-     <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10 rounded-xl mx-2">
+     <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10 rounded-xl mx-1">
   <div className="flex justify-between items-start mb-6">
     <div className="flex items-center gap-3">
       <div className="bg-white/10 px-3 rounded-lg backdrop-blur-md h-7 flex items-center">
