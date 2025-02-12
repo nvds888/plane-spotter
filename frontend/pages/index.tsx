@@ -195,19 +195,24 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
       }
   
       const savedSpots: Spot[] = []
+      let isFirstSpot = true  // Add this line
+      
       for (const flight of flights) {
         const requestBody = {
           userId: session.user.id,
           lat: coords.latitude,
           lon: coords.longitude,
-          flight
+          flight,
+          isFirstSpot   
         }
-  
+      
         const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestBody),
         })
+      
+        isFirstSpot = false 
   
         if (!spotResponse.ok) {
           const errorResponse = await spotResponse.json()
