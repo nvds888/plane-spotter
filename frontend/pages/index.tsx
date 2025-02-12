@@ -363,7 +363,7 @@ setSpotsRemaining(userData.spotsRemaining);
       position: absolute;
       top: 0;
       height: 100%;
-      width: 3px;
+      width: 4px;
       background: white;
       border-radius: 8px;
     }

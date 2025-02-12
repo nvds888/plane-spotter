@@ -224,7 +224,26 @@ export default function Achievements() {
   return (
     <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
       {/* Premium Header */}
-      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10">
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10 rounded-xl">
+  {/* Add white lines using pseudo-elements */}
+  <style jsx>{`
+    header::before,
+    header::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 4px;
+      background: white;
+      border-radius: 8px;
+    }
+    header::before {
+      left: 0;
+    }
+    header::after {
+      right: 0;
+    }
+  `}</style>
         <div className="max-w-lg mx-auto">
         <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
