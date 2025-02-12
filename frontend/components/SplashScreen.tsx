@@ -13,17 +13,23 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onAnimationComplete }) => {
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.8 }}
+      transition={{ 
+        duration: 0.8,
+        exit: { duration: 0.8 } // Ensure exit animation duration is applied
+      }}
       onAnimationComplete={onAnimationComplete}
     >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ 
-          duration: 1,
-          type: "spring", 
-          damping: 10, 
-          stiffness: 100 
+        animate={{ 
+          scale: 1, 
+          opacity: 1,
+          transition: {
+            duration: 0.5,
+            type: "spring",
+            damping: 20,
+            stiffness: 200
+          }
         }}
       >
         <Image 

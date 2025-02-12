@@ -8,13 +8,23 @@ import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   const [showSplashScreen, setShowSplashScreen] = useState(true);
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
     // Hide splash screen after delay
     const timer = setTimeout(() => {
       setShowSplashScreen(false);
-    }, 3000);
-    return () => clearTimeout(timer);
+    }, 2000); // Reduced time to account for exit animation
+
+    // Set app ready with a slight delay to ensure smooth transition
+    const readyTimer = setTimeout(() => {
+      setAppReady(true);
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(readyTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -67,7 +77,9 @@ export default function App({ Component, pageProps }: AppProps) {
           />
         )}
       </AnimatePresence>
-      <Component {...pageProps} />
+      <div style={{ opacity: appReady ? 1 : 0, transition: 'opacity 0.3s' }}>
+        <Component {...pageProps} />
+      </div>
     </SessionProvider>
   );
 }
