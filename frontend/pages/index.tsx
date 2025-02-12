@@ -322,7 +322,7 @@ setSpotsRemaining(userData.spotsRemaining);
               <div className="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Plane className="text-indigo-600" size={32} />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Plane Spotter</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Planeify</h1>
               <p className="text-gray-500 mb-6">Join the community of aviation enthusiasts</p>
               <div className="space-y-3">
                 <Link
@@ -352,9 +352,8 @@ setSpotsRemaining(userData.spotsRemaining);
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-3">
             <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-md">
-              <Plane className="text-white w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold text-white">Plane Spotter</h1>
+            <h2 className="text-2xl font-bold text-white">Planeify</h2>
           </div>
           <div className="flex flex-col items-end gap-2">
             <button 
