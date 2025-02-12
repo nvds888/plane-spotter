@@ -352,12 +352,12 @@ setSpotsRemaining(userData.spotsRemaining);
       <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10">
   <div className="flex justify-between items-start mb-6">
     <div className="flex items-center gap-3">
-      <div className="bg-white/10 py-1 px-2 rounded-xl backdrop-blur-md flex items-center">
+      <div className="bg-white/10 px-3 rounded-lg backdrop-blur-md h-7 flex items-center">
         <Image
           src="/pwa-nobackground.png"
           alt="Planeify"
-          width={100}
-          height={28}
+          width={80}
+          height={20}
           className="object-contain"
           priority
         />
