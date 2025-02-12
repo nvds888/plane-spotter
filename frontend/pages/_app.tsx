@@ -1,4 +1,5 @@
-// pages/_app.tsx
+"use client"
+
 import { SessionProvider, useSession } from 'next-auth/react';
 import type { AppProps } from 'next/app';
 import { useState, useEffect } from 'react';
