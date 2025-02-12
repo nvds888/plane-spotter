@@ -1,10 +1,22 @@
 // pages/_app.tsx
 import { SessionProvider } from 'next-auth/react';
 import type { AppProps } from 'next/app';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import SplashScreen from '../components/SplashScreen';
 import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
+  const [showSplashScreen, setShowSplashScreen] = useState(true);
+
+  useEffect(() => {
+    // Hide splash screen after delay
+    const timer = setTimeout(() => {
+      setShowSplashScreen(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       // Only register in production
@@ -48,6 +60,13 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <SessionProvider session={pageProps.session}>
+      <AnimatePresence mode="wait">
+        {showSplashScreen && (
+          <SplashScreen
+            onAnimationComplete={() => setShowSplashScreen(false)}
+          />
+        )}
+      </AnimatePresence>
       <Component {...pageProps} />
     </SessionProvider>
   );

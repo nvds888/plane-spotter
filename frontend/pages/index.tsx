@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Trophy, House, BookOpen, Users, MapPin, Plane } from "lucide-react"
 import ProfileModal from "../components/ProfileModal"
 import LocationStatsModal from "../components/LocationStatsModal"
-import SplashScreen from "../components/SplashScreen"
 
 
 interface AircraftTypeOption {
@@ -85,7 +84,6 @@ type GuessResult = {
 export default function Home() {
   const { data: session } = useSession()
   const [isClient, setIsClient] = useState(false)
-  const [showSplashScreen, setShowSplashScreen] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [newSpots, setNewSpots] = useState<Spot[]>([])
   const [showGuessModal, setShowGuessModal] = useState(false)
@@ -118,21 +116,6 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
 
   useEffect(() => setIsClient(true), [])
 
-  
-  useEffect(() => {
-    if (showSplashScreen) {
-      const timer = setTimeout(() => {
-        setShowSplashScreen(false);
-      }, 3000);  
-      
-      return () => clearTimeout(timer);
-    }
-  }, [showSplashScreen]);
-  
-  const handleSplashScreenComplete = () => {
-    // Don't set showSplashScreen here, let the timer handle it
-    console.log('Animation completed');
-  };
   useEffect(() => {
     const fetchUserXP = async () => {
       if (!session?.user?.id) return
@@ -211,33 +194,28 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
       }
   
       const savedSpots: Spot[] = []
-let isFirstSpot = true  
-
-for (const flight of flights) {
-  const requestBody = {
-    userId: session.user.id,
-    lat: coords.latitude,
-    lon: coords.longitude,
-    flight,
-    isFirstSpot  
-  }
-
-  const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody),
-  })
-
-  isFirstSpot = false  // Set to false after first iteration
-
-  if (!spotResponse.ok) {
-    const errorResponse = await spotResponse.json()
-    throw new Error(errorResponse.error || "Failed to save spot")
-  }
-
-  const newSpot: Spot = await spotResponse.json()
-  savedSpots.push(newSpot)
-}
+      for (const flight of flights) {
+        const requestBody = {
+          userId: session.user.id,
+          lat: coords.latitude,
+          lon: coords.longitude,
+          flight
+        }
+  
+        const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody),
+        })
+  
+        if (!spotResponse.ok) {
+          const errorResponse = await spotResponse.json()
+          throw new Error(errorResponse.error || "Failed to save spot")
+        }
+  
+        const newSpot: Spot = await spotResponse.json()
+        savedSpots.push(newSpot)
+      }
   
       alert(`Spotted ${savedSpots.length} flights!`)
   
@@ -335,19 +313,9 @@ setSpotsRemaining(userData.spotsRemaining);
     }
   }
 
-
-  return (
-    <div className="relative">
-      <AnimatePresence mode="wait">
-        {showSplashScreen ? (
-          <SplashScreen
-            isVisible={true}
-            onAnimationComplete={handleSplashScreenComplete}
-          />
-        ) : (
-          <>
-        {!session ? (
-          <div className="h-screen w-full bg-white flex flex-col">
+  if (!session) {
+    return (
+      <div className="h-screen w-full bg-white flex flex-col">
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
             <div className="text-center">
@@ -374,8 +342,11 @@ setSpotsRemaining(userData.spotsRemaining);
           </div>
         </div>
       </div>
-        ) : (
-          <div className="min-h-screen w-full bg-white flex flex-col"> 
+    )
+  }
+
+  return (
+    <div className="min-h-screen w-full bg-white flex flex-col">
       {/* Premium Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10">
         <div className="flex justify-between items-start mb-6">
@@ -746,26 +717,20 @@ setSpotsRemaining(userData.spotsRemaining);
         )}
       </AnimatePresence>
 
-
       <ProfileModal 
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         userId={session.user.id}
       />
 
-      <LocationStatsModal 
-        isOpen={showLocationStatsModal}
-        onClose={() => setShowLocationStatsModal(false)}
-        currentLocation={coords ? {
-          latitude: coords.latitude,
-          longitude: coords.longitude
-        } : null}
-      />
-       </div>
-            )}
-          </>
-        )}
-      </AnimatePresence>
+<LocationStatsModal 
+  isOpen={showLocationStatsModal}
+  onClose={() => setShowLocationStatsModal(false)}
+  currentLocation={coords ? {
+    latitude: coords.latitude,
+    longitude: coords.longitude
+  } : null}
+/>
     </div>
-  );
-} 
+  )
+}
