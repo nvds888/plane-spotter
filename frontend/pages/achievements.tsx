@@ -233,9 +233,9 @@ export default function Achievements() {
               </div>
               <h1 className="text-2xl font-bold text-white">Achievements</h1>
             </div>
-            <div className="bg-white/10 px-4 py-2 rounded-2xl backdrop-blur-md">
+            <div className="bg-white/10 px-3 py-1 rounded-2xl backdrop-blur-md">
               <span className="text-white/90 text-sm">
-                {completedCount} of {totalCount} completed
+                {completedCount} / {totalCount} completed
               </span>
             </div>
           </div>
