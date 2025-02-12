@@ -5,7 +5,7 @@ export default function Document() {
     <Html lang="en">
       <Head>
         {/* Base theme color for browser */}
-        <meta name="theme-color" content="#F9FAFB" />
+        <meta name="theme-color" content="#FFFFFF80" />
         
         {/* PWA specific configurations */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
