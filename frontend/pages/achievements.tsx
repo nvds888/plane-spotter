@@ -191,7 +191,7 @@ export default function Achievements() {
 
   if (!session) {
     return (
-      <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      <div className="h-screen w-full bg-white/10 backdrop-blur-md flex flex-col">
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
             <div className="text-center">
@@ -222,7 +222,7 @@ export default function Achievements() {
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-blue-50 to-white flex flex-col">
+    <div className="h-screen w-full bg-white/10 backdrop-blur-md flex flex-col">
       {/* Premium Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10 rounded-xl mx-2">
         <div className="max-w-lg mx-auto">
