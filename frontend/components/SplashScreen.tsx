@@ -21,7 +21,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onAnimationComplete }) => {
         onAnimationComplete={onAnimationComplete}
       >
         <Image 
-          src="/pwa.png" 
+          src="/pwa-nobackground.png" 
           alt="Planeify Logo" 
           width={192} 
           height={192} 
