@@ -354,23 +354,25 @@ setSpotsRemaining(userData.spotsRemaining);
   return (
     <div className="min-h-screen w-full bg-white flex flex-col">
      {/* Premium Header */}
-<header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10">
-   {/* Add white lines using pseudo-elements */}
+<header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10 rounded-b-3xl">
+  {/* Add white lines using pseudo-elements */}
   <style jsx>{`
     header::before,
     header::after {
       content: '';
       position: absolute;
       top: 0;
-      height: 100%;
-      width: 4px;
-      background: white;  
+      height: calc(100% - 24px); 
+      width: 2px;
+      background: white;
     }
     header::before {
       left: 0;
+      border-bottom-left-radius: 24px;
     }
     header::after {
       right: 0;
+      border-bottom-right-radius: 24px;
     }
   `}</style>
   <div className="flex justify-between items-start mb-6">
