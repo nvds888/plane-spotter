@@ -14,12 +14,12 @@ export default function App({ Component, pageProps }: AppProps) {
     const timer = setTimeout(() => {
       setShowSplashScreen(false);
     }, 3000);
-  
+
     // If session is already present, immediately hide splash screen
     if (session) {
       setShowSplashScreen(false);
     }
-  
+
     return () => clearTimeout(timer);
   }, [session]);
 
@@ -67,7 +67,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <SessionProvider session={pageProps.session}>
       {showSplashScreen ? (
-        <SplashScreen onAnimationComplete={() => {}} />
+        <SplashScreen onAnimationComplete={() => setShowSplashScreen(false)} />
       ) : (
         <Component {...pageProps} />
       )}
