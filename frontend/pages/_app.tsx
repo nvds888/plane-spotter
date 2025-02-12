@@ -2,29 +2,17 @@
 import { SessionProvider } from 'next-auth/react';
 import type { AppProps } from 'next/app';
 import { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '../components/SplashScreen';
 import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   const [showSplashScreen, setShowSplashScreen] = useState(true);
-  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
-    // Hide splash screen after delay
     const timer = setTimeout(() => {
       setShowSplashScreen(false);
-    }, 2000); // Reduced time to account for exit animation
-
-    // Set app ready with a slight delay to ensure smooth transition
-    const readyTimer = setTimeout(() => {
-      setAppReady(true);
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(readyTimer);
-    };
+    }, 3000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -70,16 +58,11 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <SessionProvider session={pageProps.session}>
-      <AnimatePresence mode="wait">
-        {showSplashScreen && (
-          <SplashScreen
-            onAnimationComplete={() => setShowSplashScreen(false)}
-          />
-        )}
-      </AnimatePresence>
-      <div style={{ opacity: appReady ? 1 : 0, transition: 'opacity 0.3s' }}>
+      {showSplashScreen ? (
+        <SplashScreen onAnimationComplete={() => {}} />
+      ) : (
         <Component {...pageProps} />
-      </div>
+      )}
     </SessionProvider>
   );
 }
