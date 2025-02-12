@@ -1,8 +1,14 @@
-import Link from "next/link"
+"use client"
+
+import { useState } from "react"
 import Image from "next/image"
-import { Plane, MapPin, Trophy } from "lucide-react"
+import { Plane, MapPin, Trophy, X } from "lucide-react"
 
 export default function LandingPage() {
+  const [showInstructions, setShowInstructions] = useState(false)
+
+  const toggleInstructions = () => setShowInstructions(!showInstructions)
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -25,14 +31,9 @@ export default function LandingPage() {
               How It Works
             </a>
           </nav>
-          <div className="flex space-x-4">
-            <Link href="/auth/signin" className="btn-secondary">
-              Sign In
-            </Link>
-            <Link href="/auth/signup" className="btn-primary">
-              Sign Up
-            </Link>
-          </div>
+          <button onClick={toggleInstructions} className="btn-primary">
+            Install App
+          </button>
         </div>
       </header>
 
@@ -46,9 +47,12 @@ export default function LandingPage() {
             Join the community of aviation enthusiasts. Spot planes in real-time, guess their details, and build your
             collection.
           </p>
-          <Link href="/auth/signup" className="btn-primary text-lg px-8 py-4">
-            Get Started
-          </Link>
+          <button onClick={toggleInstructions} className="btn-primary text-lg px-8 py-4">
+            Install Planeify
+          </button>
+          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            Add to your home screen for the full app experience!
+          </p>
         </div>
       </section>
 
@@ -81,7 +85,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">How It Works</h2>
           <div className="grid md:grid-cols-4 gap-8">
-            <StepCard number={1} title="Sign Up" description="Create your account and join the Planeify community." />
+            <StepCard
+              number={1}
+              title="Install the App"
+              description="Add Planeify to your home screen for easy access."
+            />
             <StepCard
               number={2}
               title="Spot Aircraft"
@@ -167,6 +175,33 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Install Instructions Modal */}
+      {showInstructions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">How to Install Planeify</h3>
+              <button
+                onClick={toggleInstructions}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <ol className="list-decimal list-inside space-y-2 text-gray-700 dark:text-gray-300">
+              <li>Open Planeify in your mobile browser</li>
+              <li>Tap the browser menu icon (usually three dots)</li>
+              <li>Select Add to Home Screen or Install App</li>
+              <li>Follow the on-screen prompts to complete installation</li>
+            </ol>
+            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              Note: The exact steps may vary depending on your device and browser. Once installed, open the app from
+              your home screen for the full experience!
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -184,7 +219,7 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
       <p className="text-gray-600 dark:text-gray-300">{description}</p>
     </div>
-  )
+  );
 }
 
 interface StepCardProps {
@@ -202,6 +237,8 @@ function StepCard({ number, title, description }: StepCardProps) {
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
       <p className="text-gray-600 dark:text-gray-300">{description}</p>
     </div>
-  )
+  );
 }
+
+
 
