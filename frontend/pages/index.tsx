@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Trophy, House, BookOpen, Users, MapPin, Plane } from "lucide-react"
 import ProfileModal from "../components/ProfileModal"
 import LocationStatsModal from "../components/LocationStatsModal"
+import Image from 'next/image'
 
 
 interface AircraftTypeOption {
@@ -349,21 +350,28 @@ setSpotsRemaining(userData.spotsRemaining);
     <div className="min-h-screen w-full bg-white flex flex-col">
       {/* Premium Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10">
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-md">
-            </div>
-            <h2 className="text-2xl font-bold text-white">Planeify</h2>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <button 
-              onClick={() => setShowProfileModal(true)}
-              className="bg-white/10 px-4 py-1 rounded-full backdrop-blur-md"
-            >
-              <span className="text-white text-sm font-medium">@{session.user.username}</span>
-            </button>
-          </div>
-        </div>
+  <div className="flex justify-between items-start mb-6">
+    <div className="flex items-center gap-3">
+      <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-md">
+        <Image
+          src="/pwa-nobackground.png"
+          alt="Planeify"
+          width={120}
+          height={35}
+          className="object-contain"
+          priority
+        />
+      </div>
+    </div>
+    <div className="flex flex-col items-end gap-2">
+      <button 
+        onClick={() => setShowProfileModal(true)}
+        className="bg-white/10 px-4 py-1 rounded-full backdrop-blur-md"
+      >
+        <span className="text-white text-sm font-medium">@{session.user.username}</span>
+      </button>
+    </div>
+  </div>
         
         {/* XP Display */}
         <div className="flex gap-3">
