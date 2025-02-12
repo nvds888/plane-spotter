@@ -363,7 +363,7 @@ setSpotsRemaining(userData.spotsRemaining);
         position: absolute;
         top: 0;
         height: 100%;
-        width: 2px;  /* Changed from 1px to 2px */
+        width: 4px; 
         background: rgba(255, 255, 255, 0.3);
       }
       header::before {
