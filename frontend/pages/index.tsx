@@ -6,8 +6,9 @@ import { useGeolocated } from "react-geolocated"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { motion, AnimatePresence } from "framer-motion"
-import { Trophy, House, BookOpen, Users, MapPin, Plane } from "lucide-react"
+import { Trophy, House, BookOpen, Users, MapPin, Plane, Sparkles } from "lucide-react"
 import ProfileModal from "../components/ProfileModal"
+import TeleportModal from "../components/TeleportModal"
 import LocationStatsModal from "../components/LocationStatsModal"
 import Image from 'next/image'
 
@@ -103,6 +104,7 @@ const [globalSpot, setGlobalSpot] = useState<GlobalSpot | null>(null);
 const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
 const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
   const [spotLimit, setSpotLimit] = useState<number>(4)
+  const [showTeleportModal, setShowTeleportModal] = useState(false)
 
 
   const { coords, isGeolocationAvailable } = useGeolocated({
@@ -353,30 +355,39 @@ setSpotsRemaining(userData.spotsRemaining);
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col">
-     {/* Premium Header */}
-     <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10 rounded-xl mx-1">
-  <div className="flex justify-between items-start mb-6">
-    <div className="flex items-center gap-3">
-      <div className="bg-white/10 px-3 rounded-lg backdrop-blur-md h-7 flex items-center">
-        <Image
-          src="/pwa-nobackground.png"
-          alt="Planeify"
-          width={80}
-          height={20}
-          className="object-contain"
-          priority
-        />
-      </div>
-    </div>
-    <div className="flex flex-col items-end gap-2">
-      <button 
-        onClick={() => setShowProfileModal(true)}
-        className="bg-white/10 px-4 py-1 rounded-full backdrop-blur-md"
-      >
-        <span className="text-white text-sm font-medium">@{session.user.username}</span>
-      </button>
-    </div>
-  </div>
+      {/* Premium Header */}
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-600 pt-8 pb-6 px-4 fixed top-0 left-0 right-0 z-10 rounded-xl mx-1">
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/10 px-3 rounded-lg backdrop-blur-md h-7 flex items-center">
+              <Image
+                src="/pwa-nobackground.png"
+                alt="Planeify"
+                width={80}
+                height={20}
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setShowTeleportModal(true)}
+                className="bg-white/10 px-4 py-1 rounded-full backdrop-blur-md flex items-center gap-2"
+              >
+                <Sparkles className="text-white" size={16} />
+                <span className="text-white text-sm font-medium">Teleport</span>
+              </button>
+              <button 
+                onClick={() => setShowProfileModal(true)}
+                className="bg-white/10 px-4 py-1 rounded-full backdrop-blur-md"
+              >
+                <span className="text-white text-sm font-medium">@{session.user.username}</span>
+              </button>
+            </div>
+          </div>
+        </div>
         
         {/* XP Display */}
         <div className="flex gap-3">
@@ -742,6 +753,85 @@ setSpotsRemaining(userData.spotsRemaining);
     latitude: coords.latitude,
     longitude: coords.longitude
   } : null}
+/>
+
+<TeleportModal 
+  isOpen={showTeleportModal}
+  onClose={() => setShowTeleportModal(false)}
+  onSpot={async (coords) => {
+    if (isLoading || !session?.user?.id) return;
+    if (spotsRemaining <= 0) {
+      alert("You've reached your daily spot limit! Upgrade to premium for unlimited spots.")
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const userId = encodeURIComponent(session.user.id);
+      const flightsResponse = await fetch(
+        `https://plane-spotter-backend.onrender.com/api/flights/nearby?lat=${coords.latitude}&lon=${coords.longitude}&userId=${userId}`
+      );
+
+      if (!flightsResponse.ok) throw new Error("Failed to fetch flights");
+      const flights = await flightsResponse.json();
+
+      if (!flights.length) {
+        alert("No flights detected within visible range!");
+        return;
+      }
+
+      const savedSpots: Spot[] = [];
+      let isFirstSpot = true;
+      
+      for (const flight of flights) {
+        const requestBody = {
+          userId: session.user.id,
+          lat: coords.latitude,
+          lon: coords.longitude,
+          flight,
+          isFirstSpot
+        };
+      
+        const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody),
+        });
+      
+        isFirstSpot = false;
+
+        if (!spotResponse.ok) {
+          const errorResponse = await spotResponse.json();
+          throw new Error(errorResponse.error || "Failed to save spot");
+        }
+
+        const newSpot: Spot = await spotResponse.json();
+        savedSpots.push(newSpot);
+      }
+
+      alert(`Spotted ${savedSpots.length} flights!`);
+
+      const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
+      const xpData = await xpResponse.json();
+      setUserXP(xpData);
+
+      const userResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}`);
+      const userData = await userResponse.json();
+      setSpotsRemaining(userData.spotsRemaining);
+
+      if (savedSpots.length > 0) {
+        setNewSpots(savedSpots);
+        setCurrentGuessSpot(savedSpots[0]);
+        await fetchSuggestions();
+        setShowGuessModal(true);
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Spotting failed: ${message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }}
 />
     </div>
   )
