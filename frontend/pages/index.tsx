@@ -12,7 +12,6 @@ import TeleportModal from "../components/TeleportModal"
 import LocationStatsModal from "../components/LocationStatsModal"
 import Image from 'next/image'
 
-
 interface AircraftTypeOption {
   code: string;
   name: string;
@@ -28,7 +27,7 @@ interface DestinationOption {
   name: string;
 }
 
-type Flight = {
+export type Flight = {
   hex: string
   flight: string
   type: string
@@ -37,8 +36,8 @@ type Flight = {
   operator: string
   lat: number
   lon: number
-  departureAirport: string  // Changed from departureairport
-  arrivalAirport: string    // Changed from arrivalairport
+  departureAirport: string  
+  arrivalAirport: string    
   track?: number
   geography?: {
     direction?: number
@@ -59,7 +58,7 @@ type GlobalSpot = {
 
 
 
-type Spot = {
+export type Spot = {
   _id: string
   userId: string
   lat: number
@@ -73,6 +72,7 @@ type Spot = {
   isAirlineCorrect?: boolean
   isDestinationCorrect?: boolean
   bonusXP?: number
+  baseXP?: number
 }
 
 type GuessResult = {
@@ -89,6 +89,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [newSpots, setNewSpots] = useState<Spot[]>([])
   const [showGuessModal, setShowGuessModal] = useState(false)
+const [guessCount, setGuessCount] = useState<number>(0);
+const [isMapSelectionMode, setIsMapSelectionMode] = useState<boolean>(false);
   const [currentGuessSpot, setCurrentGuessSpot] = useState<Spot | null>(null)
   const [guessedType, setGuessedType] = useState("")
   const [userXP, setUserXP] = useState<{ totalXP: number; weeklyXP: number }>({ totalXP: 0, weeklyXP: 0 })
@@ -240,12 +242,17 @@ const userResponse = await fetch(`https://plane-spotter-backend.onrender.com/api
 const userData = await userResponse.json();
 setSpotsRemaining(userData.spotsRemaining);
   
-      if (savedSpots.length > 0) {
-        setNewSpots(savedSpots)
-        setCurrentGuessSpot(savedSpots[0])
-        await fetchSuggestions()
-        setShowGuessModal(true)
-      }
+if (savedSpots.length > 0) {
+  setNewSpots(savedSpots);
+  if (savedSpots.length > 3) {
+    setIsMapSelectionMode(true);
+    setCurrentGuessSpot(null); 
+  } else {
+    setCurrentGuessSpot(savedSpots[0]);  
+  }
+  await fetchSuggestions();
+  setShowGuessModal(true);
+}
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error"
       alert(`Spotting failed: ${message}`)
@@ -274,7 +281,7 @@ setSpotsRemaining(userData.spotsRemaining);
   };
 
   const handleGuessSubmit = async () => {
-    if (!currentGuessSpot || !session?.user?.id) return
+    if (!currentGuessSpot || !session?.user?.id) return;
   
     try {
       const response = await fetch(
@@ -287,10 +294,10 @@ setSpotsRemaining(userData.spotsRemaining);
             guessedAirline,
             guessedDestination
           }),
-        },
-      )
+        }
+      );
   
-      const result = await response.json()
+      const result = await response.json();
   
       setGuessResults((prev) => [
         ...prev,
@@ -299,34 +306,51 @@ setSpotsRemaining(userData.spotsRemaining);
           isTypeCorrect: result.isTypeCorrect,
           isAirlineCorrect: result.isAirlineCorrect,
           isDestinationCorrect: result.isDestinationCorrect,
-          xpEarned: result.bonusXP + 5, // Base XP (5) + Bonus XP
+          xpEarned: result.bonusXP + (currentGuessSpot.baseXP || 5),
         },
-      ])
+      ]);
   
       // Reset guess fields
-      setGuessedType("")
-      setGuessedAirline("")
-      setGuessedDestination("")
+      setGuessedType("");
+      setGuessedAirline("");
+      setGuessedDestination("");
   
-      const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`)
-      const xpData = await xpResponse.json()
-      setUserXP(xpData)
+      const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
+      const xpData = await xpResponse.json();
+      setUserXP(xpData);
   
-      const nextSpots = newSpots.slice(1)
-      if (nextSpots.length > 0) {
-        setNewSpots(nextSpots)
-        setCurrentGuessSpot(nextSpots[0])
+      // Update guess count and handle next selection
+      setGuessCount(prev => prev + 1);
+      
+      if (isMapSelectionMode) {
+        setCurrentGuessSpot(null);  // Return to map selection
+        
+        if (guessCount + 1 >= 3) {
+          // If we've made 3 guesses, finish up
+          setShowGuessModal(false);
+          setShowResultsModal(true);
+          setIsTeleportSpot(false);
+          setTeleportCoords(null);
+        }
+        // Otherwise, we return to map for next selection (currentGuessSpot is already null)
       } else {
-        setShowGuessModal(false)
-        setShowResultsModal(true)
-        setNewSpots([])
-        setIsTeleportSpot(false)    
-    setTeleportCoords(null)
+        // Original behavior for ≤3 spots
+        const nextSpots = newSpots.slice(1);
+        if (nextSpots.length > 0) {
+          setNewSpots(nextSpots);
+          setCurrentGuessSpot(nextSpots[0]);
+        } else {
+          setShowGuessModal(false);
+          setShowResultsModal(true);
+          setNewSpots([]);
+          setIsTeleportSpot(false);
+          setTeleportCoords(null);
+        }
       }
     } catch (error) {
-      console.error("Guess submission failed:", error)
+      console.error("Guess submission failed:", error);
     }
-  }
+  };
 
   if (!session) {
     return (
@@ -526,115 +550,137 @@ setSpotsRemaining(userData.spotsRemaining);
         )}
       </AnimatePresence>
 
-      {/* Guess Modal */}
       <AnimatePresence>
-        {showGuessModal && currentGuessSpot && (
-          <motion.div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-gradient-to-b from-white to-blue-50 rounded-3xl max-w-md w-full p-6 shadow-xl"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl">
-                  <Plane className="text-white" size={24} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">What Did You Spot?</h3>
-                  <p className="text-sm text-gray-500">
-                    {newSpots.length} plane{newSpots.length > 1 ? "s" : ""} left to guess
-                  </p>
-                </div>
-              </div>
-
-              <div className="mb-6 overflow-hidden rounded-2xl bg-white/50 p-1">
-  {currentGuessSpot && (
-    <Map
-      center={isTeleportSpot && teleportCoords 
-        ? [teleportCoords.latitude, teleportCoords.longitude]
-        : coords 
-          ? [coords.latitude, coords.longitude]
-          : [0, 0]  // fallback coordinates
-      }
-      spots={newSpots}
-      highlightedSpot={currentGuessSpot}
-    />
-  )}
-</div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Aircraft Type
-                  </label>
-                  <select 
-  value={guessedType}
-  onChange={(e) => setGuessedType(e.target.value)}
-  className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
->
-  <option value="">Select Type</option>
-  {aircraftTypeOptions.map(type => (
-    <option key={type.code} value={type.code}>
-      ({type.code}) {type.name}
-    </option>
-  ))}
-</select>
+  {showGuessModal && (
+    <motion.div
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="bg-gradient-to-b from-white to-blue-50 rounded-3xl max-w-md w-full p-6 shadow-xl"
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl">
+            <Plane className="text-white" size={24} />
           </div>
-
           <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Airline
-                  </label>
-                  <select
-                    value={guessedAirline}
-                    onChange={(e) => setGuessedAirline(e.target.value)}
-                    className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select Airline</option>
-                    {airlineOptions.map(airline => (
-  <option key={airline.code} value={airline.code}>
-    ({airline.code}) {airline.name}
-  </option>
-))}
-                  </select>
-                </div>
+            <h3 className="text-xl font-bold text-gray-900">
+              {isMapSelectionMode && !currentGuessSpot 
+                ? "Select Aircraft to Guess" 
+                : "What Did You Spot?"}
+            </h3>
+            <p className="text-sm text-gray-500">
+              {isMapSelectionMode 
+                ? `${guessCount}/3 guesses made` 
+                : `${newSpots.length} plane${newSpots.length > 1 ? "s" : ""} left to guess`}
+            </p>
+          </div>
+        </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Destination
-                  </label>
-                  <select
-                    value={guessedDestination}
-                    onChange={(e) => setGuessedDestination(e.target.value)}
-                    className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select Destination</option>
-                    {destinationOptions.map(destination => (
-                      <option key={destination.code} value={destination.code}>
-                        ({destination.code}) {destination.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+        <div className="mb-6 overflow-hidden rounded-2xl bg-white/50 p-1">
+        <Map
+  center={isTeleportSpot && teleportCoords 
+    ? [teleportCoords.latitude, teleportCoords.longitude]
+    : coords 
+      ? [coords.latitude, coords.longitude]
+      : [0, 0]
+  }
+  spots={newSpots}
+  highlightedSpot={currentGuessSpot}
+  isSelectable={isMapSelectionMode && !currentGuessSpot}
+  onSpotSelect={isMapSelectionMode ? (spot: Spot) => setCurrentGuessSpot(spot) : undefined}
+/>
+        </div>
 
-              <motion.button
-                onClick={handleGuessSubmit}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors font-medium mt-6"
-                whileTap={{ scale: 0.95 }}
+        {currentGuessSpot ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Aircraft Type
+              </label>
+              <select 
+                value={guessedType}
+                onChange={(e) => setGuessedType(e.target.value)}
+                className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                Submit Guess
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                <option value="">Select Type</option>
+                {aircraftTypeOptions.map(type => (
+                  <option key={type.code} value={type.code}>
+                    ({type.code}) {type.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Airline
+              </label>
+              <select
+                value={guessedAirline}
+                onChange={(e) => setGuessedAirline(e.target.value)}
+                className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select Airline</option>
+                {airlineOptions.map(airline => (
+                  <option key={airline.code} value={airline.code}>
+                    ({airline.code}) {airline.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Destination
+              </label>
+              <select
+                value={guessedDestination}
+                onChange={(e) => setGuessedDestination(e.target.value)}
+                className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select Destination</option>
+                {destinationOptions.map(destination => (
+                  <option key={destination.code} value={destination.code}>
+                    ({destination.code}) {destination.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <motion.button
+              onClick={handleGuessSubmit}
+              className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors font-medium mt-6"
+              whileTap={{ scale: 0.95 }}
+            >
+              Submit Guess
+            </motion.button>
+          </div>
+        ) : isMapSelectionMode && guessCount >= 3 ? (
+          <motion.button
+            onClick={() => {
+              setShowGuessModal(false);
+              setShowResultsModal(true);
+            }}
+            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors font-medium"
+            whileTap={{ scale: 0.95 }}
+          >
+            Done
+          </motion.button>
+        ) : isMapSelectionMode ? (
+          <p className="text-center text-gray-500 text-sm">
+            Click on an aircraft to make your guess
+          </p>
+        ) : null}
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* Results Modal */}
       <AnimatePresence>
@@ -840,7 +886,11 @@ setSpotsRemaining(userData.spotsRemaining);
 
       if (savedSpots.length > 0) {
         setNewSpots(savedSpots);
-        setCurrentGuessSpot(savedSpots[0]);
+        if (savedSpots.length > 3) {
+          setIsMapSelectionMode(true);
+          setCurrentGuessSpot(null);  
+          setCurrentGuessSpot(savedSpots[0]);  
+        }
         await fetchSuggestions();
         setShowGuessModal(true);
       }

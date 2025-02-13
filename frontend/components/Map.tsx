@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, CircleMarker, useMap } from "react-lea
 import "leaflet/dist/leaflet.css";
 import { type LatLngExpression, LatLngBounds, DivIcon } from "leaflet";
 import { useEffect } from "react";
-import type { Spot } from "../types/types";
+import { type Spot } from "../pages/index";
 
 // Auto-fit component
 function AutoFitBounds({ positions }: { positions: LatLngExpression[] }) {
@@ -21,18 +21,18 @@ function AutoFitBounds({ positions }: { positions: LatLngExpression[] }) {
 }
 
 // Create custom plane icon
-const createPlaneIcon = (direction: number = 0, isHighlighted: boolean = false) => {
+const createPlaneIcon = (direction: number = 0, isHighlighted: boolean = false, isSelectable: boolean = false) => {
   return new DivIcon({
     html: `
       <div style="transform: rotate(${direction}deg);">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
           <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" 
-                fill="${isHighlighted ? '#ef4444' : '#3b82f6'}"
+                fill="${isHighlighted ? '#ef4444' : isSelectable ? '#8b5cf6' : '#3b82f6'}"
           />
         </svg>
       </div>
     `,
-    className: 'plane-icon',
+    className: isSelectable ? 'plane-icon selectable' : 'plane-icon',
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
@@ -42,9 +42,17 @@ interface MapProps {
   center: LatLngExpression;
   spots: Spot[];
   highlightedSpot: Spot | null;
+  isSelectable?: boolean;
+  onSpotSelect?: (spot: Spot) => void;
 }
 
-export default function Map({ center, spots, highlightedSpot }: MapProps) {
+export default function Map({ 
+  center, 
+  spots, 
+  highlightedSpot, 
+  isSelectable = false,
+  onSpotSelect 
+}: MapProps) {
   // Collect all positions for bounds calculation
   const allPositions: LatLngExpression[] = [center];
   spots.forEach(spot => {
@@ -62,6 +70,14 @@ export default function Map({ center, spots, highlightedSpot }: MapProps) {
       style.innerHTML = `
         .plane-icon {
           transition: transform 0.3s ease-in-out;
+        }
+        .plane-icon.selectable {
+          cursor: pointer;
+          transition: transform 0.2s ease-in-out;
+        }
+        .plane-icon.selectable:hover {
+          transform: scale(1.2);
+          filter: brightness(1.2);
         }
       `;
       document.head.appendChild(style);
@@ -117,12 +133,28 @@ export default function Map({ center, spots, highlightedSpot }: MapProps) {
               />
             )}
 
+            {/* Hover ring for selectable spots */}
+            {isSelectable && !isHighlighted && (
+              <CircleMarker
+                center={position}
+                radius={20}
+                color="#8b5cf6"
+                fillColor="#8b5cf6"
+                fillOpacity={0}
+                stroke={true}
+                weight={2}
+                interactive={false}
+              />
+            )}
+
             {/* Aircraft marker */}
             <Marker
               position={position}
-              icon={createPlaneIcon(direction, isHighlighted)}
-              interactive={false}
-              keyboard={false}
+              icon={createPlaneIcon(direction, isHighlighted, isSelectable)}
+              interactive={isSelectable}
+              eventHandlers={isSelectable && onSpotSelect ? {
+                click: () => onSpotSelect(spot)
+              } : undefined}
             />
           </div>
         );

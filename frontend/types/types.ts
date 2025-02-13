@@ -7,8 +7,8 @@ export type Flight = {
   operator: string
   lat: number
   lon: number
-  departureairport?: string
-  arrivalairport?: string
+  departureAirport?: string
+  arrivalAirport?: string
   track?: number
   geography?: {
     direction?: number
@@ -33,6 +33,7 @@ export type Spot = {
   isAirlineCorrect?: boolean
   isDestinationCorrect?: boolean
   bonusXP?: number
+  baseXP?: number
 }
 
   
