@@ -90,7 +90,6 @@ export default function Home() {
   const [newSpots, setNewSpots] = useState<Spot[]>([])
   const [showGuessModal, setShowGuessModal] = useState(false)
 const [guessCount, setGuessCount] = useState<number>(0);
-const [isMapSelectionMode, setIsMapSelectionMode] = useState<boolean>(false);
   const [currentGuessSpot, setCurrentGuessSpot] = useState<Spot | null>(null)
   const [guessedType, setGuessedType] = useState("")
   const [userXP, setUserXP] = useState<{ totalXP: number; weeklyXP: number }>({ totalXP: 0, weeklyXP: 0 })
@@ -244,11 +243,8 @@ setSpotsRemaining(userData.spotsRemaining);
   
 if (savedSpots.length > 0) {
   setNewSpots(savedSpots);
-  if (savedSpots.length > 3) {
-    setIsMapSelectionMode(true);
-    setCurrentGuessSpot(null); 
-  } else {
-    setCurrentGuessSpot(savedSpots[0]);  
+  if (savedSpots.length <= 3) {
+    setCurrentGuessSpot(savedSpots[0]);
   }
   await fetchSuggestions();
   setShowGuessModal(true);
@@ -319,20 +315,18 @@ if (savedSpots.length > 0) {
       const xpData = await xpResponse.json();
       setUserXP(xpData);
   
-      // Update guess count and handle next selection
       setGuessCount(prev => prev + 1);
       
-      if (isMapSelectionMode) {
-        setCurrentGuessSpot(null);  // Return to map selection
-        
+    
+      if (newSpots.length > 3) {
         if (guessCount + 1 >= 3) {
-          // If we've made 3 guesses, finish up
           setShowGuessModal(false);
           setShowResultsModal(true);
           setIsTeleportSpot(false);
           setTeleportCoords(null);
+        } else {
+          setCurrentGuessSpot(null);  
         }
-        // Otherwise, we return to map for next selection (currentGuessSpot is already null)
       } else {
         // Original behavior for ≤3 spots
         const nextSpots = newSpots.slice(1);
@@ -552,7 +546,7 @@ if (savedSpots.length > 0) {
 
       <AnimatePresence>
   {showGuessModal && (
-    <motion.div
+    <motion.div 
       className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -570,12 +564,12 @@ if (savedSpots.length > 0) {
           </div>
           <div>
             <h3 className="text-xl font-bold text-gray-900">
-              {isMapSelectionMode && !currentGuessSpot 
-                ? "Select Aircraft to Guess" 
+              {newSpots.length > 3 
+                ? currentGuessSpot ? "What Did You Spot?" : "Select Aircraft to Guess"
                 : "What Did You Spot?"}
             </h3>
             <p className="text-sm text-gray-500">
-              {isMapSelectionMode 
+              {newSpots.length > 3 
                 ? `${guessCount}/3 guesses made` 
                 : `${newSpots.length} plane${newSpots.length > 1 ? "s" : ""} left to guess`}
             </p>
@@ -583,18 +577,18 @@ if (savedSpots.length > 0) {
         </div>
 
         <div className="mb-6 overflow-hidden rounded-2xl bg-white/50 p-1">
-        <Map
-  center={isTeleportSpot && teleportCoords 
-    ? [teleportCoords.latitude, teleportCoords.longitude]
-    : coords 
-      ? [coords.latitude, coords.longitude]
-      : [0, 0]
-  }
-  spots={newSpots}
-  highlightedSpot={currentGuessSpot}
-  isSelectable={isMapSelectionMode && !currentGuessSpot}
-  onSpotSelect={isMapSelectionMode ? (spot: Spot) => setCurrentGuessSpot(spot) : undefined}
-/>
+          <Map
+            center={isTeleportSpot && teleportCoords 
+              ? [teleportCoords.latitude, teleportCoords.longitude]
+              : coords 
+                ? [coords.latitude, coords.longitude]
+                : [0, 0]
+            }
+            spots={newSpots}
+            highlightedSpot={currentGuessSpot}
+            isSelectable={newSpots.length > 3}
+            onSpotSelect={newSpots.length > 3 ? (spot) => setCurrentGuessSpot(spot) : undefined}
+          />
         </div>
 
         {currentGuessSpot ? (
@@ -661,22 +655,24 @@ if (savedSpots.length > 0) {
               Submit Guess
             </motion.button>
           </div>
-        ) : isMapSelectionMode && guessCount >= 3 ? (
+        ) : newSpots.length > 3 ? (
+          <p className="text-center text-gray-500 text-sm">
+            Click on an aircraft to make your guess
+          </p>
+        ) : null}
+
+        {guessCount >= 3 && (
           <motion.button
             onClick={() => {
               setShowGuessModal(false);
               setShowResultsModal(true);
             }}
-            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors font-medium"
+            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors font-medium mt-6"
             whileTap={{ scale: 0.95 }}
           >
             Done
           </motion.button>
-        ) : isMapSelectionMode ? (
-          <p className="text-center text-gray-500 text-sm">
-            Click on an aircraft to make your guess
-          </p>
-        ) : null}
+        )}
       </motion.div>
     </motion.div>
   )}
@@ -886,10 +882,8 @@ if (savedSpots.length > 0) {
 
       if (savedSpots.length > 0) {
         setNewSpots(savedSpots);
-        if (savedSpots.length > 3) {
-          setIsMapSelectionMode(true);
-          setCurrentGuessSpot(null);  
-          setCurrentGuessSpot(savedSpots[0]);  
+        if (savedSpots.length <= 3) {
+          setCurrentGuessSpot(savedSpots[0]);
         }
         await fetchSuggestions();
         setShowGuessModal(true);
