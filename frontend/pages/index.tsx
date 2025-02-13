@@ -105,6 +105,8 @@ const [showLocationStatsModal, setShowLocationStatsModal] = useState(false)
 const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
   const [spotLimit, setSpotLimit] = useState<number>(4)
   const [showTeleportModal, setShowTeleportModal] = useState(false)
+  const [isTeleportSpot, setIsTeleportSpot] = useState(false)
+const [teleportCoords, setTeleportCoords] = useState<{latitude: number; longitude: number} | null>(null)
 
 
   const { coords, isGeolocationAvailable } = useGeolocated({
@@ -173,6 +175,8 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
   
 
   const handleSpot = async () => {
+    setIsTeleportSpot(false) 
+  setTeleportCoords(null)
     if (!coords || isLoading || !session?.user?.id) return
     if (spotsRemaining <= 0) {
       alert("You've reached your daily spot limit! Upgrade to premium for unlimited spots.")
@@ -205,7 +209,8 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
           lat: coords.latitude,
           lon: coords.longitude,
           flight,
-          isFirstSpot   
+          isFirstSpot,
+          isTeleport: false    
         }
       
         const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {
@@ -315,6 +320,8 @@ setSpotsRemaining(userData.spotsRemaining);
         setShowGuessModal(false)
         setShowResultsModal(true)
         setNewSpots([])
+        setIsTeleportSpot(false)    
+    setTeleportCoords(null)
       }
     } catch (error) {
       console.error("Guess submission failed:", error)
@@ -547,9 +554,14 @@ setSpotsRemaining(userData.spotsRemaining);
               </div>
 
               <div className="mb-6 overflow-hidden rounded-2xl bg-white/50 p-1">
-  {currentGuessSpot && coords && (
+  {currentGuessSpot && (
     <Map
-      center={[coords.latitude, coords.longitude]}
+      center={isTeleportSpot && teleportCoords 
+        ? [teleportCoords.latitude, teleportCoords.longitude]
+        : coords 
+          ? [coords.latitude, coords.longitude]
+          : [0, 0]  // fallback coordinates
+      }
       spots={newSpots}
       highlightedSpot={currentGuessSpot}
     />
@@ -759,6 +771,8 @@ setSpotsRemaining(userData.spotsRemaining);
   isOpen={showTeleportModal}
   onClose={() => setShowTeleportModal(false)}
   onSpot={async (coords) => {
+    setIsTeleportSpot(true)           
+    setTeleportCoords(coords)   
     if (isLoading || !session?.user?.id) return;
     if (spotsRemaining <= 0) {
       alert("You've reached your daily spot limit! Upgrade to premium for unlimited spots.")
@@ -789,7 +803,12 @@ setSpotsRemaining(userData.spotsRemaining);
           lat: coords.latitude,
           lon: coords.longitude,
           flight,
-          isFirstSpot
+          isFirstSpot,
+          isTeleport: true,    
+          location: {
+            name: coords.locationName,
+            description: coords.locationDescription
+          }
         };
       
         const spotResponse = await fetch("https://plane-spotter-backend.onrender.com/api/spot", {

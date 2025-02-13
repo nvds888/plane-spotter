@@ -146,7 +146,9 @@ router.post('/', async (req, res) => {
       lat: req.body.lat,
       lon: req.body.lon,
       flight: req.body.flight,
-      baseXP: 5,
+      baseXP: req.body.isTeleport ? 10 : 5,  // Modified this line
+      isTeleport: req.body.isTeleport || false,  // Added this
+      location: req.body.location || null,     // Added this
       timestamp: now
     };
 
@@ -163,10 +165,9 @@ await User.findByIdAndUpdate(
   spot.userId,
   { 
     $inc: { 
-      totalXP: 5, 
-      weeklyXP: 5
+      totalXP: spotData.baseXP,    // Changed from hardcoded 5
+      weeklyXP: spotData.baseXP    // Changed from hardcoded 5
     },
-    // Only decrease spotsRemaining if this is the first spot in a group
     ...(user.premium ? {} : req.body.isFirstSpot ? { 
       spotsRemaining: user.spotsRemaining - 1 
     } : {})
