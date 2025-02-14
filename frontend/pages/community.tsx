@@ -16,12 +16,10 @@ interface Flight {
   operator: string
   lat: number
   lon: number
-  orig_iata?: string  
-  dest_iata?: string 
-  departureAirport: string
-  departureAirportName: string
-  arrivalAirport: string
-  arrivalAirportName: string
+  orig_iata?: string 
+  dest_iata?: string  
+  departureAirport: string  
+  arrivalAirport: string   
 }
 
 interface Location {
@@ -143,21 +141,23 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
               <p className="text-sm text-gray-600">{spot.flight?.operator || 'Unknown Operator'}</p>
               
               <div className="flex items-center gap-2 mt-2 text-sm">
-                <div className="flex-1 min-w-0">
-                <p className="text-gray-700 truncate">
-  {formatAirport(spot.flight?.orig_iata || 'N/A', 
-                 spot.flight?.departureAirportName || 'Unknown Airport')}
-</p>
-                </div>
-                <div className="flex-shrink-0">
-                  <Plane size={14} className="text-gray-400 rotate-90" />
-                </div>
-                <p className="text-gray-700 truncate">
-  {formatAirport(spot.flight?.dest_iata || 'N/A', 
-                 spot.flight?.arrivalAirportName || 'Unknown Airport')}
-</p>
-              </div>
-            </div>
+  <div className="flex-1 min-w-0">
+    <p className="text-gray-700 truncate">
+      {formatAirport(spot.flight?.orig_iata || 'N/A', 
+                    spot.flight?.departureAirport || 'Unknown Airport')}
+    </p>
+  </div>
+  <div className="flex-shrink-0">
+    <Plane size={14} className="text-gray-400 rotate-90" />
+  </div>
+  <div className="flex-1 min-w-0">
+    <p className="text-gray-700 truncate">
+      {formatAirport(spot.flight?.dest_iata || 'N/A', 
+                    spot.flight?.arrivalAirport || 'Unknown Airport')}
+    </p>
+  </div>
+</div>
+</div>
             <p className="text-sm text-gray-500 flex items-center gap-1 ml-4">
               <MapPin size={14} />
               {isTeleport && spot.location?.name 
