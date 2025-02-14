@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, Users, MapPin, Plane, House, BookOpen, Trophy, X, CheckCircle, XCircle, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import ProfileModal from "../components/ProfileModal";  
+import ProfileModal from "../components/ProfileModal";
 
 interface Flight {
   hex: string
@@ -16,8 +16,17 @@ interface Flight {
   operator: string
   lat: number
   lon: number
+  orig_iata?: string  
+  dest_iata?: string 
   departureAirport: string
+  departureAirportName: string
   arrivalAirport: string
+  arrivalAirportName: string
+}
+
+interface Location {
+  name: string
+  description?: string
 }
 
 interface Spot {
@@ -50,6 +59,8 @@ interface Spot {
   isDestinationCorrect?: boolean
   baseXP?: number
   bonusXP?: number
+  isTeleport?: boolean
+  location?: Location
 }
 
 interface User {
@@ -70,6 +81,7 @@ interface UsersModalProps {
   onAction?: (username: string) => Promise<void>;
   actionLabel?: string | ((user: UserWithFollowing) => string);
 }
+
 interface SpotCardProps {
   spot: Spot;
   onProfileClick: (userId: string) => void;
@@ -78,6 +90,7 @@ interface SpotCardProps {
 const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const totalXP = (spot.baseXP || 0) + (spot.bonusXP || 0);
+  const isTeleport = spot.isTeleport || false;
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleString('en-US', {
@@ -88,11 +101,18 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
     });
   };
 
+  const formatAirport = (iata: string, name: string) => {
+    if (iata === 'N/A' || !iata) return name;
+    return `(${iata}) ${name}`;
+  };
+
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100">
+    <div className={`bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 
+      ${isTeleport ? 'ring-2 ring-purple-200 ring-opacity-50 bg-gradient-to-r from-white/80 to-purple-50/80' : ''}`}>
       <div className="p-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="h-10 w-10 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl flex items-center justify-center">
+          <div className={`h-10 w-10 rounded-xl flex items-center justify-center
+            ${isTeleport ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-gradient-to-r from-indigo-600 to-blue-600'}`}>
             <Users size={18} className="text-white" />
           </div>
           <div className="flex-1">
@@ -121,17 +141,30 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
             <div className="flex-1">
               <p className="text-gray-900 font-medium">{spot.flight?.type || 'Unknown Aircraft'}</p>
               <p className="text-sm text-gray-600">{spot.flight?.operator || 'Unknown Operator'}</p>
-              <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                <span>{spot.flight?.departureAirport || 'N/A'}</span>
-                <span>→</span>
-                <span>{spot.flight?.arrivalAirport || 'N/A'}</span>
+              
+              <div className="flex items-center gap-2 mt-2 text-sm">
+                <div className="flex-1 min-w-0">
+                <p className="text-gray-700 truncate">
+  {formatAirport(spot.flight?.orig_iata || 'N/A', 
+                 spot.flight?.departureAirportName || 'Unknown Airport')}
+</p>
+                </div>
+                <div className="flex-shrink-0">
+                  <Plane size={14} className="text-gray-400 rotate-90" />
+                </div>
+                <p className="text-gray-700 truncate">
+  {formatAirport(spot.flight?.dest_iata || 'N/A', 
+                 spot.flight?.arrivalAirportName || 'Unknown Airport')}
+</p>
               </div>
             </div>
             <p className="text-sm text-gray-500 flex items-center gap-1 ml-4">
               <MapPin size={14} />
-              {spot.userId?.location?.city 
-                ? `${spot.userId.location.city}, ${spot.userId.location.country}`
-                : (spot.country || 'Unknown Location')}
+              {isTeleport && spot.location?.name 
+                ? spot.location.name
+                : (spot.userId?.location?.city 
+                  ? `${spot.userId.location.city}, ${spot.userId.location.country}`
+                  : 'Unknown Location')}
             </p>
           </div>
 
@@ -153,13 +186,13 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
             >
               <div className="space-y-4 pt-3 border-t border-gray-100">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-3">
+                  <div className={`rounded-xl p-3 ${isTeleport ? 'bg-gradient-to-r from-purple-50 to-indigo-50' : 'bg-gradient-to-r from-indigo-50 to-blue-50'}`}>
                     <p className="text-xs text-gray-500 mb-1">Altitude</p>
                     <p className="font-medium">
                       {spot.flight?.alt ? `${spot.flight.alt.toLocaleString()} ft` : "N/A"}
                     </p>
                   </div>
-                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-3">
+                  <div className={`rounded-xl p-3 ${isTeleport ? 'bg-gradient-to-r from-purple-50 to-indigo-50' : 'bg-gradient-to-r from-indigo-50 to-blue-50'}`}>
                     <p className="text-xs text-gray-500 mb-1">Speed</p>
                     <p className="font-medium">
                       {spot.flight?.speed ? `${spot.flight.speed} kts` : "N/A"}
@@ -288,7 +321,7 @@ export default function Community() {
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -488,25 +521,25 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
       </AnimatePresence>
 
       {/* Global Spot Alert */}
-<AnimatePresence>
-  {globalSpot && (
-    <motion.div
-      className="fixed top-4 right-4 left-4 z-50"
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-    >
-      <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-lg shadow-lg p-4">
-        <div className="flex items-center gap-2">
-          <Plane className="text-indigo-600" size={16} />
-          <span className="text-sm">
-            {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
-          </span>
-        </div>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+      <AnimatePresence>
+        {globalSpot && (
+          <motion.div
+            className="fixed top-4 right-4 left-4 z-50"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-lg shadow-lg p-4">
+              <div className="flex items-center gap-2">
+                <Plane className="text-indigo-600" size={16} />
+                <span className="text-sm">
+                  {globalSpot.flight?.type} spotted in {globalSpot.city}, {globalSpot.country}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modals */}
       <UsersModal 
@@ -577,28 +610,28 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
       </header>
 
       {/* Friend Spots Feed */}
-<div className="max-w-lg mx-auto px-4 py-6 mt-[140px] mb-24 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
-  {friendSpots.length === 0 ? (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center">
-      <Users size={40} className="text-indigo-600 mx-auto mb-4" />
-      <p className="text-gray-600 font-medium">No spots from people you follow yet.</p>
-      <p className="text-sm text-gray-500 mt-2">Follow more users to see their spots here!</p>
-    </div>
-  ) : (
-    <div className="space-y-4">
-      {friendSpots.map((spot) => (
-        <SpotCard 
-          key={spot._id} 
-          spot={spot}
-          onProfileClick={(userId) => {
-            setSelectedUserId(userId);
-            setShowProfileModal(true);
-          }}
-        />
-      ))}
-    </div>
-  )}
-</div>
+      <div className="max-w-lg mx-auto px-4 py-6 mt-[140px] mb-24 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+        {friendSpots.length === 0 ? (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center">
+            <Users size={40} className="text-indigo-600 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">No spots from people you follow yet.</p>
+            <p className="text-sm text-gray-500 mt-2">Follow more users to see their spots here!</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {friendSpots.map((spot) => (
+              <SpotCard 
+                key={spot._id} 
+                spot={spot}
+                onProfileClick={(userId) => {
+                  setSelectedUserId(userId);
+                  setShowProfileModal(true);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
@@ -606,7 +639,7 @@ const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
           <div className="flex justify-around py-4">
             <Link href="/" className="flex flex-col items-center gap-1 text-gray-400 hover:text-indigo-600 transition-colors">
               <div className="bg-gray-50 p-2 rounded-xl hover:bg-indigo-50">
-              <House size="24" /> 
+                <House size="24" /> 
               </div>
               <span className="text-xs">Home</span>
             </Link>
