@@ -140,22 +140,13 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
               <p className="text-gray-900 font-medium">{spot.flight?.type || 'Unknown Aircraft'}</p>
               <p className="text-sm text-gray-600">{spot.flight?.operator || 'Unknown Operator'}</p>
               
-              <div className="flex items-center gap-2 mt-2 text-sm">
-  <div className="flex-1 min-w-0">
-    <p className="text-gray-700 truncate">
-      {formatAirport(spot.flight?.orig_iata || 'N/A', 
-                    spot.flight?.departureAirport || 'Unknown Airport')}
-    </p>
-  </div>
-  <div className="flex-shrink-0">
-    <Plane size={14} className="text-gray-400 rotate-90" />
-  </div>
-  <div className="flex-1 min-w-0">
-    <p className="text-gray-700 truncate">
-      {formatAirport(spot.flight?.dest_iata || 'N/A', 
-                    spot.flight?.arrivalAirport || 'Unknown Airport')}
-    </p>
-  </div>
+  
+<div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+  <span>{formatAirport(spot.flight?.orig_iata || 'N/A', 
+                      spot.flight?.departureAirport || 'Unknown Airport')}</span>
+  <span>→</span>
+  <span>{formatAirport(spot.flight?.dest_iata || 'N/A', 
+                      spot.flight?.arrivalAirport || 'Unknown Airport')}</span>
 </div>
 </div>
             <p className="text-sm text-gray-500 flex items-center gap-1 ml-4">
