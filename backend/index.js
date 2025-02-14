@@ -8,7 +8,6 @@ const achievementsRouter = require('./routes/achievements');
 const friendRoutes = require('./routes/friends');
 const badgesprofileRoutes = require('./routes/badgesprofile');
 const locationStatsRoutes = require('./routes/locationStats');
-const { initializeDailyReset } = require('./routes/dailyReset');
 require('dotenv').config();
 
 const app = express();
@@ -21,7 +20,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-initializeDailyReset();
 
 app.use(express.json());
 
