@@ -108,6 +108,7 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
   const [showTeleportModal, setShowTeleportModal] = useState(false)
   const [isTeleportSpot, setIsTeleportSpot] = useState(false)
 const [teleportCoords, setTeleportCoords] = useState<{latitude: number; longitude: number} | null>(null)
+const [guessedSpotIds, setGuessedSpotIds] = useState<string[]>([]);
 
 
   const { coords, isGeolocationAvailable } = useGeolocated({
@@ -294,6 +295,8 @@ if (savedSpots.length > 0) {
       );
   
       const result = await response.json();
+
+      setGuessedSpotIds(prev => [...prev, currentGuessSpot._id]);
   
       setGuessResults((prev) => [
         ...prev,
@@ -577,18 +580,19 @@ if (savedSpots.length > 0) {
         </div>
 
         <div className="mb-6 overflow-hidden rounded-2xl bg-white/50 p-1">
-          <Map
-            center={isTeleportSpot && teleportCoords 
-              ? [teleportCoords.latitude, teleportCoords.longitude]
-              : coords 
-                ? [coords.latitude, coords.longitude]
-                : [0, 0]
-            }
-            spots={newSpots}
-            highlightedSpot={currentGuessSpot}
-            isSelectable={newSpots.length > 3}
-            onSpotSelect={newSpots.length > 3 ? (spot) => setCurrentGuessSpot(spot) : undefined}
-          />
+        <Map
+  center={isTeleportSpot && teleportCoords 
+    ? [teleportCoords.latitude, teleportCoords.longitude]
+    : coords 
+      ? [coords.latitude, coords.longitude]
+      : [0, 0]
+  }
+  spots={newSpots}
+  highlightedSpot={currentGuessSpot}
+  isSelectable={newSpots.length > 3}
+  onSpotSelect={newSpots.length > 3 ? (spot) => setCurrentGuessSpot(spot) : undefined}
+  guessedSpotIds={guessedSpotIds}
+/>
         </div>
 
         {currentGuessSpot ? (
@@ -661,18 +665,6 @@ if (savedSpots.length > 0) {
           </p>
         ) : null}
 
-        {guessCount >= 3 && (
-          <motion.button
-            onClick={() => {
-              setShowGuessModal(false);
-              setShowResultsModal(true);
-            }}
-            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-colors font-medium mt-6"
-            whileTap={{ scale: 0.95 }}
-          >
-            Done
-          </motion.button>
-        )}
       </motion.div>
     </motion.div>
   )}
