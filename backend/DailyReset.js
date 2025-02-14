@@ -2,7 +2,7 @@
 const cron = require('node-cron');
 const User = require('../models/User');
 
-// Schedule the job to run at midnight UTC every day
+
 const initializeDailyReset = () => {
   console.log('Initializing daily spot reset scheduler...');
   
