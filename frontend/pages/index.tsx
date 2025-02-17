@@ -89,27 +89,17 @@ const getRandomOptions = (
   correctOption: string,
   count: number = 2
 ) => {
-  console.log('All Options:', allOptions);
-  console.log('Correct Option:', correctOption);
-
-  if (!allOptions?.length || !correctOption) return [];
-
-  const correctOptionObj = allOptions.find(opt => opt.code === correctOption) || {
-    code: correctOption,
-    name: correctOption
-  };
-
-  // Get random wrong options (max 2 or whatever is available)
-  const availableWrongOptions = allOptions
+  // Filter out the correct option and get random ones
+  const otherOptions = allOptions
     .filter(opt => opt.code !== correctOption)
+    // Shuffle array using Fisher-Yates
+    .sort(() => Math.random() - 0.5)
+    .slice(0, count);
+
+  // Add correct option and shuffle again
+  const finalOptions = [...otherOptions, allOptions.find(opt => opt.code === correctOption)!]
     .sort(() => Math.random() - 0.5);
 
-  const otherOptions = availableWrongOptions.slice(0, count);
-
-  // If we don't have enough wrong options, we'll still show what we have
-  const finalOptions = [...otherOptions, correctOptionObj].sort(() => Math.random() - 0.5);
-
-  console.log('Final Options:', finalOptions);
   return finalOptions;
 };
 
@@ -139,9 +129,6 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
   const [isTeleportSpot, setIsTeleportSpot] = useState(false)
 const [teleportCoords, setTeleportCoords] = useState<{latitude: number; longitude: number} | null>(null)
 const [guessedSpotIds, setGuessedSpotIds] = useState<string[]>([]);
-const [randomizedTypeOptions, setRandomizedTypeOptions] = useState<AircraftTypeOption[]>([]);
-const [randomizedAirlineOptions, setRandomizedAirlineOptions] = useState<AirlineOption[]>([]);
-const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<DestinationOption[]>([]);
 
 
   const { coords, isGeolocationAvailable } = useGeolocated({
@@ -185,6 +172,8 @@ const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<Destin
   useEffect(() => {
     if (!session?.user?.id) return;
 
+
+  
     const subscribeToGlobalSpots = () => {
       const interval = setInterval(async () => {
         try {
@@ -207,25 +196,7 @@ const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<Destin
     return () => cleanup();
   }, [session]);
 
-  useEffect(() => {
-    if (currentGuessSpot && aircraftTypeOptions?.length > 0) {
-      setRandomizedTypeOptions(getRandomOptions(
-        aircraftTypeOptions,
-        currentGuessSpot.flight.type,
-        2
-      ));
-      setRandomizedAirlineOptions(getRandomOptions(
-        airlineOptions,
-        currentGuessSpot.flight.operator,
-        2
-      ));
-      setRandomizedDestinationOptions(getRandomOptions(
-        destinationOptions,
-        currentGuessSpot.flight.arrivalAirport,
-        2
-      ));
-    }
-  }, [currentGuessSpot, aircraftTypeOptions, airlineOptions, destinationOptions]); 
+  
 
   const handleSpot = async () => {
     setGuessResults([]); 
@@ -347,7 +318,7 @@ if (savedSpots.length > 0) {
       );
   
       const result = await response.json();
-  
+
       setGuessedSpotIds(prev => [...prev, currentGuessSpot._id]);
   
       setGuessResults((prev) => [
@@ -371,29 +342,27 @@ if (savedSpots.length > 0) {
       setUserXP(xpData);
   
       setGuessCount(prev => prev + 1);
-  
+      
+    
       if (newSpots.length > 3) {
-        // For more than 3 spots
         if (guessCount + 1 >= 3) {
           setShowGuessModal(false);
           setShowResultsModal(true);
           setIsTeleportSpot(false);
           setTeleportCoords(null);
         } else {
-          setCurrentGuessSpot(null);  // Force map selection for next guess
+          setCurrentGuessSpot(null);  
         }
       } else {
-        // For 3 or fewer spots
-        const nextUnguessedSpot = newSpots.find(spot => !guessedSpotIds.includes(spot._id));
-        
-        if (nextUnguessedSpot) {
-          setCurrentGuessSpot(nextUnguessedSpot);
-        } else {
-          // All spots guessed
-          setShowGuessModal(false);
-          setShowResultsModal(true);
-          setIsTeleportSpot(false);
-          setTeleportCoords(null);
+        // Original behavior for ≤3 spots
+        if (newSpots.length > 0) {
+          setCurrentGuessSpot(newSpots.find(spot => !guessedSpotIds.includes(spot._id)) || null);
+          if (guessedSpotIds.length === newSpots.length) {
+            setShowGuessModal(false);
+            setShowResultsModal(true);
+            setIsTeleportSpot(false);
+            setTeleportCoords(null);
+          }
         }
       }
     } catch (error) {
@@ -659,7 +628,11 @@ if (savedSpots.length > 0) {
   className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
   <option value="">Select Type</option>
-  {currentGuessSpot && randomizedTypeOptions.map(type => (
+  {currentGuessSpot && getRandomOptions(
+    aircraftTypeOptions,
+    currentGuessSpot.flight.type,
+    2
+  ).map(type => (
     <option key={type.code} value={type.code}>
       ({type.code}) {type.name}
     </option>
@@ -677,7 +650,11 @@ if (savedSpots.length > 0) {
   className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
   <option value="">Select Airline</option>
-  {currentGuessSpot && randomizedAirlineOptions.map(airline => (
+  {currentGuessSpot && getRandomOptions(
+    airlineOptions,
+    currentGuessSpot.flight.operator,
+    2
+  ).map(airline => (
     <option key={airline.code} value={airline.code}>
       ({airline.code}) {airline.name}
     </option>
@@ -695,7 +672,11 @@ if (savedSpots.length > 0) {
   className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
   <option value="">Select Destination</option>
-  {currentGuessSpot && randomizedDestOptions.map(destination => (
+  {currentGuessSpot && getRandomOptions(
+    destinationOptions,
+    currentGuessSpot.flight.arrivalAirport,
+    2
+  ).map(destination => (
     <option key={destination.code} value={destination.code}>
       ({destination.code}) {destination.name}
     </option>
