@@ -91,20 +91,22 @@ const getRandomOptions = (
 ) => {
   if (!allOptions?.length || !correctOption) return [];
 
-  const correctOptionObj = allOptions.find(opt => opt.code === correctOption);
-  if (!correctOptionObj) {
-    console.error('Correct option not found in options list:', correctOption);
-    return [];
-  }
+  const correctOptionObj = allOptions.find(opt => opt.code === correctOption) || {
+    code: correctOption,
+    name: correctOption
+  };
 
-  // Get random wrong options
-  const otherOptions = allOptions
+  // Get random wrong options (max 2 or whatever is available)
+  const availableWrongOptions = allOptions
     .filter(opt => opt.code !== correctOption)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, count);
+    .sort(() => Math.random() - 0.5);
 
-  // Add correct option and shuffle
-  return [...otherOptions, correctOptionObj].sort(() => Math.random() - 0.5);
+  const otherOptions = availableWrongOptions.slice(0, count);
+
+  // If we don't have enough wrong options, we'll still show what we have
+  const finalOptions = [...otherOptions, correctOptionObj].sort(() => Math.random() - 0.5);
+
+  return finalOptions;
 };
 
 export default function Home() {
