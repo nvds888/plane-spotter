@@ -36,5 +36,12 @@ export type Spot = {
   baseXP?: number
 }
 
+export type GuessResult = {
+  spot: Spot
+  isTypeCorrect: boolean
+  isAirlineCorrect: boolean
+  isDestinationCorrect: boolean
+  xpEarned: number
+}
   
   
