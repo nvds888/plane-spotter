@@ -91,17 +91,23 @@ const getRandomOptions = (
 ) => {
   if (!allOptions?.length || !correctOption) return [];
   
-  // Check if correct option exists in allOptions
-  const correctOptionExists = allOptions.some(opt => opt.code === correctOption);
-  if (!correctOptionExists) return allOptions.slice(0, 3);
+  // Ensure correct option exists in allOptions
+  const correctOptionObj = allOptions.find(opt => opt.code === correctOption);
+  if (!correctOptionObj) {
+    // If correct option not found, return first few options
+    return allOptions.slice(0, count + 1);
+  }
 
-  // Rest of the function remains the same
-  const otherOptions = allOptions
-    .filter(opt => opt.code !== correctOption)
+  // Filter out the correct option from other options
+  const otherOptions = allOptions.filter(opt => opt.code !== correctOption);
+
+  // Randomly select additional options
+  const randomOptions = otherOptions
     .sort(() => Math.random() - 0.5)
     .slice(0, count);
 
-  const finalOptions = [...otherOptions, allOptions.find(opt => opt.code === correctOption)!]
+  // Combine correct option with random options and shuffle
+  const finalOptions = [...randomOptions, correctOptionObj]
     .sort(() => Math.random() - 0.5);
 
   return finalOptions;
@@ -202,24 +208,33 @@ const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<Destin
   }, [session]);
 
   useEffect(() => {
-    if (currentGuessSpot && aircraftTypeOptions?.length > 0) {
-      setRandomizedTypeOptions(getRandomOptions(
-        aircraftTypeOptions,
-        currentGuessSpot.flight.type,
-        2
-      ));
-      setRandomizedAirlineOptions(getRandomOptions(
-        airlineOptions,
-        currentGuessSpot.flight.operator,
-        2
-      ));
-      setRandomizedDestinationOptions(getRandomOptions(
-        destinationOptions,
-        currentGuessSpot.flight.arrivalAirport,
-        2
-      ));
+    if (currentGuessSpot) {
+      // Ensure we have options before randomizing
+      if (aircraftTypeOptions?.length > 0) {
+        setRandomizedTypeOptions(getRandomOptions(
+          aircraftTypeOptions,
+          currentGuessSpot.flight.type,
+          2
+        ));
+      }
+      
+      if (airlineOptions?.length > 0) {
+        setRandomizedAirlineOptions(getRandomOptions(
+          airlineOptions,
+          currentGuessSpot.flight.operator,
+          2
+        ));
+      }
+      
+      if (destinationOptions?.length > 0) {
+        setRandomizedDestinationOptions(getRandomOptions(
+          destinationOptions,
+          currentGuessSpot.flight.arrivalAirport,
+          2
+        ));
+      }
     }
-  }, [currentGuessSpot, aircraftTypeOptions, airlineOptions, destinationOptions]); 
+  }, [currentGuessSpot, aircraftTypeOptions, airlineOptions, destinationOptions]);
 
   const handleSpot = async () => {
     setGuessResults([]); 
