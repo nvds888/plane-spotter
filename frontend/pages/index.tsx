@@ -86,20 +86,13 @@ type GuessResult = {
 
 const getRandomOptions = (
   allOptions: { code: string; name: string }[],
-  correctOption: string,
+  correctOption: { code: string; name: string },
   count: number = 2
 ) => {
   if (!allOptions?.length || !correctOption) return [];
   
-  // Ensure correct option exists in allOptions
-  const correctOptionObj = allOptions.find(opt => opt.code === correctOption);
-  if (!correctOptionObj) {
-    // If correct option not found, return first few options
-    return allOptions.slice(0, count + 1);
-  }
-
-  // Filter out the correct option from other options
-  const otherOptions = allOptions.filter(opt => opt.code !== correctOption);
+  // Filter out the correct option from other options if it exists
+  const otherOptions = allOptions.filter(opt => opt.code !== correctOption.code);
 
   // Randomly select additional options
   const randomOptions = otherOptions
@@ -107,7 +100,7 @@ const getRandomOptions = (
     .slice(0, count);
 
   // Combine correct option with random options and shuffle
-  const finalOptions = [...randomOptions, correctOptionObj]
+  const finalOptions = [...randomOptions, correctOption]
     .sort(() => Math.random() - 0.5);
 
   return finalOptions;
@@ -209,32 +202,42 @@ const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<Destin
 
   useEffect(() => {
     if (currentGuessSpot) {
-      // Ensure we have options before randomizing
-      if (aircraftTypeOptions?.length > 0) {
-        setRandomizedTypeOptions(getRandomOptions(
-          aircraftTypeOptions,
-          currentGuessSpot.flight.type,
-          2
-        ));
-      }
+      // Create option objects for the current spot's correct values
+      const correctTypeOption = {
+        code: currentGuessSpot.flight.type,
+        name: aircraftTypeOptions.find(opt => opt.code === currentGuessSpot.flight.type)?.name || currentGuessSpot.flight.type
+      };
+  
+      const correctAirlineOption = {
+        code: currentGuessSpot.flight.operator,
+        name: airlineOptions.find(opt => opt.code === currentGuessSpot.flight.operator)?.name || currentGuessSpot.flight.operator
+      };
+  
+      const correctDestOption = {
+        code: currentGuessSpot.flight.arrivalAirport,
+        name: destinationOptions.find(opt => opt.code === currentGuessSpot.flight.arrivalAirport)?.name || currentGuessSpot.flight.arrivalAirport
+      };
+  
+      // Generate randomized options including correct answers
+      setRandomizedTypeOptions(getRandomOptions(
+        aircraftTypeOptions,
+        correctTypeOption,
+        2
+      ));
       
-      if (airlineOptions?.length > 0) {
-        setRandomizedAirlineOptions(getRandomOptions(
-          airlineOptions,
-          currentGuessSpot.flight.operator,
-          2
-        ));
-      }
+      setRandomizedAirlineOptions(getRandomOptions(
+        airlineOptions,
+        correctAirlineOption,
+        2
+      ));
       
-      if (destinationOptions?.length > 0) {
-        setRandomizedDestinationOptions(getRandomOptions(
-          destinationOptions,
-          currentGuessSpot.flight.arrivalAirport,
-          2
-        ));
-      }
+      setRandomizedDestinationOptions(getRandomOptions(
+        destinationOptions,
+        correctDestOption,
+        2
+      ));
     }
-  }, [currentGuessSpot, aircraftTypeOptions, airlineOptions, destinationOptions]);
+  }, [currentGuessSpot]);
 
   const handleSpot = async () => {
     setGuessResults([]); 
@@ -356,10 +359,13 @@ if (savedSpots.length > 0) {
       );
   
       const result = await response.json();
-
-      setGuessedSpotIds(prev => [...prev, currentGuessSpot._id]);
-  
-      setGuessResults((prev) => [
+      const newGuessedSpotIds = [...guessedSpotIds, currentGuessSpot._id];
+      const newGuessCount = guessCount + 1;
+      
+      // Update all related state at once
+      setGuessedSpotIds(newGuessedSpotIds);
+      setGuessCount(newGuessCount);
+      setGuessResults(prev => [
         ...prev,
         {
           spot: currentGuessSpot,
@@ -375,32 +381,33 @@ if (savedSpots.length > 0) {
       setGuessedAirline("");
       setGuessedDestination("");
   
+      // Update XP
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
       const xpData = await xpResponse.json();
       setUserXP(xpData);
   
-      setGuessCount(prev => prev + 1);
-      
-    
+      // Determine next action based on spot count
       if (newSpots.length > 3) {
-        if (guessCount + 1 >= 3) {
+        if (newGuessCount >= 3) {
           setShowGuessModal(false);
           setShowResultsModal(true);
           setIsTeleportSpot(false);
           setTeleportCoords(null);
         } else {
-          setCurrentGuessSpot(null);  
+          // Find next unguessed spot
+          const nextSpot = newSpots.find(spot => !newGuessedSpotIds.includes(spot._id));
+          setCurrentGuessSpot(nextSpot || null);
         }
       } else {
-        // Original behavior for ≤3 spots
-        if (newSpots.length > 0) {
-          setCurrentGuessSpot(newSpots.find(spot => !guessedSpotIds.includes(spot._id)) || null);
-          if (guessedSpotIds.length === newSpots.length) {
-            setShowGuessModal(false);
-            setShowResultsModal(true);
-            setIsTeleportSpot(false);
-            setTeleportCoords(null);
-          }
+        if (newGuessedSpotIds.length === newSpots.length) {
+          setShowGuessModal(false);
+          setShowResultsModal(true);
+          setIsTeleportSpot(false);
+          setTeleportCoords(null);
+        } else {
+          // Find next unguessed spot
+          const nextSpot = newSpots.find(spot => !newGuessedSpotIds.includes(spot._id));
+          setCurrentGuessSpot(nextSpot || null);
         }
       }
     } catch (error) {
