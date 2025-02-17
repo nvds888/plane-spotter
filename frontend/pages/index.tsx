@@ -89,14 +89,18 @@ const getRandomOptions = (
   correctOption: string,
   count: number = 2
 ) => {
-  // Filter out the correct option and get random ones
+  if (!allOptions?.length || !correctOption) return [];
+  
+  // Check if correct option exists in allOptions
+  const correctOptionExists = allOptions.some(opt => opt.code === correctOption);
+  if (!correctOptionExists) return allOptions.slice(0, 3);
+
+  // Rest of the function remains the same
   const otherOptions = allOptions
     .filter(opt => opt.code !== correctOption)
-    // Shuffle array using Fisher-Yates
     .sort(() => Math.random() - 0.5)
     .slice(0, count);
 
-  // Add correct option and shuffle again
   const finalOptions = [...otherOptions, allOptions.find(opt => opt.code === correctOption)!]
     .sort(() => Math.random() - 0.5);
 
@@ -628,7 +632,7 @@ if (savedSpots.length > 0) {
   className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
   <option value="">Select Type</option>
-  {currentGuessSpot && getRandomOptions(
+  {currentGuessSpot && aircraftTypeOptions?.length > 0 && getRandomOptions(
     aircraftTypeOptions,
     currentGuessSpot.flight.type,
     2
@@ -650,15 +654,15 @@ if (savedSpots.length > 0) {
   className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
   <option value="">Select Airline</option>
-  {currentGuessSpot && getRandomOptions(
-    airlineOptions,
-    currentGuessSpot.flight.operator,
-    2
-  ).map(airline => (
-    <option key={airline.code} value={airline.code}>
-      ({airline.code}) {airline.name}
-    </option>
-  ))}
+  {currentGuessSpot && airlineOptions?.length > 0 && getRandomOptions(
+  airlineOptions,
+  currentGuessSpot.flight.operator,
+  2
+).map(airline => (
+  <option key={airline.code} value={airline.code}>
+    ({airline.code}) {airline.name}
+  </option>
+))}
 </select>
             </div>
 
@@ -672,15 +676,15 @@ if (savedSpots.length > 0) {
   className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
   <option value="">Select Destination</option>
-  {currentGuessSpot && getRandomOptions(
-    destinationOptions,
-    currentGuessSpot.flight.arrivalAirport,
-    2
-  ).map(destination => (
-    <option key={destination.code} value={destination.code}>
-      ({destination.code}) {destination.name}
-    </option>
-  ))}
+  {currentGuessSpot && destinationOptions?.length > 0 && getRandomOptions(
+  destinationOptions,
+  currentGuessSpot.flight.arrivalAirport,
+  2
+).map(destination => (
+  <option key={destination.code} value={destination.code}>
+    ({destination.code}) {destination.name}
+  </option>
+))}
 </select>
             </div>
 
