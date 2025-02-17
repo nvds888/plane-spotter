@@ -133,6 +133,9 @@ const [spotsRemaining, setSpotsRemaining] = useState<number>(0)
   const [isTeleportSpot, setIsTeleportSpot] = useState(false)
 const [teleportCoords, setTeleportCoords] = useState<{latitude: number; longitude: number} | null>(null)
 const [guessedSpotIds, setGuessedSpotIds] = useState<string[]>([]);
+const [randomizedTypeOptions, setRandomizedTypeOptions] = useState<AircraftTypeOption[]>([]);
+const [randomizedAirlineOptions, setRandomizedAirlineOptions] = useState<AirlineOption[]>([]);
+const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<DestinationOption[]>([]);
 
 
   const { coords, isGeolocationAvailable } = useGeolocated({
@@ -176,8 +179,6 @@ const [guessedSpotIds, setGuessedSpotIds] = useState<string[]>([]);
   useEffect(() => {
     if (!session?.user?.id) return;
 
-
-  
     const subscribeToGlobalSpots = () => {
       const interval = setInterval(async () => {
         try {
@@ -200,7 +201,25 @@ const [guessedSpotIds, setGuessedSpotIds] = useState<string[]>([]);
     return () => cleanup();
   }, [session]);
 
-  
+  useEffect(() => {
+    if (currentGuessSpot && aircraftTypeOptions?.length > 0) {
+      setRandomizedTypeOptions(getRandomOptions(
+        aircraftTypeOptions,
+        currentGuessSpot.flight.type,
+        2
+      ));
+      setRandomizedAirlineOptions(getRandomOptions(
+        airlineOptions,
+        currentGuessSpot.flight.operator,
+        2
+      ));
+      setRandomizedDestinationOptions(getRandomOptions(
+        destinationOptions,
+        currentGuessSpot.flight.arrivalAirport,
+        2
+      ));
+    }
+  }, [currentGuessSpot, aircraftTypeOptions, airlineOptions, destinationOptions]); 
 
   const handleSpot = async () => {
     setGuessResults([]); 
@@ -632,11 +651,7 @@ if (savedSpots.length > 0) {
   className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
   <option value="">Select Type</option>
-  {currentGuessSpot && aircraftTypeOptions?.length > 0 && getRandomOptions(
-    aircraftTypeOptions,
-    currentGuessSpot.flight.type,
-    2
-  ).map(type => (
+  {currentGuessSpot && randomizedTypeOptions.map(type => (
     <option key={type.code} value={type.code}>
       ({type.code}) {type.name}
     </option>
@@ -654,15 +669,11 @@ if (savedSpots.length > 0) {
   className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
   <option value="">Select Airline</option>
-  {currentGuessSpot && airlineOptions?.length > 0 && getRandomOptions(
-  airlineOptions,
-  currentGuessSpot.flight.operator,
-  2
-).map(airline => (
-  <option key={airline.code} value={airline.code}>
-    ({airline.code}) {airline.name}
-  </option>
-))}
+  {currentGuessSpot && randomizedAirlineOptions.map(airline => (
+    <option key={airline.code} value={airline.code}>
+      ({airline.code}) {airline.name}
+    </option>
+  ))}
 </select>
             </div>
 
@@ -676,15 +687,11 @@ if (savedSpots.length > 0) {
   className="block w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
   <option value="">Select Destination</option>
-  {currentGuessSpot && destinationOptions?.length > 0 && getRandomOptions(
-  destinationOptions,
-  currentGuessSpot.flight.arrivalAirport,
-  2
-).map(destination => (
-  <option key={destination.code} value={destination.code}>
-    ({destination.code}) {destination.name}
-  </option>
-))}
+  {currentGuessSpot && randomizedDestOptions.map(destination => (
+    <option key={destination.code} value={destination.code}>
+      ({destination.code}) {destination.name}
+    </option>
+  ))}
 </select>
             </div>
 
