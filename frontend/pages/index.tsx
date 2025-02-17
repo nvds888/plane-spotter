@@ -201,7 +201,7 @@ const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<Destin
   }, [session]);
 
   useEffect(() => {
-    if (currentGuessSpot) {
+    if (currentGuessSpot && aircraftTypeOptions?.length > 0 && airlineOptions?.length > 0 && destinationOptions?.length > 0) {
       // Create option objects for the current spot's correct values
       const correctTypeOption = {
         code: currentGuessSpot.flight.type,
@@ -237,7 +237,7 @@ const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<Destin
         2
       ));
     }
-  }, [currentGuessSpot]);
+  }, [currentGuessSpot, aircraftTypeOptions, airlineOptions, destinationOptions]);
 
   const handleSpot = async () => {
     setGuessResults([]); 
