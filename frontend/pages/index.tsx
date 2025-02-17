@@ -378,14 +378,18 @@ if (savedSpots.length > 0) {
         }
       } else {
         // Original behavior for ≤3 spots
-        if (newSpots.length > 0) {
-          setCurrentGuessSpot(newSpots.find(spot => !guessedSpotIds.includes(spot._id)) || null);
-          if (guessedSpotIds.length === newSpots.length) {
-            setShowGuessModal(false);
-            setShowResultsModal(true);
-            setIsTeleportSpot(false);
-            setTeleportCoords(null);
-          }
+        const nextUnguessedSpot = newSpots.find(spot => 
+          !guessedSpotIds.includes(spot._id) && spot._id !== currentGuessSpot?._id
+        );
+        
+        if (nextUnguessedSpot) {
+          setCurrentGuessSpot(nextUnguessedSpot);
+        } else {
+          // No more unguessed spots (including the current one being guessed)
+          setShowGuessModal(false);
+          setShowResultsModal(true);
+          setIsTeleportSpot(false);
+          setTeleportCoords(null);
         }
       }
     } catch (error) {
