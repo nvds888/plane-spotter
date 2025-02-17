@@ -348,7 +348,6 @@ if (savedSpots.length > 0) {
   
       const result = await response.json();
   
-      // Always add to guessedSpotIds to track progress
       setGuessedSpotIds(prev => [...prev, currentGuessSpot._id]);
   
       setGuessResults((prev) => [
@@ -367,20 +366,25 @@ if (savedSpots.length > 0) {
       setGuessedAirline("");
       setGuessedDestination("");
   
-      // Increment guess count
-      setGuessCount(prev => prev + 1);
-  
-      // Update XP
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);
       const xpData = await xpResponse.json();
       setUserXP(xpData);
   
-      // Determine next steps based on spot count
-      if (newSpots.length <= 3) {
-        // For ≤3 spots, automatically move to next spot
-        const nextUnguessedSpot = newSpots.find(spot => 
-          !guessedSpotIds.includes(spot._id)
-        );
+      setGuessCount(prev => prev + 1);
+  
+      if (newSpots.length > 3) {
+        // For more than 3 spots
+        if (guessCount + 1 >= 3) {
+          setShowGuessModal(false);
+          setShowResultsModal(true);
+          setIsTeleportSpot(false);
+          setTeleportCoords(null);
+        } else {
+          setCurrentGuessSpot(null);  // Force map selection for next guess
+        }
+      } else {
+        // For 3 or fewer spots
+        const nextUnguessedSpot = newSpots.find(spot => !guessedSpotIds.includes(spot._id));
         
         if (nextUnguessedSpot) {
           setCurrentGuessSpot(nextUnguessedSpot);
@@ -388,19 +392,8 @@ if (savedSpots.length > 0) {
           // All spots guessed
           setShowGuessModal(false);
           setShowResultsModal(true);
-        }
-      } else {
-        // For >3 spots
-        if (guessCount >= 2) {  // Limit to 3 guesses (0, 1, 2)
-          setShowGuessModal(false);
-          setShowResultsModal(true);
-        } else if (guessedSpotIds.length >= newSpots.length) {
-          // All spots guessed
-          setShowGuessModal(false);
-          setShowResultsModal(true);
-        } else {
-          // Clear current guess spot to force map selection
-          setCurrentGuessSpot(null);
+          setIsTeleportSpot(false);
+          setTeleportCoords(null);
         }
       }
     } catch (error) {
