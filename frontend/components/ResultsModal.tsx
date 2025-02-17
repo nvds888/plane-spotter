@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion"
-import { Trophy, Plane, Navigation, Building } from "lucide-react"
+import { Trophy } from "lucide-react"
 import { Spot, GuessResult } from "../types/types"
 
 interface ResultsModalProps {
@@ -63,20 +63,16 @@ export default function ResultsModal({
                 <motion.div
                   key={spot._id}
                   className={`bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-100 ${
-                    !wasGuessed ? 'opacity-70' : ''
+                    !wasGuessed ? 'opacity-50' : ''
                   }`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  {/* Flight Header */}
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-2">
-                      <Plane className="text-indigo-600" size={20} />
-                      <span className="font-medium text-gray-900">
-                        {spot.flight.flight || 'Unknown Flight'}
-                      </span>
-                    </div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-medium text-gray-900">
+                      {spot.flight.flight || 'Unknown Flight'}
+                    </span>
                     {wasGuessed && (
                       <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-sm font-medium">
                         +{result.xpEarned} XP
@@ -84,85 +80,70 @@ export default function ResultsModal({
                     )}
                   </div>
 
-                  {/* Flight Details Card */}
-                  <div className="bg-white/70 rounded-xl p-3 mb-4">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                          <Navigation className="text-blue-600 w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Altitude</p>
-                          <p className="font-medium">{spot.flight.alt.toLocaleString()}ft</p>
-                        </div>
+                  {/* Flight Details */}
+                  <div className="bg-gray-50/80 rounded-lg p-2 mb-3 text-sm">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <span className="text-gray-500 text-xs">Altitude</span>
+                        <p className="font-medium">{spot.flight.alt.toLocaleString()}ft</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                          <Building className="text-blue-600 w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-gray-500">From</p>
-                          <p className="font-medium">{spot.flight.departureAirport || '—'}</p>
-                        </div>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-gray-500">Speed</p>
+                      <div>
+                        <span className="text-gray-500 text-xs">Speed</span>
                         <p className="font-medium">{spot.flight.speed}kts</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-xs">Route</span>
+                        <p className="font-medium">
+                          {spot.flight.departureAirport} → {spot.flight.arrivalAirport}
+                        </p>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Guessing Results or Not Guessed Message */}
                   {wasGuessed ? (
-                    <div className="space-y-3 text-sm">
-                      <div className="flex flex-col gap-2">
-                        <span className="text-gray-500">Aircraft Type</span>
-                        <div className={`flex items-center justify-between p-2 rounded-lg ${
-                          result.isTypeCorrect ? 'bg-green-50' : 'bg-red-50'
-                        }`}>
-                          <span className={result.isTypeCorrect ? 'text-green-600' : 'text-red-600'}>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Type:</span>
+                        <div className="flex items-center gap-2">
+                          <span className={result.isTypeCorrect ? "text-green-600" : "text-red-600"}>
                             {spot.guessedType || '—'}
                           </span>
-                          <span className="text-gray-400 mx-2">→</span>
-                          <span className="font-medium">{spot.flight.type}</span>
+                          <span className="text-gray-400">→</span>
+                          <span className="text-gray-900">{spot.flight.type}</span>
                           {result.isTypeCorrect && (
-                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center ml-2">
+                            <div className="w-5 h-5 bg-green-50 rounded-full flex items-center justify-center">
                               <span className="text-green-600">✓</span>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-2">
-                        <span className="text-gray-500">Airline</span>
-                        <div className={`flex items-center justify-between p-2 rounded-lg ${
-                          result.isAirlineCorrect ? 'bg-green-50' : 'bg-red-50'
-                        }`}>
-                          <span className={result.isAirlineCorrect ? 'text-green-600' : 'text-red-600'}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Airline:</span>
+                        <div className="flex items-center gap-2">
+                          <span className={result.isAirlineCorrect ? "text-green-600" : "text-red-600"}>
                             {spot.guessedAirline || '—'}
                           </span>
-                          <span className="text-gray-400 mx-2">→</span>
-                          <span className="font-medium">{spot.flight.operator}</span>
+                          <span className="text-gray-400">→</span>
+                          <span className="text-gray-900">{spot.flight.operator}</span>
                           {result.isAirlineCorrect && (
-                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center ml-2">
+                            <div className="w-5 h-5 bg-green-50 rounded-full flex items-center justify-center">
                               <span className="text-green-600">✓</span>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-2">
-                        <span className="text-gray-500">Destination</span>
-                        <div className={`flex items-center justify-between p-2 rounded-lg ${
-                          result.isDestinationCorrect ? 'bg-green-50' : 'bg-red-50'
-                        }`}>
-                          <span className={result.isDestinationCorrect ? 'text-green-600' : 'text-red-600'}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Destination:</span>
+                        <div className="flex items-center gap-2">
+                          <span className={result.isDestinationCorrect ? "text-green-600" : "text-red-600"}>
                             {spot.guessedDestination || '—'}
                           </span>
-                          <span className="text-gray-400 mx-2">→</span>
-                          <span className="font-medium">{spot.flight.arrivalAirport}</span>
+                          <span className="text-gray-400">→</span>
+                          <span className="text-gray-900">{spot.flight.arrivalAirport}</span>
                           {result.isDestinationCorrect && (
-                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center ml-2">
+                            <div className="w-5 h-5 bg-green-50 rounded-full flex items-center justify-center">
                               <span className="text-green-600">✓</span>
                             </div>
                           )}
@@ -170,7 +151,7 @@ export default function ResultsModal({
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3 text-center">
+                    <div className="text-sm text-gray-500">
                       Not guessed
                     </div>
                   )}
