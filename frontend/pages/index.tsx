@@ -38,7 +38,9 @@ export type Flight = {
   lat: number
   lon: number
   departureAirport: string  
-  arrivalAirport: string    
+  arrivalAirport: string   
+  dest_iata: string    
+  orig_iata: string 
   track?: number
   geography?: {
     direction?: number
@@ -214,8 +216,8 @@ const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<Destin
       };
   
       const correctDestOption = {
-        code: currentGuessSpot.flight.arrivalAirport,
-        name: destinationOptions.find(opt => opt.code === currentGuessSpot.flight.arrivalAirport)?.name || currentGuessSpot.flight.arrivalAirport
+        code: currentGuessSpot.flight.dest_iata,  // Use IATA code
+        name: currentGuessSpot.flight.arrivalAirport  // Use full name
       };
   
       // Generate randomized options including correct answers
