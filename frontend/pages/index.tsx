@@ -35,12 +35,14 @@ export type Flight = {
   alt: number
   speed: number
   operator: string
+  operating_as: string  
+  painted_as: string
   lat: number
   lon: number
   departureAirport: string  
-  arrivalAirport: string   
+  arrivalAirport: string  
   dest_iata: string    
-  orig_iata: string 
+  orig_iata: string  
   track?: number
   geography?: {
     direction?: number
@@ -211,13 +213,13 @@ const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<Destin
       };
   
       const correctAirlineOption = {
-        code: currentGuessSpot.flight.operator,
-        name: airlineOptions.find(opt => opt.code === currentGuessSpot.flight.operator)?.name || currentGuessSpot.flight.operator
+        code: currentGuessSpot.flight.operating_as || currentGuessSpot.flight.painted_as,  // The IATA
+        name: currentGuessSpot.flight.operator 
       };
   
       const correctDestOption = {
-        code: currentGuessSpot.flight.dest_iata,  // Use IATA code
-        name: currentGuessSpot.flight.arrivalAirport  // Use full name
+        code: currentGuessSpot.flight.dest_iata,
+        name: currentGuessSpot.flight.arrivalAirport
       };
   
       // Generate randomized options including correct answers
