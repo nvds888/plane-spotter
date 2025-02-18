@@ -44,6 +44,8 @@ const mapSpotToFrontend = (spot) => {
         spotObj.flight?.operating_as,
         spotObj.flight?.painted_as
       ),
+      operating_as: spotObj.flight?.operating_as || 'N/A',
+painted_as: spotObj.flight?.painted_as || 'N/A',
       lat: spotObj.flight?.geography?.latitude || 0,
       lon: spotObj.flight?.geography?.longitude || 0,
       geography: {
