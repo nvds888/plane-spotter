@@ -88,6 +88,7 @@ class SpotResetManager {
 
 // Create singleton instance
 const spotResetManager = new SpotResetManager();
+module.exports.spotResetManager = spotResetManager;
 
 // Middleware to check and reset spots if needed
 async function checkAndResetSpots(req, res, next) {
@@ -171,7 +172,4 @@ router.post('/:id/spot', [ decrementSpots], async (req, res) => {
   }
 });
 
-module.exports = { 
-  router,
-  spotResetManager
-};
+module.exports = router;
