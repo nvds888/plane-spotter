@@ -137,7 +137,10 @@ router.post('/', async (req, res) => {
 
     // Check spot limit for non-premium users
     if (!user.premium && user.spotsRemaining <= 0) {
-      throw new Error('Daily spot limit reached');
+      return res.status(403).json({ 
+        error: 'Daily spot limit reached',
+        nextResetTime: user.lastDailyReset  // Add this
+      });
     }
 
     // Verify algorand address

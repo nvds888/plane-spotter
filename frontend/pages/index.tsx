@@ -292,8 +292,12 @@ const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<Destin
         isFirstSpot = false 
   
         if (!spotResponse.ok) {
-          const errorResponse = await spotResponse.json()
-          throw new Error(errorResponse.error || "Failed to save spot")
+          const errorData = await spotResponse.json();
+          if (errorData.error === 'Daily spot limit reached') {
+            alert(`You've reached your daily spot limit! Next reset at ${new Date(errorData.nextResetTime).toLocaleString()}`);
+            return;
+          }
+          throw new Error(errorData.error || "Failed to save spot");
         }
   
         const newSpot: Spot = await spotResponse.json()
