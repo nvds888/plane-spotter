@@ -8,22 +8,24 @@ class SpotResetManager {
   constructor() {
     this.nextResetTime = this.calculateNextResetTime();
     this.initializeCronJob();
-  }
+    console.log('SpotResetManager initialized, next reset at:', this.nextResetTime);  // Add this line
+}
 
-  calculateNextResetTime() {
-    const now = new Date();
-    const nextReset = new Date(now);
-    nextReset.setUTCHours(0, 0, 0, 0);
-    
-    if (now >= nextReset) {
-      nextReset.setUTCDate(nextReset.getUTCDate() + 1);
-    }
-    
-    return nextReset;
+ calculateNextResetTime() {
+  const now = new Date();
+  const nextReset = new Date(now);
+  nextReset.setUTCHours(0, 0, 0, 0);
+  
+  if (now >= nextReset) {
+    nextReset.setUTCDate(nextReset.getUTCDate() + 1);
   }
-
+  
+  console.log('Calculated next reset time:', nextReset);  // Add this line
+  return nextReset;
+}
   async resetAllUserSpots() {
     const now = new Date();
+    console.log('Starting resetAllUserSpots at:', now);
     try {
       const result = await User.updateMany(
         { 
@@ -66,17 +68,30 @@ class SpotResetManager {
 
   async checkAndResetIfNeeded(user) {
     const now = new Date();
+    console.log('Checking reset for user:', {  // Add this block
+      userId: user._id,
+      lastReset: user.lastDailyReset,
+      nextReset: this.nextResetTime,
+      currentSpots: user.spotsRemaining
+    });
     
     if (!user.lastDailyReset || new Date(user.lastDailyReset) < this.nextResetTime) {
+      console.log('Reset needed for user:', user._id);  // Add this line
       if (!user.premium) {
         user.spotsRemaining = 4;
         user.lastDailyReset = now;
         await user.save();
+        console.log('User spots reset:', {   // Add this block
+          userId: user._id,
+          newSpots: user.spotsRemaining,
+          newResetTime: user.lastDailyReset
+        });
       }
       return true;
     }
+    console.log('No reset needed for user:', user._id);  // Add this line
     return false;
-  }
+}
 }
 
 // Create singleton instance

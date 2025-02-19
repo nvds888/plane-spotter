@@ -135,6 +135,13 @@ router.post('/', async (req, res) => {
       throw new Error('User not found');
     }
 
+    console.log('User status:', {  // Add this block
+      userId: user._id,
+      premium: user.premium,
+      spotsRemaining: user.spotsRemaining,
+      lastReset: user.lastDailyReset
+    });
+
     // Check spot limit for non-premium users
     if (!user.premium && user.spotsRemaining <= 0) {
       return res.status(403).json({ 
@@ -162,6 +169,8 @@ router.post('/', async (req, res) => {
     // In Spot.js, change the user update part after spot creation:
 const spot = await Spot.create(spotData);
 await spot.save();
+console.log('Spot created:', spot._id);
+
 await updateStreak(user, now);
 await user.save();
 console.log("Spot created and saved:", spot);
@@ -178,7 +187,12 @@ await User.findByIdAndUpdate(
     }
   }
 );
-    console.log("Base XP awarded");
+
+console.log('User updated after spot creation:', {  // Add this block
+  userId: user._id,
+  newSpotsRemaining: user.spotsRemaining,
+  xpAdded: spotData.baseXP
+});
 
     const flightToLog = {
       flight: req.body.flight.flight || 'N/A',
