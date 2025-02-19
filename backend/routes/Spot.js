@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const { getAirportName } = require('../utils/airportMapping');
 const { updateStreak } = require('./badgesprofile');  
+const { spotResetManager } = require('./User.js');  
 
 let spotBuffer = [];
 let spotIdBuffer = [];
@@ -145,7 +146,7 @@ router.post('/', async (req, res) => {
         await user.save();
       }
     }
-    
+
     console.log('User status:', {  // Add this block
       userId: user._id,
       premium: user.premium,

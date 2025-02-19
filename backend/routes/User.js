@@ -171,4 +171,7 @@ router.post('/:id/spot', [ decrementSpots], async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { 
+  router,
+  spotResetManager
+};
