@@ -106,7 +106,7 @@ async function checkAndResetSpots(req, res, next) {
 }
 
 // GET /api/user/:id/xp
-router.get('/:id/xp', checkAndResetSpots, async (req, res) => {
+router.get('/:id/xp', async (req, res) => {
   try {
     res.json({ 
       totalXP: req.user.totalXP, 
@@ -121,7 +121,7 @@ router.get('/:id/xp', checkAndResetSpots, async (req, res) => {
 });
 
 // GET /api/user/:id
-router.get('/:id', checkAndResetSpots, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     res.json({
       spotsRemaining: req.user.spotsRemaining,
@@ -135,7 +135,7 @@ router.get('/:id', checkAndResetSpots, async (req, res) => {
 });
 
 // GET /api/user/:id/spots-remaining
-router.get('/:id/spots-remaining', checkAndResetSpots, async (req, res) => {
+router.get('/:id/spots-remaining', async (req, res) => {
   try {
     res.json({
       spotsRemaining: req.user.spotsRemaining,
@@ -160,7 +160,7 @@ async function decrementSpots(req, res, next) {
 }
 
 // Use both middlewares for routes that consume spots
-router.post('/:id/spot', [checkAndResetSpots, decrementSpots], async (req, res) => {
+router.post('/:id/spot', [ decrementSpots], async (req, res) => {
   try {
     res.json({
       spotsRemaining: req.user.spotsRemaining,

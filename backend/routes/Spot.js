@@ -135,6 +135,17 @@ router.post('/', async (req, res) => {
       throw new Error('User not found');
     }
 
+    const nextResetTimestamp = new Date(spotResetManager.nextResetTime).setUTCHours(0,0,0,0);
+    const lastResetTimestamp = new Date(user.lastDailyReset).setUTCHours(0,0,0,0);
+    
+    if (!user.lastDailyReset || lastResetTimestamp < nextResetTimestamp) {
+      if (!user.premium) {
+        user.spotsRemaining = 4;
+        user.lastDailyReset = now;
+        await user.save();
+      }
+    }
+    
     console.log('User status:', {  // Add this block
       userId: user._id,
       premium: user.premium,
