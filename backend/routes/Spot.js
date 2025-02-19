@@ -6,7 +6,8 @@ const mongoose = require('mongoose');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const { getAirportName } = require('../utils/airportMapping');
 const { updateStreak } = require('./badgesprofile');  
-const { spotResetManager } = require('./User.js');  
+const userRouter = require('./User.js');
+const spotResetManager = userRouter.spotResetManager;
 
 let spotBuffer = [];
 let spotIdBuffer = [];
