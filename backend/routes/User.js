@@ -68,27 +68,20 @@ class SpotResetManager {
 
   async checkAndResetIfNeeded(user) {
     const now = new Date();
-    const lastReset = new Date(user.lastDailyReset);
     
-    // Set both dates to start of their respective days for comparison
-    const lastResetDay = new Date(lastReset.setUTCHours(0, 0, 0, 0));
-    const nextResetDay = new Date(this.nextResetTime.setUTCHours(0, 0, 0, 0));
+    // Only compare the date parts
+    const nextResetTimestamp = new Date(this.nextResetTime).setUTCHours(0,0,0,0);
+    const lastResetTimestamp = new Date(user.lastDailyReset).setUTCHours(0,0,0,0);
     
-    if (!user.lastDailyReset || lastResetDay < nextResetDay) {
-      console.log('Reset needed for user:', user._id);  // Add this line
-      if (!user.premium) {
-        user.spotsRemaining = 4;
-        user.lastDailyReset = now;
-        await user.save();
-        console.log('User spots reset:', {   // Add this block
-          userId: user._id,
-          newSpots: user.spotsRemaining,
-          newResetTime: user.lastDailyReset
-        });
-      }
-      return true;
+    if (!user.lastDailyReset || lastResetTimestamp < nextResetTimestamp) {
+        if (!user.premium) {
+            user.spotsRemaining = 4;
+            user.lastDailyReset = now;
+            await user.save();
+            console.log('Reset performed, next reset at:', this.nextResetTime);
+        }
+        return true;
     }
-    console.log('No reset needed for user:', user._id);  // Add this line
     return false;
 }
 }
