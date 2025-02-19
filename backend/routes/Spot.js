@@ -172,12 +172,10 @@ await User.findByIdAndUpdate(
   spot.userId,
   { 
     $inc: { 
-      totalXP: spotData.baseXP,    // Changed from hardcoded 5
-      weeklyXP: spotData.baseXP    // Changed from hardcoded 5
-    },
-    ...(user.premium ? {} : req.body.isFirstSpot ? { 
-      spotsRemaining: user.spotsRemaining - 1 
-    } : {})
+      totalXP: spotData.baseXP,    
+      weeklyXP: spotData.baseXP,
+      ...(user.premium ? {} : { spotsRemaining: -1 })  // Simpler decrement for non-premium users
+    }
   }
 );
     console.log("Base XP awarded");
