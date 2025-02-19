@@ -109,12 +109,17 @@ async function checkAndResetSpots(req, res, next) {
 // GET /api/user/:id/xp
 router.get('/:id/xp', async (req, res) => {
   try {
+    const user = await User.findById(req.params.id);  // Add this line
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     res.json({ 
-      totalXP: req.user.totalXP, 
-      weeklyXP: req.user.weeklyXP,
+      totalXP: user.totalXP,  // Changed from req.user to user
+      weeklyXP: user.weeklyXP,
       nextResetTime: spotResetManager.nextResetTime,
-      spotsRemaining: req.user.spotsRemaining,  // Add this
-      dailySpotLimit: req.user.dailySpotLimit   // Add this
+      spotsRemaining: user.spotsRemaining,
+      dailySpotLimit: user.dailySpotLimit
     });
   } catch (error) {
     res.status(404).json({ error: error.message });
@@ -124,10 +129,15 @@ router.get('/:id/xp', async (req, res) => {
 // GET /api/user/:id
 router.get('/:id', async (req, res) => {
   try {
+    const user = await User.findById(req.params.id);  // Add this line
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     res.json({
-      spotsRemaining: req.user.spotsRemaining,
-      dailySpotLimit: req.user.dailySpotLimit,
-      premium: req.user.premium,
+      spotsRemaining: user.spotsRemaining,
+      dailySpotLimit: user.dailySpotLimit,
+      premium: user.premium,
       nextResetTime: spotResetManager.nextResetTime
     });
   } catch (error) {
@@ -138,8 +148,13 @@ router.get('/:id', async (req, res) => {
 // GET /api/user/:id/spots-remaining
 router.get('/:id/spots-remaining', async (req, res) => {
   try {
+    const user = await User.findById(req.params.id);  // Add this line
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     res.json({
-      spotsRemaining: req.user.spotsRemaining,
+      spotsRemaining: user.spotsRemaining,
       nextResetTime: spotResetManager.nextResetTime
     });
   } catch (error) {
