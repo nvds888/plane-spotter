@@ -183,7 +183,7 @@ await User.findByIdAndUpdate(
     $inc: { 
       totalXP: spotData.baseXP,    
       weeklyXP: spotData.baseXP,
-      ...(user.premium ? {} : { spotsRemaining: -1 })  // Simpler decrement for non-premium users
+      ...(user.premium ? {} : req.body.isFirstSpot ? { spotsRemaining: -1 } : {})  // Only decrement on first plane
     }
   }
 );
