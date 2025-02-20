@@ -182,7 +182,7 @@ if (!user.premium) {
       timestamp: now
     };
 
-    const spot = await Spot.create([spotData], { session });
+    const spot = await Spot.create(spotData);
     
     // Update user XP
     await User.findByIdAndUpdate(
