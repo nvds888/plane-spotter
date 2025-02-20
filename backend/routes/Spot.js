@@ -154,19 +154,21 @@ router.post('/', async (req, res) => {
     }
 
     // For non-premium users, check and decrement spots
-    if (!user.premium) {
-      if (user.spotsRemaining <= 0) {
-        await session.abortTransaction();
-        return res.status(403).json({ 
-          error: 'Daily spot limit reached',
-          nextResetTime: user.lastDailyReset
-        });
-      }
+if (!user.premium) {
+  if (user.spotsRemaining <= 0) {
+    await session.abortTransaction();
+    return res.status(403).json({ 
+      error: 'Daily spot limit reached',
+      nextResetTime: user.lastDailyReset
+    });
+  }
 
-      // Decrement spots - only once per button press, not per plane
-      user.spotsRemaining -= 1;
-      await user.save({ session });
-    }
+  // Only decrement if this is the first plane in this spotting session
+  if (req.body.isFirstSpot) {
+    user.spotsRemaining -= 1;
+    await user.save({ session });
+  }
+}
 
     // Create the spot with provided flight data
     const spotData = {
