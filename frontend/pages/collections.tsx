@@ -27,6 +27,13 @@ type Location = {
   description?: string
 }
 
+type GuessResult = {
+  isTypeCorrect: boolean
+  isAirlineCorrect: boolean
+  isDestinationCorrect: boolean
+  xpEarned: number
+}
+
 type Spot = {
   _id: string
   userId: string
@@ -37,21 +44,11 @@ type Spot = {
   country?: string
   flight?: Flight
   guessResult?: GuessResult
-  isTypeCorrect?: boolean
-  isAirlineCorrect?: boolean
-  isDestinationCorrect?: boolean
   baseXP?: number
   bonusXP?: number
   isTeleport?: boolean
   location?: Location
   algorandGroupId?: string
-}
-
-type GuessResult = {
-  isTypeCorrect: boolean
-  isAirlineCorrect: boolean
-  isDestinationCorrect: boolean
-  xpEarned: number
 }
 
 type GroupBy = "type" | "airline" | "date" | "altitude"
@@ -254,23 +251,21 @@ const SpotCard = ({ spot }: SpotCardProps) => {
                 </div>
               </div>
 
-              {(spot.isTypeCorrect !== undefined || 
-                spot.isAirlineCorrect !== undefined || 
-                spot.isDestinationCorrect !== undefined) && (
+              {spot.guessResult && (
                 <div className="flex flex-wrap gap-2">
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
-                    ${spot.isTypeCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
-                    {spot.isTypeCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                    ${spot.guessResult.isTypeCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
+                    {spot.guessResult.isTypeCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
                     <span className="font-medium">Type</span>
                   </div>
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
-                    ${spot.isAirlineCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
-                    {spot.isAirlineCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                    ${spot.guessResult.isAirlineCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
+                    {spot.guessResult.isAirlineCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
                     <span className="font-medium">Airline</span>
                   </div>
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
-                    ${spot.isDestinationCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
-                    {spot.isDestinationCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                    ${spot.guessResult.isDestinationCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
+                    {spot.guessResult.isDestinationCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
                     <span className="font-medium">Destination</span>
                   </div>
                 </div>
@@ -503,15 +498,20 @@ export default function Collection() {
                   onClick={() => toggleGroup(group.id)}
                   className="w-full p-4 flex items-center justify-between"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-semibold text-gray-900">
-                        {group.title}
-                      </h2>
-                      <span className="text-sm text-gray-500">
-                        {group.count} plane{group.count !== 1 ? "s" : ""}
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 truncate">
+                      {group.title}
+                      <span className="opacity-0">
+                        {groupBy === 'airline' 
+                          ? 'Emirates Airlines International Extra Long Name'
+                          : groupBy === 'type'
+                          ? 'Boeing 777-300ER Dreamliner Extra Long Aircraft'
+                          : ''}
                       </span>
-                    </div>
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      {group.count} plane{group.count !== 1 ? "s" : ""}
+                    </p>
                   </div>
                   <motion.div
                     animate={{ rotate: expandedGroups.has(group.id) ? 180 : 0 }}
