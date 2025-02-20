@@ -169,7 +169,7 @@ const SpotCard = ({ spot }: SpotCardProps) => {
           </div>
           {spot.algorandGroupId && (
             <a
-              href={`https://testnet.explorer.perawallet.app/group/${spot.algorandGroupId}`}
+              href={`https://testnet.explorer.perawallet.app/tx/${spot.algorandGroupId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700"
