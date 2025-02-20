@@ -140,37 +140,30 @@ async function processAlgorandTransaction(spotIds, buffer) {
 }
 
 router.post('/', async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
+  let currentSpotIds = [];  // Track IDs for this request
+  
   try {
     console.log("Starting spot creation with data:", req.body);
     const now = new Date();
-
-    // Check user and spots in one atomic operation
-    const user = await User.findById(req.body.userId).session(session);
+    
+    const user = await User.findById(req.body.userId);
     if (!user) {
       throw new Error('User not found');
     }
 
-    // For non-premium users, check and decrement spots
-if (!user.premium) {
-  if (user.spotsRemaining <= 0) {
-    await session.abortTransaction();
-    return res.status(403).json({ 
-      error: 'Daily spot limit reached',
-      nextResetTime: user.lastDailyReset
-    });
-  }
+    // Check spot limit for non-premium users
+    if (!user.premium && user.spotsRemaining <= 0) {
+      return res.status(403).json({ 
+        error: 'Daily spot limit reached',
+        nextResetTime: user.lastDailyReset
+      });
+    }
 
-  // Only decrement if this is the first plane in this spotting session
-  if (req.body.isFirstSpot) {
-    user.spotsRemaining -= 1;
-    await user.save({ session });
-  }
-}
+    // Verify algorand address
+    if (!user.algorandAddress) {
+      throw new Error('No Algorand address found');
+    }
 
-    // Create the spot with provided flight data
     const spotData = {
       userId: req.body.userId,
       lat: req.body.lat,
@@ -183,66 +176,84 @@ if (!user.premium) {
     };
 
     const spot = await Spot.create(spotData);
-    
-    // Update user XP
-    await User.findByIdAndUpdate(
-      req.body.userId,
-      { 
-        $inc: { 
-          totalXP: spotData.baseXP,
-          weeklyXP: spotData.baseXP
-        }
-      },
-      { session }
-    );
+    await spot.save();
+    console.log('Spot created:', spot._id);
 
     await updateStreak(user, now);
-    await session.commitTransaction();
+    await user.save();
+    console.log("Spot created and saved:", spot);
+    currentSpotIds.push(spot._id);
 
-    // Process Algorand transaction (your existing logic)
-    if (spot[0]) {
-      const flightToLog = {
-        flight: req.body.flight.flight || 'N/A',
-        operator: req.body.flight.operating_as || req.body.flight.painted_as || 'Unknown',
-        altitude: req.body.flight.geography?.altitude || 0,
-        departure: req.body.flight.orig_iata || 'Unknown',
-        destination: req.body.flight.dest_iata || 'Unknown',
-        hex: req.body.flight.system?.hex || 'N/A',
-        userAddress: user.algorandAddress,
-        coordinates: {
-          lat: req.body.flight.geography?.latitude || 0,
-          lon: req.body.flight.geography?.longitude || 0
+    // Update user XP and decrease spots remaining by EXACTLY 1
+    await User.findByIdAndUpdate(
+      spot.userId,
+      { 
+        $inc: { 
+          totalXP: spotData.baseXP,    
+          weeklyXP: spotData.baseXP,
+          ...(user.premium ? {} : req.body.isFirstSpot ? { spotsRemaining: -1 } : {})  // Only decrement on first plane
         }
-      };
-
-      // Your existing Algorand buffer logic here...
-      const currentTime = Date.now();
-      if (lastSpotTime && (currentTime - lastSpotTime) < BUFFER_WINDOW) {
-        spotBuffer.push(flightToLog);
-        spotIdBuffer.push(spot[0]._id);
-      } else {
-        if (spotBuffer.length > 0) {
-          try {
-            await processAlgorandTransaction([...spotIdBuffer], [...spotBuffer]);
-          } catch (error) {
-            console.error('Error processing Algorand transaction:', error);
-          }
-        }
-        spotBuffer = [flightToLog];
-        spotIdBuffer = [spot[0]._id];
       }
-      lastSpotTime = currentTime;
+    );
+
+    console.log('User updated after spot creation:', {
+      userId: user._id,
+      newSpotsRemaining: user.spotsRemaining,
+      xpAdded: spotData.baseXP
+    });
+
+    const flightToLog = {
+      flight: req.body.flight.flight || 'N/A',
+      operator: req.body.flight.operating_as || req.body.flight.painted_as || 'Unknown',
+      altitude: req.body.flight.geography?.altitude || 0,
+      departure: req.body.flight.orig_iata || 'Unknown',
+      destination: req.body.flight.dest_iata || 'Unknown',
+      hex: req.body.flight.system?.hex || 'N/A',
+      userAddress: user.algorandAddress,
+      coordinates: {
+        lat: req.body.flight.geography?.latitude || 0,
+        lon: req.body.flight.geography?.longitude || 0
+      }
+    };
+
+    const currentTime = Date.now();
+    if (lastSpotTime && (currentTime - lastSpotTime) < BUFFER_WINDOW) {
+      console.log("Adding to existing buffer");
+      spotBuffer.push(flightToLog);
+      spotIdBuffer = [...spotIdBuffer, ...currentSpotIds];
+      console.log("Current spotIdBuffer:", spotIdBuffer);
+    } else {
+      console.log("Creating new buffer");
+      if (spotBuffer.length > 0) {
+        try {
+          await processAlgorandTransaction([...spotIdBuffer], [...spotBuffer]);
+        } catch (error) {
+          console.error('Error processing Algorand transaction:', error);
+        }
+      }
+      spotBuffer = [flightToLog];
+      spotIdBuffer = [...currentSpotIds];
+      console.log("New spotIdBuffer:", spotIdBuffer);
     }
+    lastSpotTime = currentTime;
 
-    const mappedSpot = mapSpotToFrontend(spot[0]);
+    setTimeout(async () => {
+      if (spotBuffer.length > 0 && (Date.now() - lastSpotTime) >= BUFFER_WINDOW) {
+        try {
+          await processAlgorandTransaction([...spotIdBuffer], [...spotBuffer]);
+        } catch (error) {
+          console.error('Error processing Algorand transaction in timeout:', error);
+        }
+        spotBuffer = [];
+        spotIdBuffer = [];
+      }
+    }, BUFFER_WINDOW);
+
+    const mappedSpot = mapSpotToFrontend(spot);
     res.status(201).json(mappedSpot);
-
   } catch (error) {
-    await session.abortTransaction();
     console.error('Error in spot creation:', error);
     res.status(400).json({ error: error.message });
-  } finally {
-    session.endSession();
   }
 });
 
