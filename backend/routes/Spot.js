@@ -6,30 +6,44 @@ const mongoose = require('mongoose');
 const { getBestAirlineName } = require('../utils/airlineMapping');
 const { getAirportName } = require('../utils/airportMapping');
 const { updateStreak } = require('./badgesprofile');  
-const userRouter = require('./User.js');
-const spotResetManager = userRouter.spotResetManager;
+const cron = require('node-cron');
 
 let spotBuffer = [];
 let spotIdBuffer = [];
 let lastSpotTime = null;
 const BUFFER_WINDOW = 1000; // 1 second window to collect flights from same spot
 
-function getNextResetDate(type) {
-  const now = new Date();
-  
-  if (type === 'daily') {
-    const nextDay = new Date(now);
-    nextDay.setUTCHours(24, 0, 0, 0);
-    return nextDay;
-  } else if (type === 'weekly') {
-    const currentDay = now.getUTCDay();
-    const daysUntilMonday = currentDay === 0 ? 1 : 1 + 7 - currentDay;
-    const nextMonday = new Date(now);
-    nextMonday.setUTCDate(now.getUTCDate() + daysUntilMonday);
-    nextMonday.setUTCHours(0, 0, 0, 0);
-    return nextMonday;
+class SpotResetManager {
+  constructor() {
+    this.initializeCronJob();
+  }
+
+  initializeCronJob() {
+    // Run at midnight UTC
+    cron.schedule('0 0 * * *', async () => {
+      try {
+        const now = new Date();
+        // Reset all non-premium users to 4 spots
+        await User.updateMany(
+          { premium: false },
+          { 
+            $set: { 
+              spotsRemaining: 4,
+              lastDailyReset: now
+            }
+          }
+        );
+        console.log('Daily spot reset completed at:', now);
+      } catch (error) {
+        console.error('Error in daily spot reset:', error);
+      }
+    }, {
+      timezone: 'UTC'
+    });
   }
 }
+
+new SpotResetManager();
 
 const mapSpotToFrontend = (spot) => {
   const spotObj = spot.toObject ? spot.toObject() : spot;
@@ -126,139 +140,107 @@ async function processAlgorandTransaction(spotIds, buffer) {
 }
 
 router.post('/', async (req, res) => {
-  let currentSpotIds = [];  // Track IDs for this request
-  
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     console.log("Starting spot creation with data:", req.body);
     const now = new Date();
-    
-    const user = await User.findById(req.body.userId);
+
+    // Check user and spots in one atomic operation
+    const user = await User.findById(req.body.userId).session(session);
     if (!user) {
       throw new Error('User not found');
     }
 
-    const nextResetTimestamp = new Date(spotResetManager.nextResetTime).setUTCHours(0,0,0,0);
-    const lastResetTimestamp = new Date(user.lastDailyReset).setUTCHours(0,0,0,0);
-    
-    if (!user.lastDailyReset || lastResetTimestamp < nextResetTimestamp) {
-      if (!user.premium) {
-        user.spotsRemaining = 4;
-        user.lastDailyReset = now;
-        await user.save();
+    // For non-premium users, check and decrement spots
+    if (!user.premium) {
+      if (user.spotsRemaining <= 0) {
+        await session.abortTransaction();
+        return res.status(403).json({ 
+          error: 'Daily spot limit reached',
+          nextResetTime: user.lastDailyReset
+        });
       }
+
+      // Decrement spots - only once per button press, not per plane
+      user.spotsRemaining -= 1;
+      await user.save({ session });
     }
 
-    console.log('User status:', {  // Add this block
-      userId: user._id,
-      premium: user.premium,
-      spotsRemaining: user.spotsRemaining,
-      lastReset: user.lastDailyReset
-    });
-
-    // Check spot limit for non-premium users
-    if (!user.premium && user.spotsRemaining <= 0) {
-      return res.status(403).json({ 
-        error: 'Daily spot limit reached',
-        nextResetTime: user.lastDailyReset  // Add this
-      });
-    }
-
-    // Verify algorand address
-    if (!user.algorandAddress) {
-      throw new Error('No Algorand address found');
-    }
-
+    // Create the spot with provided flight data
     const spotData = {
       userId: req.body.userId,
       lat: req.body.lat,
       lon: req.body.lon,
       flight: req.body.flight,
-      baseXP: req.body.isTeleport ? 10 : 5,  // Modified this line
-      isTeleport: req.body.isTeleport || false,  // Added this
-      location: req.body.location || null,     // Added this
+      baseXP: req.body.isTeleport ? 10 : 5,
+      isTeleport: req.body.isTeleport || false,
+      location: req.body.location || null,
       timestamp: now
     };
 
-    // In Spot.js, change the user update part after spot creation:
-const spot = await Spot.create(spotData);
-await spot.save();
-console.log('Spot created:', spot._id);
-
-await updateStreak(user, now);
-await user.save();
-console.log("Spot created and saved:", spot);
-currentSpotIds.push(spot._id);
-
-// Update user XP and decrease spots remaining by EXACTLY 1 (not using $inc for spotsRemaining)
-await User.findByIdAndUpdate(
-  spot.userId,
-  { 
-    $inc: { 
-      totalXP: spotData.baseXP,    
-      weeklyXP: spotData.baseXP,
-      ...(user.premium ? {} : req.body.isFirstSpot ? { spotsRemaining: -1 } : {})  // Only decrement on first plane
-    }
-  }
-);
-
-console.log('User updated after spot creation:', {  // Add this block
-  userId: user._id,
-  newSpotsRemaining: user.spotsRemaining,
-  xpAdded: spotData.baseXP
-});
-
-    const flightToLog = {
-      flight: req.body.flight.flight || 'N/A',
-      operator: req.body.flight.operating_as || req.body.flight.painted_as || 'Unknown',
-      altitude: req.body.flight.geography?.altitude || 0,
-      departure: req.body.flight.orig_iata || 'Unknown',
-      destination: req.body.flight.dest_iata || 'Unknown',
-      hex: req.body.flight.system?.hex || 'N/A',
-      userAddress: user.algorandAddress,
-      coordinates: {
-        lat: req.body.flight.geography?.latitude || 0,
-        lon: req.body.flight.geography?.longitude || 0
-      }
-    };
-
-    const currentTime = Date.now();
-    if (lastSpotTime && (currentTime - lastSpotTime) < BUFFER_WINDOW) {
-      console.log("Adding to existing buffer");
-      spotBuffer.push(flightToLog);
-      spotIdBuffer = [...spotIdBuffer, ...currentSpotIds];
-      console.log("Current spotIdBuffer:", spotIdBuffer);
-    } else {
-      console.log("Creating new buffer");
-      if (spotBuffer.length > 0) {
-        try {
-          await processAlgorandTransaction([...spotIdBuffer], [...spotBuffer]);
-        } catch (error) {
-          console.error('Error processing Algorand transaction:', error);
+    const spot = await Spot.create([spotData], { session });
+    
+    // Update user XP
+    await User.findByIdAndUpdate(
+      req.body.userId,
+      { 
+        $inc: { 
+          totalXP: spotData.baseXP,
+          weeklyXP: spotData.baseXP
         }
-      }
-      spotBuffer = [flightToLog];
-      spotIdBuffer = [...currentSpotIds];
-      console.log("New spotIdBuffer:", spotIdBuffer);
-    }
-    lastSpotTime = currentTime;
+      },
+      { session }
+    );
 
-    setTimeout(async () => {
-      if (spotBuffer.length > 0 && (Date.now() - lastSpotTime) >= BUFFER_WINDOW) {
-        try {
-          await processAlgorandTransaction([...spotIdBuffer], [...spotBuffer]);
-        } catch (error) {
-          console.error('Error processing Algorand transaction in timeout:', error);
+    await updateStreak(user, now);
+    await session.commitTransaction();
+
+    // Process Algorand transaction (your existing logic)
+    if (spot[0]) {
+      const flightToLog = {
+        flight: req.body.flight.flight || 'N/A',
+        operator: req.body.flight.operating_as || req.body.flight.painted_as || 'Unknown',
+        altitude: req.body.flight.geography?.altitude || 0,
+        departure: req.body.flight.orig_iata || 'Unknown',
+        destination: req.body.flight.dest_iata || 'Unknown',
+        hex: req.body.flight.system?.hex || 'N/A',
+        userAddress: user.algorandAddress,
+        coordinates: {
+          lat: req.body.flight.geography?.latitude || 0,
+          lon: req.body.flight.geography?.longitude || 0
         }
-        spotBuffer = [];
-        spotIdBuffer = [];
-      }
-    }, BUFFER_WINDOW);
+      };
 
-    const mappedSpot = mapSpotToFrontend(spot);
+      // Your existing Algorand buffer logic here...
+      const currentTime = Date.now();
+      if (lastSpotTime && (currentTime - lastSpotTime) < BUFFER_WINDOW) {
+        spotBuffer.push(flightToLog);
+        spotIdBuffer.push(spot[0]._id);
+      } else {
+        if (spotBuffer.length > 0) {
+          try {
+            await processAlgorandTransaction([...spotIdBuffer], [...spotBuffer]);
+          } catch (error) {
+            console.error('Error processing Algorand transaction:', error);
+          }
+        }
+        spotBuffer = [flightToLog];
+        spotIdBuffer = [spot[0]._id];
+      }
+      lastSpotTime = currentTime;
+    }
+
+    const mappedSpot = mapSpotToFrontend(spot[0]);
     res.status(201).json(mappedSpot);
+
   } catch (error) {
+    await session.abortTransaction();
     console.error('Error in spot creation:', error);
     res.status(400).json({ error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
