@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
-import { ChevronDown, Filter, CheckCircle, XCircle, Home, Layers, Trophy, Users, Plane } from "lucide-react"
+import { ChevronDown, Filter, CheckCircle, XCircle, Home, Layers, Trophy, Users, Plane, MapPin, ExternalLink } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import _ from 'lodash'
 
@@ -16,12 +16,35 @@ type Flight = {
   operator: string
   lat: number
   lon: number
+  orig_iata?: string
+  dest_iata?: string
   departureAirport: string
   arrivalAirport: string
 }
 
-type SpotCardProps = {
-  spot: Spot
+type Location = {
+  name: string
+  description?: string
+}
+
+type Spot = {
+  _id: string
+  userId: string
+  lat: number
+  lon: number
+  timestamp: string
+  city?: string
+  country?: string
+  flight?: Flight
+  guessResult?: GuessResult
+  isTypeCorrect?: boolean
+  isAirlineCorrect?: boolean
+  isDestinationCorrect?: boolean
+  baseXP?: number
+  bonusXP?: number
+  isTeleport?: boolean
+  location?: Location
+  algorandGroupId?: string
 }
 
 type GuessResult = {
@@ -31,22 +54,16 @@ type GuessResult = {
   xpEarned: number
 }
 
-type Spot = {
-  _id: string
-  userId: string
-  lat: number
-  lon: number
-  timestamp: string
-  flight?: Flight
-  guessResult?: GuessResult
-}
-
 type GroupBy = "type" | "airline" | "date" | "altitude"
 
 type GroupFilterProps = {
   value: GroupBy
   onChange: (value: GroupBy) => void
   onClose: () => void
+}
+
+type SpotCardProps = {
+  spot: Spot
 }
 
 type ExpandedGroups = Set<string>
@@ -103,37 +120,73 @@ const GroupFilter = ({ value, onChange, onClose }: GroupFilterProps) => {
   )
 }
 
-
 const SpotCard = ({ spot }: SpotCardProps) => {
   const [expanded, setExpanded] = useState(false)
+  const totalXP = (spot.baseXP || 0) + (spot.bonusXP || 0)
+  const isTeleport = spot.isTeleport || false
+
+  const formatAirport = (iata: string | undefined, name: string) => {
+    if (!iata || iata === 'N/A') return name
+    return `(${iata}) ${name}`
+  }
 
   return (
     <motion.div
       layout
-      className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+      className={`${
+        isTeleport 
+          ? 'ring-2 ring-purple-200 ring-opacity-50 bg-gradient-to-r from-white/80 to-purple-50/80' 
+          : 'bg-white/80'
+      } backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm overflow-hidden`}
     >
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center justify-between"
+        className="w-full p-4"
       >
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="font-semibold text-gray-900">{spot.flight?.flight || "Unknown Flight"}</h3>
-            {spot.guessResult && (
-              <span className="text-emerald-600 text-sm font-medium bg-emerald-50 px-3 py-1 rounded-full ml-2">
-                +{spot.guessResult.xpEarned} XP
-              </span>
-            )}
-          </div>
-          <div className="flex items-center text-sm text-gray-500">
-            <span>{spot.flight?.operator || "Unknown Operator"}</span>
-            <span className="mx-2">•</span>
-            <span>{spot.flight?.type || "Unknown Type"}</span>
-          </div>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-semibold text-gray-900 truncate max-w-[70%]">
+            {spot.flight?.flight || "Unknown Flight"}
+          </h3>
+          {totalXP > 0 && (
+            <span className="text-emerald-600 text-sm font-medium bg-emerald-50 px-3 py-1 rounded-full ml-2">
+              +{totalXP} XP
+            </span>
+          )}
         </div>
+        <div className="flex items-center text-sm text-gray-500 mb-2">
+          <span className="truncate max-w-[150px]">{spot.flight?.operator || "Unknown Operator"}</span>
+          <span className="mx-2">•</span>
+          <span className="truncate max-w-[150px]">{spot.flight?.type || "Unknown Type"}</span>
+        </div>
+
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center gap-1">
+            <MapPin size={14} />
+            <span className="truncate max-w-[200px]">
+              {isTeleport && spot.location?.name 
+                ? spot.location.name
+                : (spot.city && spot.country 
+                  ? `${spot.city}, ${spot.country}`
+                  : 'Unknown Location')}
+            </span>
+          </div>
+          {spot.algorandGroupId && (
+            <a
+              href={`https://testnet.explorer.perawallet.app/group/${spot.algorandGroupId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink size={14} />
+              <span className="text-xs">View TX</span>
+            </a>
+          )}
+        </div>
+
         <motion.div
           animate={{ rotate: expanded ? 180 : 0 }}
-          className="ml-4"
+          className="flex justify-center w-full mt-2"
         >
           <ChevronDown className="text-gray-400" />
         </motion.div>
@@ -149,13 +202,21 @@ const SpotCard = ({ spot }: SpotCardProps) => {
           >
             <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-3">
+                <div className={`rounded-xl p-3 ${
+                  isTeleport 
+                    ? 'bg-gradient-to-r from-purple-50 to-indigo-50' 
+                    : 'bg-gradient-to-r from-indigo-50 to-blue-50'
+                }`}>
                   <p className="text-xs text-gray-500 mb-1">Altitude</p>
                   <p className="font-medium">
                     {spot.flight?.alt ? `${spot.flight.alt.toLocaleString()} ft` : "N/A"}
                   </p>
                 </div>
-                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-3">
+                <div className={`rounded-xl p-3 ${
+                  isTeleport 
+                    ? 'bg-gradient-to-r from-purple-50 to-indigo-50' 
+                    : 'bg-gradient-to-r from-indigo-50 to-blue-50'
+                }`}>
                   <p className="text-xs text-gray-500 mb-1">Speed</p>
                   <p className="font-medium">
                     {spot.flight?.speed ? `${spot.flight.speed} kts` : "N/A"}
@@ -163,37 +224,53 @@ const SpotCard = ({ spot }: SpotCardProps) => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-4">
+              <div className={`rounded-xl p-4 ${
+                isTeleport 
+                  ? 'bg-gradient-to-r from-purple-50 to-indigo-50' 
+                  : 'bg-gradient-to-r from-indigo-50 to-blue-50'
+              }`}>
                 <div className="grid grid-cols-[1fr,auto,1fr] gap-4 items-center">
                   <div className="min-w-0">
                     <p className="text-xs text-gray-500 mb-1">From</p>
-                    <p className="font-medium break-words">{spot.flight?.departureAirport || "N/A"}</p>
+                    <p className="font-medium break-words">
+                      {formatAirport(
+                        spot.flight?.orig_iata,
+                        spot.flight?.departureAirport || "N/A"
+                      )}
+                    </p>
                   </div>
                   <div className="flex-shrink-0 text-center">
-                    <Plane className="text-indigo-600" size={20} />
+                    <Plane className={isTeleport ? "text-purple-600" : "text-indigo-600"} size={20} />
                   </div>
                   <div className="min-w-0 text-right">
                     <p className="text-xs text-gray-500 mb-1">To</p>
-                    <p className="font-medium break-words">{spot.flight?.arrivalAirport || "N/A"}</p>
+                    <p className="font-medium break-words">
+                      {formatAirport(
+                        spot.flight?.dest_iata,
+                        spot.flight?.arrivalAirport || "N/A"
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {spot.guessResult && (
+              {(spot.isTypeCorrect !== undefined || 
+                spot.isAirlineCorrect !== undefined || 
+                spot.isDestinationCorrect !== undefined) && (
                 <div className="flex flex-wrap gap-2">
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
-                    ${spot.guessResult.isTypeCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
-                    {spot.guessResult.isTypeCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                    ${spot.isTypeCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
+                    {spot.isTypeCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
                     <span className="font-medium">Type</span>
                   </div>
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
-                    ${spot.guessResult.isAirlineCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
-                    {spot.guessResult.isAirlineCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                    ${spot.isAirlineCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
+                    {spot.isAirlineCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
                     <span className="font-medium">Airline</span>
                   </div>
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm
-                    ${spot.guessResult.isDestinationCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
-                    {spot.guessResult.isDestinationCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                    ${spot.isDestinationCorrect ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
+                    {spot.isDestinationCorrect ? <CheckCircle size={16} /> : <XCircle size={16} />}
                     <span className="font-medium">Destination</span>
                   </div>
                 </div>
@@ -215,7 +292,6 @@ const SpotCard = ({ spot }: SpotCardProps) => {
     </motion.div>
   )
 }
-
 
 export default function Collection() {
   const { data: session } = useSession()
@@ -309,7 +385,7 @@ export default function Collection() {
         id: key,
         title: key,
         count: groupSpots.length,
-        spots: groupSpots
+        spots: groupSpots.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       }))
       .sort((a, b) => b.count - a.count)
   }, [spots, groupBy, searchTerm])
@@ -377,7 +453,6 @@ export default function Collection() {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="max-w-lg mx-auto px-4 py-6 mt-[180px] mb-24 flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-4">
@@ -424,64 +499,54 @@ export default function Collection() {
           <div className="space-y-6">
             {groupedSpots.map((group) => (
               <div key={group.id} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm overflow-hidden">
-              <button
-                onClick={() => toggleGroup(group.id)}
-                className="w-full p-4 flex items-center justify-between"
-              >
-                <div className="grid grid-cols-[1fr,auto] gap-2 items-baseline" style={{ width: 'calc(100% - 48px)' }}>
-                  <h2 className="text-lg font-semibold text-gray-900 truncate">
-                    {group.title}
-                    {(groupBy === 'type' || groupBy === 'date' || groupBy === 'airline') && (
-  <span className="opacity-0">
-    {/* Add invisible padding text */}
-    {groupBy === 'airline' 
-      ? 'Emirates Airlines International Extra Long Name'
-      : 'Boeing 777-300ER Dreamliner Extra Long Aircraft'
-    }
-  </span>
-)}
-                  </h2>
-                  <p className="text-sm text-gray-500 whitespace-nowrap">
-                    {group.count} plane{group.count !== 1 ? "s" : ""}
-                  </p>
-                </div>
-                <motion.div
-                  animate={{ rotate: expandedGroups.has(group.id) ? 180 : 0 }}
-                  className={`p-2 rounded-xl flex-shrink-0 ${
-                    expandedGroups.has(group.id) 
-                      ? "bg-gradient-to-r from-indigo-600 to-blue-600" 
-                      : "bg-gray-50"
-                  }`}
+                <button
+                  onClick={() => toggleGroup(group.id)}
+                  className="w-full p-4 flex items-center justify-between"
                 >
-                  <ChevronDown className={`${
-                    expandedGroups.has(group.id) ? "text-white" : "text-gray-400"
-                  }`} />
-                </motion.div>
-              </button>
-              
-              <AnimatePresence>
-                {expandedGroups.has(group.id) && (
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: "auto" }}
-                    exit={{ height: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="p-4 space-y-3 border-t border-gray-100">
-                      {group.spots.map((spot) => (
-                        <SpotCard key={spot._id} spot={spot} />
-                      ))}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {group.title}
+                      </h2>
+                      <span className="text-sm text-gray-500">
+                        {group.count} plane{group.count !== 1 ? "s" : ""}
+                      </span>
                     </div>
+                  </div>
+                  <motion.div
+                    animate={{ rotate: expandedGroups.has(group.id) ? 180 : 0 }}
+                    className={`p-2 rounded-xl ${
+                      expandedGroups.has(group.id) 
+                        ? "bg-gradient-to-r from-indigo-600 to-blue-600" 
+                        : "bg-gray-50"
+                    }`}
+                  >
+                    <ChevronDown className={expandedGroups.has(group.id) ? "text-white" : "text-gray-400"} />
                   </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                </button>
+
+                <AnimatePresence>
+                  {expandedGroups.has(group.id) && (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: "auto" }}
+                      exit={{ height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-4 space-y-3 border-t border-gray-100">
+                        {group.spots.map((spot) => (
+                          <SpotCard key={spot._id} spot={spot} />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
         <div className="max-w-lg mx-auto">
           <div className="flex justify-around py-4">
@@ -516,21 +581,13 @@ export default function Collection() {
         </div>
       </nav>
 
-      {/* Filter Modal */}
       <AnimatePresence>
         {showFilters && (
-          <motion.div
-          className="fixed inset-0 bg-black/60 z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-            <GroupFilter
-              value={groupBy}
-              onChange={setGroupBy}
-              onClose={() => setShowFilters(false)}
-            />
-          </motion.div>
+          <GroupFilter
+            value={groupBy}
+            onChange={setGroupBy}
+            onClose={() => setShowFilters(false)}
+          />
         )}
       </AnimatePresence>
     </div>
