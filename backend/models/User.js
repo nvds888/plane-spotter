@@ -25,6 +25,15 @@ const badgeSchema = new mongoose.Schema({
   earnedAt: { type: Date, default: Date.now }
 });
 
+const subscriptionSchema = new mongoose.Schema({
+  active: { type: Boolean, default: false },
+  plan: { type: String, enum: ['3', '6', '12'] },  // months
+  startDate: Date,
+  endDate: Date,
+  transactionId: String,
+  autoRenew: { type: Boolean, default: false }
+});
+
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -67,6 +76,11 @@ const userSchema = new mongoose.Schema({
   premium: {
     type: Boolean,
     default: false
+  },
+  subscription: subscriptionSchema,  // Add subscription schema
+  dailySpotLimit: {
+    type: Number,
+    default: 4
   },
   dailySpotLimit: {
     type: Number,

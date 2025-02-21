@@ -4,6 +4,7 @@ import React, { useState, useEffect, JSX } from 'react';
 import { Award, Plane, Calendar, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from "next-auth/react";
+import { SubscriptionButton } from './SubscriptionModal';
 
 interface Badge {
   id: string;
@@ -32,6 +33,10 @@ interface ProfileData {
   joinDate: string;
   stats: ProfileStats;
   badges: Badge[];
+  premium: boolean;
+  subscription?: {
+    endDate: string;
+  };
 }
 
 interface ProfileModalProps {
@@ -198,33 +203,50 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    {session?.user?.id !== userId && profileData && (
-                      <button
-                        onClick={async () => {
-                          try {
-                            const response = await fetch(
-                              `https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/${isFollowing ? 'unfollow' : 'follow'}`,
-                              {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ username: profileData.username })
-                              }
-                            );
-                            if (!response.ok) throw new Error(`Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);
-                            setIsFollowing(!isFollowing);
-                          } catch (error) {
-                            console.error('Error following/unfollowing user:', error);
-                          }
-                        }}
-                        className={`px-4 py-2 ${
-                          isFollowing 
-                            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
-                            : 'bg-blue-500 text-white hover:bg-blue-600'
-                        } rounded-xl transition-colors`}
-                      >
-                        {isFollowing ? 'Following' : 'Follow'}
-                      </button>
-                    )}
+  {session?.user?.id !== userId && profileData && (
+    <button
+      onClick={async () => {
+        try {
+          const response = await fetch(
+            `https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/${isFollowing ? 'unfollow' : 'follow'}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: profileData.username })
+            }
+          );
+          if (!response.ok) throw new Error(`Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);
+          setIsFollowing(!isFollowing);
+        } catch (error) {
+          console.error('Error following/unfollowing user:', error);
+        }
+      }}
+      className={`px-4 py-2 ${
+        isFollowing 
+          ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+          : 'bg-blue-500 text-white hover:bg-blue-600'
+      } rounded-xl transition-colors`}
+    >
+      {isFollowing ? 'Following' : 'Follow'}
+    </button>
+  )}
+  
+  {/* Add SubscriptionButton here */}
+  {session?.user?.id === userId && profileData && (
+    <SubscriptionButton 
+      userId={userId}
+      isPremium={profileData.premium}
+      subscriptionEndDate={profileData.subscription?.endDate}
+    />
+  )}
+
+  <button 
+    onClick={onClose}
+    className="p-2 hover:bg-gray-100 rounded-full"
+  >
+    <X size={20} className="text-gray-400" />
+  </button>
+                    
                     <button 
                       onClick={onClose}
                       className="p-2 hover:bg-gray-100 rounded-full"
