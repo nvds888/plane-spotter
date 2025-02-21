@@ -160,12 +160,8 @@ const SpotCard = ({ spot }: SpotCardProps) => {
           <div className="flex items-center gap-1">
             <MapPin size={14} />
             <span className="truncate max-w-[200px]">
-              {isTeleport && spot.location?.name 
-                ? spot.location.name
-                : (spot.city && spot.country 
-                  ? `${spot.city}, ${spot.country}`
-                  : 'Unknown Location')}
-            </span>
+  {spot.location?.name || 'Unknown Location'}
+</span>
           </div>
           {spot.algorandGroupId && (
             <a
