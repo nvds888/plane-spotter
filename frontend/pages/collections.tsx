@@ -352,7 +352,7 @@ export default function Collection() {
       return (
         spot.flight?.flight?.toLowerCase().includes(searchLower) ||
         spot.flight?.operator?.toLowerCase().includes(searchLower) ||
-        spot.flight?.type?.toLowerCase().includes(searchLower) ||
+        spot.flight?.typeName?.toLowerCase().includes(searchLower) ||
         spot.flight?.departureAirport?.toLowerCase().includes(searchLower) ||
         spot.flight?.arrivalAirport?.toLowerCase().includes(searchLower)
       )
@@ -361,7 +361,7 @@ export default function Collection() {
     let grouped: Record<string, Spot[]>
     switch (groupBy) {
       case 'type':
-        grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
+        grouped = _.groupBy(filteredSpots, spot => spot.flight?.typeName || 'Unknown')
         break
       case 'airline':
         grouped = _.groupBy(filteredSpots, spot => spot.flight?.operator || 'Unknown')
@@ -381,7 +381,7 @@ export default function Collection() {
         })
         break
       default:
-        grouped = _.groupBy(filteredSpots, spot => spot.flight?.type || 'Unknown')
+        grouped = _.groupBy(filteredSpots, spot => spot.flight?.typeName || 'Unknown')
     }
 
     return Object.entries(grouped)
