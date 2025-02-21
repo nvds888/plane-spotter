@@ -185,41 +185,122 @@ router.get('/suggestions', async (req, res) => {
         // Create a human-readable name for the aircraft type
         let typeName = flight.type;
         const typeMapping = {
-          'A20N': 'Airbus A320neo',
-          'A21N': 'Airbus A321neo',
-          'A318': 'Airbus A318',
-          'A319': 'Airbus A319',
-          'A320': 'Airbus A320',
-          'A321': 'Airbus A321',
-          'A332': 'Airbus A330-200',
-          'A333': 'Airbus A330-300',
-          'A338': 'Airbus A330-800neo',
-          'A339': 'Airbus A330-900neo',
-          'A359': 'Airbus A350-900',
-          'A35K': 'Airbus A350-1000',
-          'A388': 'Airbus A380-800',
-          'B737': 'Boeing 737',
-          'B738': 'Boeing 737-800',
-          'B739': 'Boeing 737-900',
-          'B38M': 'Boeing 737 MAX 8',
-          'B39M': 'Boeing 737 MAX 9',
-          'B744': 'Boeing 747-400',
-          'B748': 'Boeing 747-8',
-          'B752': 'Boeing 757-200',
-          'B753': 'Boeing 757-300',
-          'B762': 'Boeing 767-200',
-          'B763': 'Boeing 767-300',
-          'B764': 'Boeing 767-400',
-          'B772': 'Boeing 777-200',
-          'B773': 'Boeing 777-300',
-          'B77W': 'Boeing 777-300ER',
-          'B788': 'Boeing 787-8',
-          'B789': 'Boeing 787-9',
-          'B78X': 'Boeing 787-10',
+          // Airbus Family
+          'A20N': 'A320neo',
+          'A21N': 'A321neo',
+          'A318': 'A318',
+          'A319': 'A319',
+          'A320': 'A320',
+          'A321': 'A321',
+          'A332': 'A330-200',
+          'A333': 'A330-300',
+          'A338': 'A330-800neo',
+          'A339': 'A330-900neo',
+          'A342': 'A340-200',
+          'A343': 'A340-300',
+          'A345': 'A340-500',
+          'A346': 'A340-600',
+          'A359': 'A350-900',
+          'A35K': 'A350-1000',
+          'A388': 'A380-800',
+        
+          // Boeing Family
+          'B731': 'B737-100',
+          'B732': 'B737-200',
+          'B733': 'B737-300',
+          'B734': 'B737-400',
+          'B735': 'B737-500',
+          'B736': 'B737-600',
+          'B737': 'B737',
+          'B738': 'B737-800',
+          'B739': 'B737-900',
+          'B37M': 'B737 MAX 7',
+          'B38M': 'B737 MAX 8',
+          'B39M': 'B737 MAX 9',
+          'B3XM': 'B737 MAX 10',
+          'B741': 'B747-100',
+          'B742': 'B747-200',
+          'B743': 'B747-300',
+          'B744': 'B747-400',
+          'B748': 'B747-8',
+          'B752': 'B757-200',
+          'B753': 'B757-300',
+          'B762': 'B767-200',
+          'B763': 'B767-300',
+          'B764': 'B767-400',
+          'B772': 'B777-200',
+          'B77L': 'B777-200LR',
+          'B773': 'B777-300',
+          'B77W': 'B777-300ER',
+          'B778': 'B777-8',
+          'B779': 'B777-9',
+          'B788': 'B787-8',
+          'B789': 'B787-9',
+          'B78X': 'B787-10',
+        
+          // Embraer Commercial
+          'E170': 'Embraer E170',
+          'E175': 'Embraer E175',
           'E190': 'Embraer E190',
           'E195': 'Embraer E195',
           'E290': 'Embraer E190-E2',
-          'E295': 'Embraer E195-E2'
+          'E295': 'Embraer E195-E2',
+        
+          // Bombardier/Airbus (C Series)
+          'BCS1': 'Airbus A220-100',
+          'BCS3': 'Airbus A220-300',
+          'CS100': 'Airbus A220-100',
+          'CS300': 'Airbus A220-300',
+        
+          // ATR Aircraft
+          'AT43': 'ATR 42-300',
+          'AT45': 'ATR 42-500',
+          'AT46': 'ATR 42-600',
+          'AT72': 'ATR 72-200',
+          'AT75': 'ATR 72-500',
+          'AT76': 'ATR 72-600',
+        
+          // Bombardier Dash/Q Series
+          'DH8A': 'Dash 8-100',
+          'DH8B': 'Dash 8-200',
+          'DH8C': 'Dash 8-300',
+          'DH8D': 'Dash 8-400',
+        
+          // CRJ Series
+          'CRJ1': 'Bombardier CRJ100',
+          'CRJ2': 'Bombardier CRJ200',
+          'CRJ7': 'Bombardier CRJ700',
+          'CRJ9': 'Bombardier CRJ900',
+          'CRJX': 'Bombardier CRJ1000',
+        
+          // McDonnell Douglas (Legacy)
+          'MD11': 'McDonnell Douglas MD-11',
+          'MD80': 'McDonnell Douglas MD-80',
+          'MD82': 'McDonnell Douglas MD-82',
+          'MD83': 'McDonnell Douglas MD-83',
+          'MD87': 'McDonnell Douglas MD-87',
+          'MD88': 'McDonnell Douglas MD-88',
+          'MD90': 'McDonnell Douglas MD-90',
+        
+          // Fokker
+          'F70': 'Fokker 70',
+          'F100': 'Fokker 100',
+        
+          // British Aerospace
+          'BA46': 'BAe 146',
+          'RJ85': 'Avro RJ85',
+          'RJ1H': 'Avro RJ100',
+        
+          // Antonov
+          'A124': 'Antonov An-124',
+          'A225': 'Antonov An-225',
+        
+          // Sukhoi
+          'SU95': 'Sukhoi Superjet 100',
+          
+          // COMAC
+          'C919': 'COMAC C919',
+          'ARJ21': 'COMAC ARJ21'
         };
         
         aircraftTypes.set(flight.type, {

@@ -11,6 +11,7 @@ type Flight = {
   hex: string
   flight: string
   type: string
+  typeName: string,
   alt: number
   speed: number
   operator: string
@@ -153,7 +154,7 @@ const SpotCard = ({ spot }: SpotCardProps) => {
         <div className="flex items-center text-sm text-gray-500 mb-2">
           <span className="truncate max-w-[150px]">{spot.flight?.operator || "Unknown Operator"}</span>
           <span className="mx-2">•</span>
-          <span className="truncate max-w-[150px]">{spot.flight?.type || "Unknown Type"}</span>
+          <span className="truncate max-w-[150px]">{spot.flight?.typeName || "Unknown Type"}</span>
         </div>
 
         <div className="flex items-center justify-between text-sm text-gray-500">
