@@ -1,8 +1,17 @@
+"use client"
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Wallet, Crown, Star } from 'lucide-react';
-import { useWallet } from '@txnlab/use-wallet-react';
+import { useWallet, WalletProvider, WalletManager, WalletId, NetworkId } from '@txnlab/use-wallet-react';
 import algosdk from 'algosdk';
+
+const walletManager = new WalletManager({
+  wallets: [
+    WalletId.PERA
+  ],
+  defaultNetwork: NetworkId.TESTNET
+});
 
 interface SubscriptionPlan {
   price: number;
@@ -39,7 +48,7 @@ const subscriptionPlans: SubscriptionPlans = {
   '12': { price: 40, duration: '12 months', savings: 20 }
 };
 
-export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userId }) => {
+const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userId }) => {
   const { activeAddress, transactionSigner, algodClient, wallets } = useWallet();
   const [selectedDuration, setSelectedDuration] = useState<string>('3');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -260,6 +269,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         </motion.div>
       )}
     </AnimatePresence>
+  );
+};
+
+export const SubscriptionModal: React.FC<SubscriptionModalProps> = (props) => {
+  return (
+    <WalletProvider manager={walletManager}>
+      <ModalContent {...props} />
+    </WalletProvider>
   );
 };
 
