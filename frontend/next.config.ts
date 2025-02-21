@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 import withPWA from '@ducanh2912/next-pwa';
+import { webpackFallback } from '@txnlab/use-wallet-react'
+
 
 interface PWAConfig {
   dest: string;
@@ -82,6 +84,17 @@ const nextConfig: NextConfig = withPWA(pwaConfig)({
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        ...webpackFallback
+      }
+    }
+    return config
+  }
 });
+
+
 
 export default nextConfig;
