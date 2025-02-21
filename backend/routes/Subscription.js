@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { spawn } = require('child_process');
+const path = require('path');
 
 // Subscription plans configuration
 const SUBSCRIPTION_PLANS = {
@@ -13,8 +14,9 @@ const SUBSCRIPTION_PLANS = {
 // Helper to create USDC payment transaction
 async function createPaymentTransaction(walletAddress, amount) {
   return new Promise((resolve, reject) => {
+    const pythonScript = path.join(__dirname, '../scripts/subscription_payment.py');
     const pythonProcess = spawn('python', [
-      'subscription_payment.py',
+      pythonScript,
       walletAddress,
       amount.toString()
     ]);
@@ -27,7 +29,44 @@ async function createPaymentTransaction(walletAddress, amount) {
 
     pythonProcess.stderr.on('data', (data) => {
       console.error('Payment processing error:', data.toString());
-      reject(new Error(data.toString()));
+    });
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const result = JSON.parse(resultData);
+          if (!result.success) {
+            reject(new Error(result.error || 'Failed to create payment transaction'));
+            return;
+          }
+          resolve(result);
+        } catch (err) {
+          reject(new Error('Failed to parse payment result'));
+        }
+      } else {
+        reject(new Error(`Process exited with code ${code}`));
+      }
+    });
+  });
+}
+
+// Helper to verify payment transaction
+async function verifyPayment(txId) {
+  return new Promise((resolve, reject) => {
+    const pythonScript = path.join(__dirname, '../scripts/subscription_payment.py');
+    const pythonProcess = spawn('python', [
+      pythonScript,
+      txId
+    ]);
+
+    let resultData = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+      resultData += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error('Payment verification error:', data.toString());
     });
 
     pythonProcess.on('close', (code) => {
@@ -36,10 +75,10 @@ async function createPaymentTransaction(walletAddress, amount) {
           const result = JSON.parse(resultData);
           resolve(result);
         } catch (err) {
-          reject(new Error('Failed to parse payment result'));
+          reject(new Error('Failed to parse verification result'));
         }
       } else {
-        reject(new Error(`Process exited with code ${code}`));
+        reject(new Error(`Verification process exited with code ${code}`));
       }
     });
   });
@@ -69,6 +108,10 @@ router.post('/connect-wallet', async (req, res) => {
     // Create payment transaction
     const paymentResult = await createPaymentTransaction(walletAddress, amount);
     
+    if (!paymentResult.success) {
+      throw new Error(paymentResult.error || 'Failed to create payment transaction');
+    }
+    
     // Store pending subscription in the user document
     await User.findByIdAndUpdate(userId, {
       'subscription.pending': {
@@ -79,7 +122,7 @@ router.post('/connect-wallet', async (req, res) => {
       }
     });
 
-    // Return transaction details to be signed by wallet
+    // Return transaction for signing
     res.json({
       txnGroups: [{
         txn: paymentResult.txn,
@@ -89,11 +132,11 @@ router.post('/connect-wallet', async (req, res) => {
 
   } catch (error) {
     console.error('Error initiating subscription:', error);
-    res.status(500).json({ error: 'Failed to initiate subscription' });
+    res.status(500).json({ error: error.message || 'Failed to initiate subscription' });
   }
 });
 
-// Webhook route for subscription confirmation
+// Route to confirm subscription
 router.post('/confirm', async (req, res) => {
   try {
     const { userId, duration, txId, walletAddress } = req.body;
@@ -104,19 +147,32 @@ router.post('/confirm', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (!user.subscription?.pending?.walletAddress === walletAddress) {
-      return res.status(400).json({ error: 'Invalid wallet address' });
+    const pendingSubscription = user.subscription?.pending;
+    if (!pendingSubscription || pendingSubscription.walletAddress !== walletAddress) {
+      return res.status(400).json({ error: 'Invalid or expired subscription request' });
     }
 
     // Verify the payment transaction
     const verificationResult = await verifyPayment(txId);
     if (!verificationResult.success) {
-      return res.status(400).json({ error: 'Payment verification failed' });
+      return res.status(400).json({ 
+        error: verificationResult.error || 'Payment verification failed' 
+      });
+    }
+
+    // Verify payment amount matches subscription plan
+    const expectedAmount = SUBSCRIPTION_PLANS[duration].price;
+    if (verificationResult.amount !== expectedAmount) {
+      return res.status(400).json({ 
+        error: 'Payment amount does not match subscription price' 
+      });
     }
 
     // Calculate subscription end date
     const subscriptionEndDate = new Date();
-    subscriptionEndDate.setDate(subscriptionEndDate.getDate() + SUBSCRIPTION_PLANS[duration].duration);
+    subscriptionEndDate.setDate(
+      subscriptionEndDate.getDate() + SUBSCRIPTION_PLANS[duration].duration
+    );
 
     // Update user subscription status
     await User.findByIdAndUpdate(userId, {
@@ -137,7 +193,7 @@ router.post('/confirm', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error confirming subscription:', error);
-    res.status(500).json({ error: 'Failed to confirm subscription' });
+    res.status(500).json({ error: error.message || 'Failed to confirm subscription' });
   }
 });
 
@@ -161,35 +217,6 @@ router.get('/status/:userId', async (req, res) => {
   } catch (error) {
     console.error('Error checking subscription status:', error);
     res.status(500).json({ error: 'Failed to check subscription status' });
-  }
-});
-
-// Cron job to check and update expired subscriptions
-const cron = require('node-cron');
-
-cron.schedule('0 0 * * *', async () => {
-  try {
-    const now = new Date();
-    
-    // Find and update expired subscriptions
-    await User.updateMany(
-      {
-        premium: true,
-        'subscription.endDate': { $lte: now }
-      },
-      {
-        $set: {
-          premium: false,
-          dailySpotLimit: 4,
-          spotsRemaining: 4,
-          'subscription.active': false
-        }
-      }
-    );
-    
-    console.log('Subscription status check completed');
-  } catch (error) {
-    console.error('Error in subscription status check:', error);
   }
 });
 

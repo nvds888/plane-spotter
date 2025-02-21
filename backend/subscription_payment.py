@@ -1,8 +1,9 @@
-# verify_payment.py
 from algosdk.v2client import algod
+from algosdk.transaction import AssetTransferTxn
 import json
 import sys
 import os
+import base64
 
 # Algorand connection details
 ALGOD_ADDRESS = "https://testnet-api.4160.nodely.dev"
@@ -10,7 +11,42 @@ ALGOD_TOKEN = ""
 USDC_ASSET_ID = int(os.environ.get('USDC_ASSET_ID'))  # Testnet USDC asset ID
 MERCHANT_ADDRESS = os.environ.get('MERCHANT_ADDRESS')
 
-def verify_payment(txn_id):
+def create_payment_transaction(sender_address: str, amount_usd: float):
+    """
+    Create a USDC payment transaction
+    """
+    try:
+        # Initialize Algorand client
+        algod_client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
+        
+        # Get suggested parameters
+        params = algod_client.suggested_params()
+        
+        # Convert USD amount to USDC units (6 decimals)
+        amount_usdc = int(amount_usd * 1_000_000)
+        
+        # Create asset transfer transaction
+        txn = AssetTransferTxn(
+            sender=sender_address,
+            sp=params,
+            receiver=MERCHANT_ADDRESS,
+            amt=amount_usdc,
+            index=USDC_ASSET_ID
+        )
+        
+        # Return the encoded transaction
+        return {
+            "success": True,
+            "txn": base64.b64encode(txn.serialize()).decode('utf-8')
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+def verify_payment(txn_id: str):
     """
     Verify that a subscription payment transaction was successful
     """
@@ -65,13 +101,21 @@ def verify_payment(txn_id):
         }
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python verify_payment.py <txn_id>", file=sys.stderr)
+    if len(sys.argv) != 3:
+        print("Usage: python subscription_payment.py <wallet_address> <amount>", file=sys.stderr)
         sys.exit(1)
 
     try:
-        txn_id = sys.argv[1]
-        result = verify_payment(txn_id)
+        wallet_address = sys.argv[1]
+        amount = float(sys.argv[2])
+        
+        if len(sys.argv) == 3:
+            # Create payment transaction
+            result = create_payment_transaction(wallet_address, amount)
+        else:
+            # Verify payment
+            result = verify_payment(sys.argv[1])
+            
         print(json.dumps(result))
         sys.exit(0 if result["success"] else 1)
     except Exception as e:

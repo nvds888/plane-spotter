@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Wallet, Crown, Star } from 'lucide-react';
-import { PeraWalletConnect } from '@perawallet/connect';
+import { useWallet } from '@txnlab/use-wallet-react';
+import algosdk from 'algosdk';
 
 interface SubscriptionPlan {
   price: number;
@@ -26,10 +27,10 @@ interface SubscriptionButtonProps {
 }
 
 interface PaymentResponse {
-  txnGroups: {
+  txnGroups: Array<{
     txn: string;
     signers: string[];
-  }[];
+  }>;
 }
 
 const subscriptionPlans: SubscriptionPlans = {
@@ -39,83 +40,14 @@ const subscriptionPlans: SubscriptionPlans = {
 };
 
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userId }) => {
-    const [selectedDuration, setSelectedDuration] = useState<string>('3');
-    const [isConnecting, setIsConnecting] = useState<boolean>(false);
-    const [isProcessing, setIsProcessing] = useState<boolean>(false);
-    const [error, setError] = useState<string>('');
-    const [accountAddress, setAccountAddress] = useState<string>('');
-  
-    const peraWallet = useMemo(() => {
-      return typeof window !== 'undefined' ? new PeraWalletConnect() : null;
-    }, []);
-  
-    // Add type definition
-    type DisconnectHandler = () => Promise<void>;
-  
-    // Update the handler with proper typing
-    const handleDisconnectWallet: DisconnectHandler = useCallback(async () => {
-      if (peraWallet) {
-        await peraWallet.disconnect();
-        setAccountAddress('');
-      }
-    }, [peraWallet]);
-  
-    useEffect(() => {
-      if (typeof window !== 'undefined' && peraWallet && isOpen) {
-        peraWallet.reconnectSession().then((accounts) => {
-          if (accounts.length) {
-            setAccountAddress(accounts[0]);
-          }
-          // Set up disconnect listener
-          peraWallet.connector?.on("disconnect", handleDisconnectWallet);
-        }).catch(console.error);
-  
-        return () => {
-          peraWallet.connector?.off("disconnect", handleDisconnectWallet);
-        };
-      }
-    }, [peraWallet, isOpen, handleDisconnectWallet]);
+  const { activeAddress, transactionSigner, algodClient, wallets } = useWallet();
+  const [selectedDuration, setSelectedDuration] = useState<string>('3');
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
-  // Cleanup on unmount or modal close
-  useEffect(() => {
-    return () => {
-      if (peraWallet) {
-        peraWallet.disconnect();
-      }
-    };
-  }, [peraWallet]);
-
-  const handleConnectWalletClick = async () => {
-    if (!peraWallet) {
-      setError('Pera Wallet is not available');
-      return;
-    }
-
-    try {
-      setIsConnecting(true);
-      setError('');
-
-      // If already connected, proceed with subscription
-      if (accountAddress) {
-        await handleSubscribe(accountAddress);
-        return;
-      }
-
-      // Request wallet connection
-      const newAccounts = await peraWallet.connect();
-      setAccountAddress(newAccounts[0]);
-    } catch (err) {
-      console.error("Error connecting wallet:", err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet';
-      setError(errorMessage);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const handleSubscribe = async (walletAddress: string) => {
-    if (!peraWallet) {
-      setError('Pera Wallet is not available');
+  const handleSubscribe = async () => {
+    if (!activeAddress || !transactionSigner || !algodClient) {
+      setError('Please connect your wallet first');
       return;
     }
 
@@ -126,32 +58,37 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
       const response = await fetch('/api/subscription/connect-wallet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           userId,
           duration: selectedDuration,
           amount: subscriptionPlans[selectedDuration].price,
-          walletAddress
+          walletAddress: activeAddress
         })
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to initiate subscription');
       }
 
       const data = await response.json() as PaymentResponse;
 
-      // Sign transactions
-      const signedTxn = await peraWallet.signTransaction(data.txnGroups);
+      const atc = new algosdk.AtomicTransactionComposer();
+      
+      atc.addTransaction({
+        txn: algosdk.decodeUnsignedTransaction(Buffer.from(data.txnGroups[0].txn, 'base64')),
+        signer: transactionSigner
+      });
 
-      // Confirm subscription
+      const result = await atc.execute(algodClient, 4);
+
       const confirmResponse = await fetch('/api/subscription/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
           duration: selectedDuration,
-          txId: signedTxn[0],
-          walletAddress
+          txId: result.txIDs[0],
+          walletAddress: activeAddress
         })
       });
 
@@ -159,27 +96,46 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         throw new Error('Failed to confirm subscription');
       }
 
-      // Close modal on success
       onClose();
-      
-      // Reload page to reflect changes
       window.location.reload();
 
     } catch (err) {
       console.error("Subscription error:", err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to process subscription';
       setError(errorMessage);
-      await handleDisconnectWallet();
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleClose = useCallback(async () => {
-    await handleDisconnectWallet();
-    setError('');
-    onClose();
-  }, [handleDisconnectWallet, onClose]);
+  const renderWalletOptions = () => (
+    <div className="space-y-2">
+      <p className="text-sm text-gray-600 mb-3">Select your preferred wallet:</p>
+      {wallets.map((wallet) => (
+        <button
+          key={wallet.id}
+          onClick={() => {
+            setError('');
+            wallet.connect().catch((err) => {
+              console.error("Wallet connection error:", err);
+              setError(err instanceof Error ? err.message : 'Failed to connect wallet');
+            });
+          }}
+          disabled={wallet.isConnected}
+          className="w-full bg-white border-2 border-blue-500 hover:bg-blue-50 text-blue-500 py-3 px-4 rounded-xl flex items-center justify-between disabled:opacity-50 disabled:hover:bg-white"
+        >
+          <div className="flex items-center gap-2">
+            <Wallet size={20} />
+            <span>{wallet.metadata.name}</span>
+          </div>
+          {wallet.isConnected && <Check size={16} className="text-green-500" />}
+        </button>
+      ))}
+      {error && (
+        <p className="text-red-500 text-sm mt-2">{error}</p>
+      )}
+    </div>
+  );
 
   return (
     <AnimatePresence>
@@ -199,7 +155,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Choose Your Plan</h2>
               <button 
-                onClick={handleClose}
+                onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded-full"
               >
                 <X size={20} className="text-gray-400" />
@@ -235,7 +191,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Premium Plan</h3>
                 <p className="text-gray-500 mb-6">Advanced features for enthusiasts</p>
-                
+
                 <div className="mb-4">
                   <select 
                     value={selectedDuration}
@@ -276,26 +232,27 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                   </li>
                 </ul>
 
-                <button
-                  onClick={handleConnectWalletClick}
-                  disabled={isConnecting || isProcessing}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Wallet size={20} />
-                  {isConnecting ? 'Connecting Wallet...' : 
-                   isProcessing ? 'Processing...' :
-                   accountAddress ? 'Confirm Subscription' : 
-                   'Connect Pera Wallet'}
-                </button>
-                
-                {accountAddress && (
-                  <p className="text-sm text-gray-500 mt-2 text-center">
-                    Connected: {accountAddress.slice(0, 4)}...{accountAddress.slice(-4)}
-                  </p>
-                )}
-                
-                {error && (
-                  <p className="text-red-500 text-sm mt-2 text-center">{error}</p>
+                {!activeAddress ? (
+                  renderWalletOptions()
+                ) : (
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleSubscribe}
+                      disabled={isProcessing}
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <Wallet size={20} />
+                      {isProcessing ? 'Processing...' : 'Confirm Subscription'}
+                    </button>
+                    
+                    <p className="text-sm text-gray-500 text-center">
+                      Connected: {activeAddress.slice(0, 4)}...{activeAddress.slice(-4)}
+                    </p>
+                    
+                    {error && (
+                      <p className="text-red-500 text-sm text-center">{error}</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
