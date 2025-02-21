@@ -11,7 +11,6 @@ interface Flight {
   hex: string
   flight: string
   type: string
-  typeName: string
   alt: number
   speed: number
   operator: string
@@ -138,7 +137,7 @@ const SpotCard = ({ spot, onProfileClick }: SpotCardProps) => {
         >
           <div className="flex justify-between items-start mb-3">
             <div className="flex-1">
-              <p className="text-gray-900 font-medium">{spot.flight?.typeName || 'Unknown Aircraft'}</p>
+              <p className="text-gray-900 font-medium">{spot.flight?.type || 'Unknown Aircraft'}</p>
               <p className="text-sm text-gray-600">{spot.flight?.operator || 'Unknown Operator'}</p>
               
   
