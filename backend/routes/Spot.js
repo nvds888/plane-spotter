@@ -290,7 +290,7 @@ router.post('/', async (req, res) => {
       lat: req.body.lat,
       lon: req.body.lon,
       flight: req.body.flight,
-      baseXP: req.body.isTeleport ? 10 : 5,
+      baseXP: req.body.isTeleport ? 5 : 10,
       isTeleport: req.body.isTeleport || false,
       location: req.body.location || null,
       timestamp: now
