@@ -370,19 +370,16 @@ if (savedSpots.length > 0) {
       const newGuessedSpotIds = [...guessedSpotIds, currentGuessSpot._id];
       const newGuessCount = guessCount + 1;
       
-      // Update all related state at once
+      // Update all related state
       setGuessedSpotIds(newGuessedSpotIds);
       setGuessCount(newGuessCount);
-      setGuessResults(prev => [
-        ...prev,
-        {
-          spot: currentGuessSpot,
-          isTypeCorrect: result.isTypeCorrect,
-          isAirlineCorrect: result.isAirlineCorrect,
-          isDestinationCorrect: result.isDestinationCorrect,
-          xpEarned: result.bonusXP + (currentGuessSpot.baseXP || 5),
-        },
-      ]);
+      setGuessResults(prev => [...prev, {
+        spot: currentGuessSpot,
+        isTypeCorrect: result.isTypeCorrect,
+        isAirlineCorrect: result.isAirlineCorrect,
+        isDestinationCorrect: result.isDestinationCorrect,
+        xpEarned: result.bonusXP + (currentGuessSpot.baseXP || 5),
+      }]);
   
       // Reset guess fields
       setGuessedType("");
@@ -394,8 +391,9 @@ if (savedSpots.length > 0) {
       const xpData = await xpResponse.json();
       setUserXP(xpData);
   
-      // Determine next action based on spot count
+      // Key Change: Strict control of when to show results
       if (newSpots.length > 3) {
+        // If more than 3 spots, always require exactly 3 guesses
         if (newGuessCount >= 3) {
           setShowGuessModal(false);
           setShowResultsModal(true);
@@ -407,6 +405,7 @@ if (savedSpots.length > 0) {
           setCurrentGuessSpot(nextSpot || null);
         }
       } else {
+        // If 3 or fewer spots, require guessing all spots
         if (newGuessedSpotIds.length === newSpots.length) {
           setShowGuessModal(false);
           setShowResultsModal(true);
@@ -422,7 +421,7 @@ if (savedSpots.length > 0) {
       console.error("Guess submission failed:", error);
     }
   };
-
+  
   if (!session) {
     return (
       <div className="h-screen w-full bg-white flex flex-col">
