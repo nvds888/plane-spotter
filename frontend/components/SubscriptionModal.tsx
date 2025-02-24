@@ -36,12 +36,6 @@ interface SubscriptionButtonProps {
   subscriptionEndDate?: string;
 }
 
-interface PaymentResponse {
-  txnGroups: Array<{
-    txn: string;
-    signers: string[];
-  }>;
-}
 
 const subscriptionPlans: SubscriptionPlans = {
   '3': { price: 15, duration: '3 months', savings: 0 },
@@ -81,16 +75,20 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
         throw new Error(errorData.error || 'Failed to initiate subscription');
       }
   
-      const data = await response.json() as PaymentResponse;
+      const data = await response.json();
+      
+      // Create the transaction directly from the parameters
+      const txn = new algosdk.Transaction({
+        from: data.txnParams.from,
+        to: data.txnParams.to,
+        amount: data.txnParams.amount,
+        assetIndex: data.txnParams.assetIndex,
+        ...data.txnParams.suggestedParams
+      });
   
       const atc = new algosdk.AtomicTransactionComposer();
-      
-      // Decode the base64-encoded transaction string to a byte buffer
-      const txnBytes = Buffer.from(data.txnGroups[0].txn, 'base64');
-      const decodedTxn = algosdk.decodeUnsignedTransaction(txnBytes);
-  
       atc.addTransaction({
-        txn: decodedTxn,
+        txn: txn,
         signer: transactionSigner
       });
   
@@ -117,8 +115,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
   
     } catch (err) {
       console.error("Subscription error:", err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to process subscription';
-      setError(errorMessage);
+      setError(err instanceof Error ? err.message : 'Failed to process subscription');
     } finally {
       setIsProcessing(false);
     }

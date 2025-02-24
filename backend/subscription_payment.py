@@ -15,38 +15,31 @@ USDC_ASSET_ID = int(os.environ.get('USDC_ASSET_ID', 0))
 MERCHANT_ADDRESS = os.environ.get('MERCHANT_ADDRESS', '')
 
 def create_payment_transaction(sender_address: str, amount_usd: float):
-    """Create a USDC payment transaction."""
+    """Create USDC payment transaction parameters."""
     try:
-        print(f"Debug: Connecting to {ALGOD_ADDRESS}", file=sys.stderr)
         algod_client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
-        
-        print("Debug: Fetching suggested params", file=sys.stderr)
         params = algod_client.suggested_params()
-        
         amount_usdc = int(amount_usd * 1_000_000)  # Convert USD to microUSDC
-        print(f"Debug: Creating txn with amount={amount_usdc}", file=sys.stderr)
         
-        txn = AssetTransferTxn(
-            sender=sender_address,
-            sp=params,
-            receiver=MERCHANT_ADDRESS,
-            amt=amount_usdc,
-            index=USDC_ASSET_ID
-        )
-        
-        # Encode the transaction object to base64 for JSON serialization
-        txn_dict = txn.dictify()
-        txn_bytes = txn.__bytes__()
-        txn_base64 = base64.b64encode(txn_bytes).decode('utf-8')
-        
+        # Just return the transaction parameters
         return {
             "success": True,
-            "txn": txn_base64,  # Return the base64-encoded transaction
-            "txId": txn.get_txid()
+            "txnParams": {
+                "from": sender_address,
+                "to": MERCHANT_ADDRESS,
+                "amount": amount_usdc,
+                "assetIndex": USDC_ASSET_ID,
+                "suggestedParams": {
+                    "fee": params.fee,
+                    "firstRound": params.first,
+                    "lastRound": params.last,
+                    "genesisHash": params.gh,
+                    "genesisID": params.gen
+                }
+            }
         }
         
     except Exception as e:
-        print(f"Debug: Error in create_payment_transaction: {str(e)}", file=sys.stderr)
         return {
             "success": False,
             "error": str(e)

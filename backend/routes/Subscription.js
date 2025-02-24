@@ -128,13 +128,8 @@ router.post('/connect-wallet', async (req, res) => {
       }
     });
 
-    // Return transaction for signing
     res.json({
-      txnGroups: [{
-        txn: paymentResult.txn,           // The encoded transaction ID
-        unsigned_txn: paymentResult.unsigned_txn,  // The full transaction object
-        signers: [walletAddress]
-      }]
+      txnParams: paymentResult.txnParams
     });
 
   } catch (error) {
