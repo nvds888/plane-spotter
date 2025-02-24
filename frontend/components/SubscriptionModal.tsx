@@ -59,6 +59,8 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
     try {
       setIsProcessing(true);
       setError('');
+      
+      console.log("Starting subscription with address:", activeAddress);
   
       const response = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/connect-wallet', {
         method: 'POST',
@@ -77,17 +79,26 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       }
   
       const data = await response.json();
-      console.log("Received transaction params:", data);
+      console.log("Raw transaction params from server:", data);
   
       if (!data.txnParams) {
         throw new Error('Invalid transaction parameters received');
       }
-  
-      // Create transaction with correct parameter names and decode genesisHash
-  
-      const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: data.txnParams.sender,    // Now matches Python's sender
-        receiver: data.txnParams.receiver, // Now matches Python's receiver
+
+      // Validate addresses
+      console.log("Validating addresses:", {
+        from: data.txnParams.from,
+        to: data.txnParams.to
+      });
+
+      if (!data.txnParams.from || !data.txnParams.to) {
+        throw new Error(`Missing addresses - from: ${data.txnParams.from}, to: ${data.txnParams.to}`);
+      }
+
+      // Log full transaction parameters before creation
+      console.log("Creating transaction with parameters:", {
+        sender: data.txnParams.from,
+        receiver: data.txnParams.to,
         amount: data.txnParams.amount,
         assetIndex: data.txnParams.assetIndex,
         suggestedParams: {
@@ -97,13 +108,30 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
         }
       });
   
+      const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+        sender: data.txnParams.from,
+        receiver: data.txnParams.to,
+        amount: data.txnParams.amount,
+        assetIndex: data.txnParams.assetIndex,
+        suggestedParams: {
+          ...data.txnParams.suggestedParams,
+          fee: data.txnParams.suggestedParams.fee || 1000,
+          flatFee: true
+        }
+      });
+
+      console.log("Transaction created successfully:", txn);
+  
       const atc = new algosdk.AtomicTransactionComposer();
       atc.addTransaction({
         txn: txn,
         signer: transactionSigner
       });
+
+      console.log("Executing transaction...");
   
       const result = await atc.execute(algodClient, 4);
+      console.log("Transaction execution result:", result);
   
       const confirmResponse = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/confirm', {
         method: 'POST',
