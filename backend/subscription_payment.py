@@ -13,10 +13,16 @@ USDC_ASSET_ID = int(os.environ.get('USDC_ASSET_ID', 0))
 MERCHANT_ADDRESS = os.environ.get('MERCHANT_ADDRESS', '')
 
 def create_payment_transaction(sender_address: str, amount_usd: float):
+    """Create a USDC payment transaction."""
     try:
+        print(f"Debug: Connecting to {ALGOD_ADDRESS}", file=sys.stderr)
         algod_client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
+        
+        print("Debug: Fetching suggested params", file=sys.stderr)
         params = algod_client.suggested_params()
+        
         amount_usdc = int(amount_usd * 1_000_000)  # Convert USD to microUSDC
+        print(f"Debug: Creating txn with amount={amount_usdc}", file=sys.stderr)
         
         txn = AssetTransferTxn(
             sender=sender_address,
@@ -29,6 +35,7 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
         # Encode the full unsigned transaction for signing
         encoded_txn = base64.b64encode(transaction.encode_unsigned_transaction(txn)).decode('utf-8')
         
+        print("Debug: Transaction created successfully", file=sys.stderr)
         return {
             "success": True,
             "txn": encoded_txn,  # Full encoded transaction for signing
@@ -36,20 +43,25 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
         }
         
     except Exception as e:
+        print(f"Debug: Error in create_payment_transaction: {str(e)}", file=sys.stderr)
         return {
             "success": False,
             "error": str(e)
         }
 
 def verify_payment(txn_id: str):
+    """Verify that a subscription payment transaction was successful."""
     try:
+        print(f"Debug: Connecting to {ALGOD_ADDRESS} for verification", file=sys.stderr)
         algod_client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
         
-        # Wait for transaction confirmation
-        txn_info = transaction.wait_for_confirmation(algod_client, txn_id, 4)  # Wait up to 4 rounds
+        print(f"Debug: Waiting for confirmation of txn_id={txn_id}", file=sys.stderr)
+        # Wait for transaction confirmation (up to 4 rounds)
+        txn_info = transaction.wait_for_confirmation(algod_client, txn_id, 4)
         
         # Verify it's an asset transfer transaction
         if "asset-transfer-transaction" not in txn_info:
+            print("Debug: Not an asset transfer transaction", file=sys.stderr)
             return {
                 "success": False,
                 "error": "Not an asset transfer transaction"
@@ -59,6 +71,7 @@ def verify_payment(txn_id: str):
         
         # Verify it's a USDC transfer
         if transfer["asset-id"] != USDC_ASSET_ID:
+            print(f"Debug: Asset ID {transfer['asset-id']} does not match USDC_ASSET_ID {USDC_ASSET_ID}", file=sys.stderr)
             return {
                 "success": False,
                 "error": "Not a USDC transfer"
@@ -66,6 +79,7 @@ def verify_payment(txn_id: str):
             
         # Verify recipient is merchant
         if transfer["receiver"] != MERCHANT_ADDRESS:
+            print(f"Debug: Receiver {transfer['receiver']} does not match MERCHANT_ADDRESS", file=sys.stderr)
             return {
                 "success": False,
                 "error": "Invalid recipient"
@@ -73,6 +87,7 @@ def verify_payment(txn_id: str):
             
         amount_usd = transfer["amount"] / 1_000_000  # Convert microUSDC to USD
         
+        print("Debug: Payment verified successfully", file=sys.stderr)
         return {
             "success": True,
             "amount": amount_usd,
@@ -81,6 +96,7 @@ def verify_payment(txn_id: str):
         }
         
     except Exception as e:
+        print(f"Debug: Error in verify_payment: {str(e)}", file=sys.stderr)
         return {
             "success": False,
             "error": str(e)
@@ -101,10 +117,12 @@ if __name__ == "__main__":
         if len(sys.argv) == 3:
             # Create payment transaction
             amount = float(amount_or_txn)
+            print(f"Debug: Processing payment creation for amount={amount}", file=sys.stderr)
             result = create_payment_transaction(wallet_address, amount)
         elif len(sys.argv) == 4:
             # Verify payment
-            result = verify_payment(amount_or_txn)  # Second arg is txn_id in this case
+            print(f"Debug: Processing payment verification for txn_id={amount_or_txn}", file=sys.stderr)
+            result = verify_payment(amount_or_txn)
         else:
             raise ValueError("Invalid number of arguments")
             

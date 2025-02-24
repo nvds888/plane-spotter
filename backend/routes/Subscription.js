@@ -21,13 +21,15 @@ async function createPaymentTransaction(walletAddress, amount) {
       amount.toString()
     ]);
     
-    let resultData = '';  // Collect stdout data
+    let resultData = '';
+    let errorData = '';
     
     pythonProcess.stdout.on('data', (data) => {
-      resultData += data.toString();  // Accumulate the output
+      resultData += data.toString();
     });
     
     pythonProcess.stderr.on('data', (data) => {
+      errorData += data.toString();
       console.error('Python script stderr:', data.toString());
     });
     
@@ -38,7 +40,7 @@ async function createPaymentTransaction(walletAddress, amount) {
     pythonProcess.on('close', (code) => {
       if (code === 0) {
         try {
-          const result = JSON.parse(resultData);  // Parse the accumulated output
+          const result = JSON.parse(resultData);
           if (!result.success) {
             reject(new Error(result.error || 'Failed to create payment transaction'));
             return;
@@ -48,7 +50,7 @@ async function createPaymentTransaction(walletAddress, amount) {
           reject(new Error(`Failed to parse payment result: ${err.message}`));
         }
       } else {
-        reject(new Error(`Process exited with code ${code}`));
+        reject(new Error(`Process exited with code ${code}. Stderr: ${errorData}`));
       }
     });
   });
