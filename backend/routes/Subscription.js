@@ -20,15 +20,17 @@ async function createPaymentTransaction(walletAddress, amount) {
       walletAddress,
       amount.toString()
     ]);
-
-    let resultData = '';
-
-    pythonProcess.stdout.on('data', (data) => {
-      resultData += data.toString();
-    });
-
+    
     pythonProcess.stderr.on('data', (data) => {
-      console.error('Payment processing error:', data.toString());
+      console.error('Python script stderr:', data.toString());
+    });
+    
+    pythonProcess.stdout.on('data', (data) => {
+      console.log('Python script stdout:', data.toString());
+    });
+    
+    pythonProcess.on('error', (error) => {
+      console.error('Failed to start Python process:', error);
     });
 
     pythonProcess.on('close', (code) => {

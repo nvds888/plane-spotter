@@ -106,21 +106,23 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-        wallet_address = sys.argv[1]
-        amount = float(sys.argv[2])
+    wallet_address = sys.argv[1]
+    amount = float(sys.argv[2])
+    
+    print(f"Debug: Received wallet_address={wallet_address}, amount={amount}", file=sys.stderr)
+    print(f"Debug: USDC_ASSET_ID={USDC_ASSET_ID}, MERCHANT_ADDRESS={MERCHANT_ADDRESS}", file=sys.stderr)
+    
+    if len(sys.argv) == 3:
+        result = create_payment_transaction(wallet_address, amount)
+    else:
+        result = verify_payment(sys.argv[1])
         
-        if len(sys.argv) == 3:
-            # Create payment transaction
-            result = create_payment_transaction(wallet_address, amount)
-        else:
-            # Verify payment
-            result = verify_payment(sys.argv[1])
-            
-        print(json.dumps(result))
-        sys.exit(0 if result["success"] else 1)
-    except Exception as e:
-        print(json.dumps({
-            "success": False,
-            "error": str(e)
-        }))
-        sys.exit(1)
+    print(json.dumps(result))
+    sys.exit(0 if result["success"] else 1)
+except Exception as e:
+    print(f"Debug: Python error: {str(e)}", file=sys.stderr)
+    print(json.dumps({
+        "success": False,
+        "error": str(e)
+    }))
+    sys.exit(1)
