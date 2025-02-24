@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -77,15 +77,20 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       });
 
       if (!response.ok) {
-        throw new Error('Failed to initiate subscription');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to initiate subscription');
       }
 
       const data = await response.json() as PaymentResponse;
 
       const atc = new algosdk.AtomicTransactionComposer();
       
+      // Decode the base64-encoded transaction string to a byte buffer
+      const txnBytes = Buffer.from(data.txnGroups[0].txn, 'base64');
+      const decodedTxn = algosdk.decodeUnsignedTransaction(txnBytes);
+
       atc.addTransaction({
-        txn: algosdk.decodeUnsignedTransaction(Buffer.from(data.txnGroups[0].txn, 'base64')),
+        txn: decodedTxn,
         signer: transactionSigner
       });
 
@@ -103,7 +108,8 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       });
 
       if (!confirmResponse.ok) {
-        throw new Error('Failed to confirm subscription');
+        const confirmErrorData = await confirmResponse.json();
+        throw new Error(confirmErrorData.error || 'Failed to confirm subscription');
       }
 
       onClose();
