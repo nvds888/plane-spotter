@@ -174,7 +174,7 @@ const SpotCard = ({ spot }: SpotCardProps) => {
     </span>
   ) : (
     <a 
-                href={`https://www.google.com/maps?q=${spot.flight?.geography?.latitude || spot.lat},${spot.flight?.geography?.longitude || spot.lon}`}
+                href={`https://www.google.com/maps?q=${spot.flight?.geography?.latitude},${spot.flight?.geography?.longitude}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
