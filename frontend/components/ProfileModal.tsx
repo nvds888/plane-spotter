@@ -202,50 +202,42 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                       Member since {new Date(profileData.joinDate).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
-  {session?.user?.id !== userId && profileData && (
-    <button
-      onClick={async () => {
-        try {
-          const response = await fetch(
-            `https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/${isFollowing ? 'unfollow' : 'follow'}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username: profileData.username })
-            }
-          );
-          if (!response.ok) throw new Error(`Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);
-          setIsFollowing(!isFollowing);
-        } catch (error) {
-          console.error('Error following/unfollowing user:', error);
-        }
-      }}
-      className={`px-4 py-2 ${
-        isFollowing 
-          ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
-          : 'bg-blue-500 text-white hover:bg-blue-600'
-      } rounded-xl transition-colors`}
-    >
-      {isFollowing ? 'Following' : 'Follow'}
-    </button>
-  )}
-  
-  {/* Add SubscriptionButton here */}
-  {session?.user?.id === userId && profileData && (
-    <SubscriptionButton 
-      userId={userId}
-      isPremium={profileData.premium}
-      subscriptionEndDate={profileData.subscription?.endDate}
-    />
-  )}
-
-  <button 
-    onClick={onClose}
-    className="p-2 hover:bg-gray-100 rounded-full"
-  >
-    <X size={20} className="text-gray-400" />
-  </button>
+                  <div className="flex items-center gap-2">
+                    {session?.user?.id !== userId && profileData && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(
+                              `https://plane-spotter-backend.onrender.com/api/user/${session?.user?.id}/${isFollowing ? 'unfollow' : 'follow'}`,
+                              {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ username: profileData.username })
+                              }
+                            );
+                            if (!response.ok) throw new Error(`Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);
+                            setIsFollowing(!isFollowing);
+                          } catch (error) {
+                            console.error('Error following/unfollowing user:', error);
+                          }
+                        }}
+                        className={`px-4 py-2 ${
+                          isFollowing 
+                            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        } rounded-xl transition-colors`}
+                      >
+                        {isFollowing ? 'Following' : 'Follow'}
+                      </button>
+                    )}
+                    
+                    {session?.user?.id === userId && profileData && (
+                      <SubscriptionButton 
+                        userId={userId}
+                        isPremium={profileData.premium}
+                        subscriptionEndDate={profileData.subscription?.endDate}
+                      />
+                    )}
                     
                     <button 
                       onClick={onClose}
@@ -256,7 +248,6 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                   </div>
                 </div>
 
-                {/* XP Stats */}
                 <div className="grid grid-cols-2 gap-3 mt-6 mb-3">
                   <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl p-3">
                     <div className="flex items-center gap-2">
@@ -274,7 +265,6 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                   </div>
                 </div>
 
-                {/* Compact Stats */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-indigo-50 rounded-xl p-3">
                     <div className="flex items-center gap-2">
@@ -301,15 +291,12 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                 </div>
               </div>
 
-              {/* Badges */}
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Badges</h3>
                 <div className="overflow-y-auto max-h-48 pr-2">
-                  {/* First row with earned badges and placeholders */}
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     {renderBadgeRow(profileData.badges, 0)}
                   </div>
-                  {/* Additional placeholder rows */}
                   <div className="grid grid-cols-3 gap-4">
                     {[...Array(6)].map((_, i) => (
                       <div 
