@@ -79,6 +79,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       
       // Create the transaction directly from the parameters
       const txn = new algosdk.Transaction({
+        type: algosdk.TransactionType.axfer,  
         from: data.txnParams.from,
         to: data.txnParams.to,
         amount: data.txnParams.amount,

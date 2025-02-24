@@ -21,10 +21,10 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
         params = algod_client.suggested_params()
         amount_usdc = int(amount_usd * 1_000_000)  # Convert USD to microUSDC
         
-        # Just return the transaction parameters
         return {
             "success": True,
             "txnParams": {
+                "type": "axfer",  # This indicates it's an asset transfer
                 "from": sender_address,
                 "to": MERCHANT_ADDRESS,
                 "amount": amount_usdc,
