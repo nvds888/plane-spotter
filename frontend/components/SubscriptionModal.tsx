@@ -108,7 +108,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
         }
       });
   
-      const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+      const txnParams = {
         sender: data.txnParams.from,
         receiver: data.txnParams.to,
         amount: data.txnParams.amount,
@@ -118,9 +118,11 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
           fee: data.txnParams.suggestedParams.fee || 1000,
           flatFee: true
         }
-      });
-
-      console.log("Transaction created successfully:", txn);
+      };
+      
+      console.log("Creating transaction with mapped parameters:", txnParams);
+      
+      const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject(txnParams);
   
       const atc = new algosdk.AtomicTransactionComposer();
       atc.addTransaction({
