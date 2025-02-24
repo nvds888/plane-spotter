@@ -21,29 +21,31 @@ async function createPaymentTransaction(walletAddress, amount) {
       amount.toString()
     ]);
     
+    let resultData = '';  // Collect stdout data
+    
+    pythonProcess.stdout.on('data', (data) => {
+      resultData += data.toString();  // Accumulate the output
+    });
+    
     pythonProcess.stderr.on('data', (data) => {
       console.error('Python script stderr:', data.toString());
     });
     
-    pythonProcess.stdout.on('data', (data) => {
-      console.log('Python script stdout:', data.toString());
-    });
-    
     pythonProcess.on('error', (error) => {
-      console.error('Failed to start Python process:', error);
+      reject(new Error(`Failed to start Python process: ${error}`));
     });
 
     pythonProcess.on('close', (code) => {
       if (code === 0) {
         try {
-          const result = JSON.parse(resultData);
+          const result = JSON.parse(resultData);  // Parse the accumulated output
           if (!result.success) {
             reject(new Error(result.error || 'Failed to create payment transaction'));
             return;
           }
           resolve(result);
         } catch (err) {
-          reject(new Error('Failed to parse payment result'));
+          reject(new Error(`Failed to parse payment result: ${err.message}`));
         }
       } else {
         reject(new Error(`Process exited with code ${code}`));
@@ -127,7 +129,8 @@ router.post('/connect-wallet', async (req, res) => {
     // Return transaction for signing
     res.json({
       txnGroups: [{
-        txn: paymentResult.txn,
+        txn: paymentResult.txn,           // The encoded transaction ID
+        unsigned_txn: paymentResult.unsigned_txn,  // The full transaction object
         signers: [walletAddress]
       }]
     });
