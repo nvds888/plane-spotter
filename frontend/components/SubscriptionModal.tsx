@@ -65,7 +65,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       setIsProcessing(true);
       setError('');
 
-      const response = await fetch('/api/subscription/connect-wallet', {
+      const response = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/connect-wallet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -91,7 +91,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
 
       const result = await atc.execute(algodClient, 4);
 
-      const confirmResponse = await fetch('/api/subscription/confirm', {
+      const confirmResponse = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
