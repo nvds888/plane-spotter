@@ -33,8 +33,8 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
             index=USDC_ASSET_ID
         )
         
-        # Encode the full unsigned transaction for signing using msgpack
-        encoded_txn = base64.b64encode(algosdk.encoding.msgpack.encode(txn)).decode('utf-8')
+        # Encode the full unsigned transaction for signing using msgpack_encode
+        encoded_txn = base64.b64encode(algosdk.encoding.msgpack_encode(txn)).decode('utf-8')
         
         print("Debug: Transaction created successfully", file=sys.stderr)
         return {
