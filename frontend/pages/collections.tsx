@@ -21,6 +21,14 @@ type Flight = {
   dest_iata?: string
   departureAirport: string
   arrivalAirport: string
+  geography?: {
+    latitude: number
+    longitude: number
+    altitude: number
+    direction: number
+    gspeed: number
+    vspeed: number
+  }
 }
 
 type Location = {
@@ -166,14 +174,14 @@ const SpotCard = ({ spot }: SpotCardProps) => {
     </span>
   ) : (
     <a 
-      href={`https://www.google.com/maps?q=${spot.lat},${spot.lon}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
-      className="text-indigo-600 hover:text-indigo-700"
-    >
-      View on Map
-    </a>
+                href={`https://www.google.com/maps?q=${spot.flight?.geography?.latitude || spot.lat},${spot.flight?.geography?.longitude || spot.lon}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-indigo-600 hover:text-indigo-700"
+              >
+                View on Map
+              </a>
   )}
           </div>
           {spot.algorandGroupId && (
