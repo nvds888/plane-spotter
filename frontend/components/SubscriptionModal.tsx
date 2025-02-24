@@ -49,6 +49,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
+  
   const handleSubscribe = async () => {
     if (!activeAddress || !transactionSigner || !algodClient) {
       setError('Please connect your wallet first');
@@ -82,10 +83,11 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
         throw new Error('Invalid transaction parameters received');
       }
   
-      // Create transaction with correct parameter names
+      // Create transaction with correct parameter names and decode genesisHash
+  
       const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: data.txnParams.from,
-        receiver: data.txnParams.to,
+        sender: data.txnParams.sender,    // Now matches Python's sender
+        receiver: data.txnParams.receiver, // Now matches Python's receiver
         amount: data.txnParams.amount,
         assetIndex: data.txnParams.assetIndex,
         suggestedParams: {
