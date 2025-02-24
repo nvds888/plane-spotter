@@ -1,3 +1,4 @@
+# subscription_payment.py
 from algosdk.v2client import algod
 from algosdk import transaction
 from algosdk.transaction import AssetTransferTxn
@@ -33,11 +34,8 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
             index=USDC_ASSET_ID
         )
         
-        # Encode the transaction using msgpack_encode and ensure bytes for base64
-        msgpack_encoded = algosdk.encoding.msgpack_encode(txn)
-        if isinstance(msgpack_encoded, str):
-            msgpack_encoded = msgpack_encoded.encode('utf-8')  # Convert string to bytes if needed
-        encoded_txn = base64.b64encode(msgpack_encoded).decode('utf-8')
+        # Encode the transaction correctly for the frontend
+        encoded_txn = base64.b64encode(txn.encode()).decode('utf-8')
         
         print("Debug: Transaction created successfully", file=sys.stderr)
         return {

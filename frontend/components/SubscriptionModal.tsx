@@ -83,18 +83,17 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
 
       const data = await response.json() as PaymentResponse;
 
-      const atc = new algosdk.AtomicTransactionComposer();
-      
-      // Decode the base64-encoded transaction string to a byte buffer
+      // Sign and send the transaction directly without ATC
       const txnBytes = Buffer.from(data.txnGroups[0].txn, 'base64');
-      const decodedTxn = algosdk.decodeUnsignedTransaction(txnBytes);
-
-      atc.addTransaction({
-        txn: decodedTxn,
-        signer: transactionSigner
-      });
-
-      const result = await atc.execute(algodClient, 4);
+      
+      // Sign the transaction
+      const signedTxns = await transactionSigner([txnBytes]);
+      
+      // Send the signed transaction
+      const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
+      
+      // Wait for confirmation
+      const result = await algosdk.waitForConfirmation(algodClient, txId, 4);
 
       const confirmResponse = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/confirm', {
         method: 'POST',
@@ -102,7 +101,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
         body: JSON.stringify({
           userId,
           duration: selectedDuration,
-          txId: result.txIDs[0],
+          txId: result['confirmed-transaction-id'] || txId,
           walletAddress: activeAddress
         })
       });
