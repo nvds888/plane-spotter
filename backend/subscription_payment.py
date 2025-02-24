@@ -34,14 +34,10 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
             index=USDC_ASSET_ID
         )
         
-        # Encode the transaction correctly for the frontend
-        encoded_txn = base64.b64encode(txn.encode()).decode('utf-8')
-        
-        print("Debug: Transaction created successfully", file=sys.stderr)
         return {
             "success": True,
-            "txn": encoded_txn,  # Full encoded transaction for signing
-            "txId": txn.get_txid()  # Transaction ID for reference
+            "txn": txn.dictify(),  # Just return the transaction object directly
+            "txId": txn.get_txid()
         }
         
     except Exception as e:
@@ -50,7 +46,7 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
             "success": False,
             "error": str(e)
         }
-
+        
 def verify_payment(txn_id: str):
     """Verify that a subscription payment transaction was successful."""
     try:
