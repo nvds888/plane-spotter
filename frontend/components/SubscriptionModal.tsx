@@ -7,12 +7,12 @@ import { useWallet, WalletProvider, WalletManager, WalletId, NetworkId } from '@
 import algosdk from 'algosdk';
 
 const walletManager = new WalletManager({
-  wallets: [
-    WalletId.PERA,
-    WalletId.DEFLY
-  ],
+  wallets: [WalletId.PERA, WalletId.DEFLY],
   defaultNetwork: NetworkId.TESTNET
 });
+
+const USDC_ASSET_ID = 10458941; // Move this to env/config
+const MERCHANT_ADDRESS = 'MQYGWBVAXQHTOFWTF4KZZ3EAP6L45NCGG7JQCBH3622FVEX57WGAR7DJEI'; // Move this to env/config
 
 interface SubscriptionPlan {
   price: number;
@@ -36,7 +36,6 @@ interface SubscriptionButtonProps {
   subscriptionEndDate?: string;
 }
 
-
 const subscriptionPlans: SubscriptionPlans = {
   '3': { price: 15, duration: '3 months', savings: 0 },
   '6': { price: 25, duration: '6 months', savings: 5 },
@@ -49,86 +48,54 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
-  
   const handleSubscribe = async () => {
     if (!activeAddress || !transactionSigner || !algodClient) {
       setError('Please connect your wallet first');
       return;
     }
-  
+
     try {
       setIsProcessing(true);
       setError('');
-      
+
       console.log("Starting subscription with address:", activeAddress);
-  
-      const response = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/connect-wallet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          duration: selectedDuration,
-          amount: subscriptionPlans[selectedDuration].price,
-          walletAddress: activeAddress
-        })
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to initiate subscription');
-      }
-  
-      const data = await response.json();
-      console.log("Raw transaction params from server:", data);
-  
-      if (!data.txnParams) {
-        throw new Error('Invalid transaction parameters received');
-      }
 
-      // Validate addresses
-      console.log("Validating addresses:", {
-        from: data.txnParams.from,
-        to: data.txnParams.to
-      });
+      // Get subscription amount from plan
+      const amount = subscriptionPlans[selectedDuration].price;
+      const amountInMicroUsdc = amount * 1_000_000; // Convert to microUSDC
 
-      if (!data.txnParams.from || !data.txnParams.to) {
-        throw new Error(`Missing addresses - from: ${data.txnParams.from}, to: ${data.txnParams.to}`);
-      }
+      // Get suggested params from network
+      const suggestedParams = await algodClient.getTransactionParams().do();
+      console.log("Got suggested params:", suggestedParams);
 
-      // Log full transaction parameters before creation
-      console.log("Creating transaction with parameters:", {
-        sender: data.txnParams.from,
-        receiver: data.txnParams.to,
-        amount: data.txnParams.amount,
-        assetIndex: data.txnParams.assetIndex,
+      // Create the asset transfer transaction
+      const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+        sender: activeAddress,
+        receiver: MERCHANT_ADDRESS,
+        amount: amountInMicroUsdc,
+        assetIndex: USDC_ASSET_ID,
         suggestedParams: {
-          ...data.txnParams.suggestedParams,
-          fee: data.txnParams.suggestedParams.fee || 1000,
+          ...suggestedParams,
+          fee: 1000,
           flatFee: true
         }
       });
-  
-      const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: data.txnParams.from,      
-        receiver: data.txnParams.to,      
-        amount: data.txnParams.amount,    // The amount we get from Python
-        assetIndex: data.txnParams.assetIndex,  // The USDC asset ID
-        suggestedParams: data.txnParams.suggestedParams  // Use the suggested params directly
-      });
-      
-      
-  
+
+      console.log("Created transaction:", txn);
+
+      // Create atomic transaction composer
       const atc = new algosdk.AtomicTransactionComposer();
       atc.addTransaction({
         txn: txn,
         signer: transactionSigner
       });
 
+      // Execute the transaction
       console.log("Executing transaction...");
-  
       const result = await atc.execute(algodClient, 4);
       console.log("Transaction execution result:", result);
-  
+
+      // Save subscription in backend
       const confirmResponse = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,15 +106,15 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
           walletAddress: activeAddress
         })
       });
-  
+
       if (!confirmResponse.ok) {
         const confirmErrorData = await confirmResponse.json();
         throw new Error(confirmErrorData.error || 'Failed to confirm subscription');
       }
-  
+
       onClose();
       window.location.reload();
-  
+
     } catch (err) {
       console.error("Subscription error:", err);
       setError(err instanceof Error ? err.message : 'Failed to process subscription');
