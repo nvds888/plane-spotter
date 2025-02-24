@@ -14,7 +14,7 @@ const SUBSCRIPTION_PLANS = {
 // Helper to create USDC payment transaction
 async function createPaymentTransaction(walletAddress, amount) {
   return new Promise((resolve, reject) => {
-    const pythonScript = path.join(__dirname, '../scripts/subscription_payment.py');
+    const pythonScript = path.join(__dirname, '../subscription_payment.py');
     const pythonProcess = spawn('python', [
       pythonScript,
       walletAddress,
