@@ -34,9 +34,14 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
             index=USDC_ASSET_ID
         )
         
+        # Encode the transaction object to base64 for JSON serialization
+        txn_dict = txn.dictify()
+        txn_bytes = txn.__bytes__()
+        txn_base64 = base64.b64encode(txn_bytes).decode('utf-8')
+        
         return {
             "success": True,
-            "txn": txn.dictify(),  # Just return the transaction object directly
+            "txn": txn_base64,  # Return the base64-encoded transaction
             "txId": txn.get_txid()
         }
         
@@ -46,7 +51,7 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
             "success": False,
             "error": str(e)
         }
-        
+
 def verify_payment(txn_id: str):
     """Verify that a subscription payment transaction was successful."""
     try:

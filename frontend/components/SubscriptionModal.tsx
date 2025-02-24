@@ -60,11 +60,11 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       setError('Please connect your wallet first');
       return;
     }
-
+  
     try {
       setIsProcessing(true);
       setError('');
-
+  
       const response = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/connect-wallet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,27 +75,27 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
           walletAddress: activeAddress
         })
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to initiate subscription');
       }
-
+  
       const data = await response.json() as PaymentResponse;
-
+  
       const atc = new algosdk.AtomicTransactionComposer();
       
       // Decode the base64-encoded transaction string to a byte buffer
       const txnBytes = Buffer.from(data.txnGroups[0].txn, 'base64');
       const decodedTxn = algosdk.decodeUnsignedTransaction(txnBytes);
-
+  
       atc.addTransaction({
         txn: decodedTxn,
         signer: transactionSigner
       });
-
+  
       const result = await atc.execute(algodClient, 4);
-
+  
       const confirmResponse = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,15 +106,15 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
           walletAddress: activeAddress
         })
       });
-
+  
       if (!confirmResponse.ok) {
         const confirmErrorData = await confirmResponse.json();
         throw new Error(confirmErrorData.error || 'Failed to confirm subscription');
       }
-
+  
       onClose();
       window.location.reload();
-
+  
     } catch (err) {
       console.error("Subscription error:", err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to process subscription';
