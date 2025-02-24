@@ -8,6 +8,7 @@ const achievementsRouter = require('./routes/achievements');
 const friendRoutes = require('./routes/friends');
 const badgesprofileRoutes = require('./routes/badgesprofile');
 const locationStatsRoutes = require('./routes/locationStats');
+const subscriptionRoutes = require('./routes/Subscription');
 require('dotenv').config();
 
 const app = express();
@@ -30,6 +31,8 @@ app.use('/api/location-stats', locationStatsRoutes);
 app.use('/api/achievements', achievementsRouter);
 
 app.use('/api/badges', require('./routes/badgesprofile').router);
+
+app.use('/api/subscription', subscriptionRoutes);
 
 // Test endpoint for MongoDB connection
 app.get('/api/test-db', async (req, res) => {
