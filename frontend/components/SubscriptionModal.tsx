@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -65,7 +65,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       setIsProcessing(true);
       setError('');
 
-      const response = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/connect-wallet', {
+      const response = await fetch('/api/subscription/connect-wallet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,26 +77,21 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to initiate subscription');
+        throw new Error('Failed to initiate subscription');
       }
 
       const data = await response.json() as PaymentResponse;
 
       const atc = new algosdk.AtomicTransactionComposer();
       
-      // Decode the base64-encoded transaction string to a byte buffer
-      const txnBytes = Buffer.from(data.txnGroups[0].txn, 'base64');
-      const decodedTxn = algosdk.decodeUnsignedTransaction(txnBytes);
-
       atc.addTransaction({
-        txn: decodedTxn,
+        txn: algosdk.decodeUnsignedTransaction(Buffer.from(data.txnGroups[0].txn, 'base64')),
         signer: transactionSigner
       });
 
       const result = await atc.execute(algodClient, 4);
 
-      const confirmResponse = await fetch('https://plane-spotter-backend.onrender.com/api/subscription/confirm', {
+      const confirmResponse = await fetch('/api/subscription/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -108,8 +103,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       });
 
       if (!confirmResponse.ok) {
-        const confirmErrorData = await confirmResponse.json();
-        throw new Error(confirmErrorData.error || 'Failed to confirm subscription');
+        throw new Error('Failed to confirm subscription');
       }
 
       onClose();
