@@ -76,20 +76,23 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       }
   
       const data = await response.json();
-      console.log("Received transaction params:", data); // Debug log
+      console.log("Received transaction params:", data);
   
-      // Verify params before creating transaction
-      if (!data.txnParams || !data.txnParams.from || !data.txnParams.to) {
+      if (!data.txnParams) {
         throw new Error('Invalid transaction parameters received');
       }
   
-      const txn = new algosdk.Transaction({
-        type: algosdk.TransactionType.axfer,
-        from: data.txnParams.from,
-        to: data.txnParams.to,
+      // Create transaction with correct parameter names
+      const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+        sender: data.txnParams.from,
+        receiver: data.txnParams.to,
         amount: data.txnParams.amount,
         assetIndex: data.txnParams.assetIndex,
-        ...data.txnParams.suggestedParams
+        suggestedParams: {
+          ...data.txnParams.suggestedParams,
+          fee: data.txnParams.suggestedParams.fee || 1000,
+          flatFee: true
+        }
       });
   
       const atc = new algosdk.AtomicTransactionComposer();
