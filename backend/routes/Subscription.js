@@ -117,6 +117,14 @@ router.post('/connect-wallet', async (req, res) => {
     if (!paymentResult.success) {
       throw new Error(paymentResult.error || 'Failed to create payment transaction');
     }
+
+    // Log the payment result to verify the structure
+    console.log('Payment result:', paymentResult);
+    
+    // Verify the required fields exist
+    if (!paymentResult.txnParams || !paymentResult.txnParams.from || !paymentResult.txnParams.to) {
+      throw new Error('Invalid transaction parameters generated');
+    }
     
     // Store pending subscription in the user document
     await User.findByIdAndUpdate(userId, {
@@ -128,9 +136,8 @@ router.post('/connect-wallet', async (req, res) => {
       }
     });
 
-    res.json({
-      txnParams: paymentResult.txnParams
-    });
+    // Return the transaction parameters directly
+    res.json(paymentResult);
 
   } catch (error) {
     console.error('Error initiating subscription:', error);

@@ -76,10 +76,15 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       }
   
       const data = await response.json();
-      
-      // Create the transaction directly from the parameters
+      console.log("Received transaction params:", data); // Debug log
+  
+      // Verify params before creating transaction
+      if (!data.txnParams || !data.txnParams.from || !data.txnParams.to) {
+        throw new Error('Invalid transaction parameters received');
+      }
+  
       const txn = new algosdk.Transaction({
-        type: algosdk.TransactionType.axfer,  
+        type: algosdk.TransactionType.axfer,
         from: data.txnParams.from,
         to: data.txnParams.to,
         amount: data.txnParams.amount,

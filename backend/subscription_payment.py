@@ -17,29 +17,36 @@ MERCHANT_ADDRESS = os.environ.get('MERCHANT_ADDRESS', '')
 def create_payment_transaction(sender_address: str, amount_usd: float):
     """Create USDC payment transaction parameters."""
     try:
+        print(f"Debug: Creating transaction for address {sender_address}", file=sys.stderr)
         algod_client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
         params = algod_client.suggested_params()
         amount_usdc = int(amount_usd * 1_000_000)  # Convert USD to microUSDC
         
-        return {
-            "success": True,
-            "txnParams": {
-                "type": "axfer",  # This indicates it's an asset transfer
-                "from": sender_address,
-                "to": MERCHANT_ADDRESS,
-                "amount": amount_usdc,
-                "assetIndex": USDC_ASSET_ID,
-                "suggestedParams": {
-                    "fee": params.fee,
-                    "firstRound": params.first,
-                    "lastRound": params.last,
-                    "genesisHash": params.gh,
-                    "genesisID": params.gen
-                }
+        txn_params = {
+            "type": "axfer",
+            "from": sender_address,
+            "to": MERCHANT_ADDRESS,
+            "amount": amount_usdc,
+            "assetIndex": USDC_ASSET_ID,
+            "suggestedParams": {
+                "fee": params.fee,
+                "firstRound": params.first,
+                "lastRound": params.last,
+                "genesisHash": params.gh,
+                "genesisID": params.gen
             }
         }
         
+        # Debug print the parameters
+        print(f"Debug: Generated transaction params: {json.dumps(txn_params)}", file=sys.stderr)
+        
+        return {
+            "success": True,
+            "txnParams": txn_params
+        }
+        
     except Exception as e:
+        print(f"Debug: Error in create_payment_transaction: {str(e)}", file=sys.stderr)
         return {
             "success": False,
             "error": str(e)
