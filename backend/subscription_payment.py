@@ -37,7 +37,7 @@ def create_payment_transaction(sender_address: str, amount_usd: float):
         # Return the encoded transaction
         return {
             "success": True,
-            "txn": base64.b64encode(txn.serialize()).decode('utf-8')
+            "txn": base64.b64encode(txn.dictify()).decode('utf-8')  # Change here
         }
         
     except Exception as e:
