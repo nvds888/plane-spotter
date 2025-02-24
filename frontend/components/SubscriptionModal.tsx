@@ -109,6 +109,7 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
       });
   
       const txnParams = {
+        type: data.txnParams.type,
         sender: data.txnParams.from,
         receiver: data.txnParams.to,
         amount: data.txnParams.amount,
