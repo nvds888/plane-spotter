@@ -326,7 +326,7 @@ router.post('/', async (req, res) => {
         $inc: { 
           totalXP: spotData.baseXP,    
           weeklyXP: spotData.baseXP,
-          ...(user.premium ? {} : req.body.isFirstSpot ? { spotsRemaining: -1 } : {})  // Only decrement on first plane
+          ...(req.body.isFirstSpot ? { spotsRemaining: -1 } : {})  // Always decrement on first plane for ALL users
         }
       }
     );
