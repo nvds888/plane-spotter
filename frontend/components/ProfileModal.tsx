@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect, JSX } from 'react';
 import { Award, Plane, Calendar, X } from 'lucide-react';
@@ -28,6 +28,14 @@ interface UserXP {
   weeklyXP: number;
 }
 
+interface SubscriptionDetails {
+  startDate?: string;
+  endDate?: string;
+  plan?: string;
+  transactionId?: string;
+  walletAddress?: string;
+}
+
 interface ProfileData {
   username: string;
   joinDate: string;
@@ -53,6 +61,7 @@ interface FollowingUser {
 
 const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Element | null => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [subscriptionDetails, setSubscriptionDetails] = useState<SubscriptionDetails | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { data: session } = useSession();
   const [isFollowing, setIsFollowing] = useState<boolean>(false);
@@ -67,8 +76,6 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
         setProfileData(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -84,9 +91,29 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
       }
     };
 
+    const fetchSubscriptionStatus = async () => {
+      try {
+        const response = await fetch(`https://plane-spotter-backend.onrender.com/api/subscription/status/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch subscription status');
+        const data = await response.json();
+        setSubscriptionDetails({
+          startDate: data.subscription?.startDate,
+          endDate: data.subscription?.endDate,
+          plan: data.subscription?.plan,
+          transactionId: data.subscription?.transactionId,
+          walletAddress: data.subscription?.walletAddress
+        });
+      } catch (error) {
+        console.error('Error fetching subscription status:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (isOpen && userId) {
       fetchProfile();
       fetchUserXP();
+      fetchSubscriptionStatus();
     }
   }, [isOpen, userId]);
 
@@ -236,6 +263,7 @@ const ProfileModal = ({ userId, isOpen, onClose }: ProfileModalProps): JSX.Eleme
                         userId={userId}
                         isPremium={profileData.premium}
                         subscriptionEndDate={profileData.subscription?.endDate}
+                        subscriptionDetails={subscriptionDetails || undefined} // Pass full details
                       />
                     )}
                     
