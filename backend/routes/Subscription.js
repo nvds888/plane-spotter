@@ -98,7 +98,10 @@ router.get('/status/:userId', async (req, res) => {
       subscription: {
         active: user.subscription?.active || false,
         plan: user.subscription?.plan,
+        startDate: user.subscription?.startDate, // Add this
         endDate: user.subscription?.endDate,
+        transactionId: user.subscription?.transactionId, // Add this
+        walletAddress: user.subscription?.walletAddress, // Add this
         isExpired: user.subscription?.endDate ? new Date() > user.subscription.endDate : false
       }
     });
