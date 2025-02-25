@@ -43,7 +43,8 @@ router.post('/confirm', async (req, res) => {
     // Wait for transaction confirmation
     console.log(`Waiting for confirmation of transaction: ${txId}`);
     const txInfo = await algosdk.waitForConfirmation(algodClient, txId, 4);
-    console.log('Transaction info received:', JSON.stringify(txInfo, null, 2));
+    console.log('Transaction confirmed in round:', txInfo['confirmed-round']);
+console.log('Transaction type keys:', Object.keys(txInfo));
     
     // Check transaction type more flexibly
     let isAssetTransfer = false;
