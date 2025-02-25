@@ -177,9 +177,12 @@ export default function Home() {
       }
   
       const savedSpots: Spot[] = []
-      let isFirstSpot = true  // Add this line
       
-      for (const flight of flights) {
+      // Process flights one by one, marking only the first one as isFirstSpot
+      for (let i = 0; i < flights.length; i++) {
+        const flight = flights[i];
+        const isFirstSpot = i === 0; // Only the first flight should count towards spot limit
+        
         const requestBody = {
           userId: session.user.id,
           lat: coords.latitude,
@@ -194,8 +197,6 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestBody),
         })
-      
-        isFirstSpot = false 
   
         if (!spotResponse.ok) {
           const errorData = await spotResponse.json();
@@ -215,7 +216,7 @@ export default function Home() {
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`)
       const xpData = await xpResponse.json()
       setUserXP(xpData)
-
+  
       const userResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}`);
       const userData = await userResponse.json();
       setSpotsRemaining(userData.spotsRemaining);
@@ -256,20 +257,43 @@ export default function Home() {
         }
       );
   
+      if (!response.ok) {
+        console.error("Guess response error:", await response.text());
+        throw new Error("Failed to submit guess");
+      }
+  
       const result = await response.json();
+      
+      // Update the spot with the new guess information
+      const updatedSpot: Spot = {
+        ...spot,
+        guessedType,
+        guessedAirline,
+        guessedDestination,
+        isTypeCorrect: result.isTypeCorrect,
+        isAirlineCorrect: result.isAirlineCorrect,
+        isDestinationCorrect: result.isDestinationCorrect,
+        bonusXP: result.bonusXP
+      };
+  
+      // Add the spotId to guessed spots
       const newGuessedSpotIds = [...guessedSpotIds, spot._id];
       const newGuessCount = guessCount + 1;
       
-      // Update all related state
+      // Update related state
       setGuessedSpotIds(newGuessedSpotIds);
       setGuessCount(newGuessCount);
-      setGuessResults(prev => [...prev, {
-        spot: spot,
+      
+      // Add the result to guessResults
+      const newGuessResult = {
+        spot: updatedSpot,
         isTypeCorrect: result.isTypeCorrect,
         isAirlineCorrect: result.isAirlineCorrect,
         isDestinationCorrect: result.isDestinationCorrect,
         xpEarned: result.bonusXP + (spot.baseXP || 5),
-      }]);
+      };
+      
+      setGuessResults(prev => [...prev, newGuessResult]);
   
       // Update XP
       const xpResponse = await fetch(`https://plane-spotter-backend.onrender.com/api/user/${session.user.id}/xp`);

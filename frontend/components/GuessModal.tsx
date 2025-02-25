@@ -84,6 +84,7 @@ const GuessModal: React.FC<GuessModalProps> = ({
   const [randomizedTypeOptions, setRandomizedTypeOptions] = useState<AircraftTypeOption[]>([]);
   const [randomizedAirlineOptions, setRandomizedAirlineOptions] = useState<AirlineOption[]>([]);
   const [randomizedDestOptions, setRandomizedDestinationOptions] = useState<DestinationOption[]>([]);
+  const [optionsGenerated, setOptionsGenerated] = useState<string | null>(null);
 
   // Fetch suggestions for guessing options
   useEffect(() => {
@@ -108,7 +109,16 @@ const GuessModal: React.FC<GuessModalProps> = ({
 
   // Generate randomized options for the current spot
   useEffect(() => {
-    if (currentGuessSpot && aircraftTypeOptions?.length > 0 && airlineOptions?.length > 0 && destinationOptions?.length > 0) {
+    // Only regenerate options if we have a new spot or haven't generated for this spot yet
+    if (currentGuessSpot && 
+        aircraftTypeOptions?.length > 0 && 
+        airlineOptions?.length > 0 && 
+        destinationOptions?.length > 0 &&
+        optionsGenerated !== currentGuessSpot._id) {
+      
+      // Store the current spot ID to prevent regeneration
+      setOptionsGenerated(currentGuessSpot._id);
+      
       // Create option objects for the current spot's correct values
       const correctTypeOption = {
         code: currentGuessSpot.flight.type,
@@ -144,7 +154,7 @@ const GuessModal: React.FC<GuessModalProps> = ({
         2
       ));
     }
-  }, [currentGuessSpot, aircraftTypeOptions, airlineOptions, destinationOptions]);
+  }, [currentGuessSpot, aircraftTypeOptions, airlineOptions, destinationOptions, optionsGenerated]);
 
   const fetchSuggestions = async () => {
     if (!coordinates || !userId) return;
@@ -174,6 +184,7 @@ const GuessModal: React.FC<GuessModalProps> = ({
     setGuessedType("");
     setGuessedAirline("");
     setGuessedDestination("");
+    setOptionsGenerated(null);
     
     // If more than 3 spots, let the user select another one
     // If 3 or fewer, find the next unguessed spot
@@ -201,10 +212,10 @@ const GuessModal: React.FC<GuessModalProps> = ({
   if (!isOpen) return null;
 
   const centerCoordinates = isTeleport && teleportCoords 
-  ? [teleportCoords.latitude, teleportCoords.longitude] as [number, number]
-  : coordinates 
-    ? [coordinates.latitude, coordinates.longitude] as [number, number]
-    : [0, 0] as [number, number];
+    ? [teleportCoords.latitude, teleportCoords.longitude] as [number, number]
+    : coordinates 
+      ? [coordinates.latitude, coordinates.longitude] as [number, number]
+      : [0, 0] as [number, number];
 
   return (
     <AnimatePresence>
