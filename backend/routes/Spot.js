@@ -184,6 +184,8 @@ const mapSpotToFrontend = (spot) => {
 
   return {
     ...spotObj,
+    lat: spotObj.lat, // Spot's location latitude
+    lon: spotObj.lon, // Spot's location longitude
     flight: {
       hex: spotObj.flight?.system?.hex || 'N/A',
       flight: spotObj.flight?.flight || 'N/A',
@@ -196,11 +198,15 @@ const mapSpotToFrontend = (spot) => {
         spotObj.flight?.painted_as
       ),
       operating_as: spotObj.flight?.operating_as || 'N/A',
-painted_as: spotObj.flight?.painted_as || 'N/A',
-      lat: spotObj.flight?.geography?.latitude || 0,
-      lon: spotObj.flight?.geography?.longitude || 0,
+      painted_as: spotObj.flight?.painted_as || 'N/A',
+      lat: spotObj.flight?.geography?.latitude || 0, // Flight's current latitude
+      lon: spotObj.flight?.geography?.longitude || 0, // Flight's current longitude
       geography: {
-        direction: spotObj.flight?.geography?.direction || 0
+        direction: spotObj.flight?.geography?.direction || 0,
+        latitude: spotObj.flight?.geography?.latitude || 0,
+        longitude: spotObj.flight?.geography?.longitude || 0,
+        altitude: spotObj.flight?.geography?.altitude || 0,
+        gspeed: spotObj.flight?.geography?.gspeed || 0
       },
       orig_iata: spotObj.flight?.orig_iata || 'N/A',
       dest_iata: spotObj.flight?.dest_iata || 'N/A',

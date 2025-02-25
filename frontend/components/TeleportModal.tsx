@@ -81,7 +81,7 @@ const TeleportModal = ({ isOpen, onClose, onSpot }: TeleportModalProps): React.R
           {/* XP Indicator */}
           <div className="absolute right-14 top-5">
             <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-sm font-medium">
-              +10 XP
+              +5 XP
             </span>
           </div>
 
