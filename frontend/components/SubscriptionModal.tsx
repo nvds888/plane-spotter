@@ -127,17 +127,18 @@ const ModalContent: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, userI
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 flex items-end justify-center z-50" // Changed to items-end
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          className="bg-white rounded-t-2xl max-w-lg w-full" // Changed to rounded-t-2xl (only round top corners)
+          initial={{ y: "100%" }} // Start from below the screen
+          animate={{ y: 0 }} // Animate to visible
+          exit={{ y: "100%" }} // Exit by sliding down
+          transition={{ type: "spring", damping: 25, stiffness: 500 }}
         >
-          <motion.div
-            className="bg-white rounded-2xl max-w-lg w-full"
-            initial={{ scale: 0.95, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 20 }}
-          >
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900">Upgrade to Premium</h2>
               <button 
