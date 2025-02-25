@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { spawn } = require('child_process');
-const path = require('path');
+const algosdk = require('algosdk');
+
+// Algorand connection details
+const ALGOD_ADDRESS = "https://testnet-api.4160.nodely.dev";
+const ALGOD_TOKEN = "";
+const USDC_ASSET_ID = process.env.USDC_ASSET_ID;
+const MERCHANT_ADDRESS = process.env.MERCHANT_ADDRESS;
 
 // Subscription plans configuration
 const SUBSCRIPTION_PLANS = {
@@ -11,170 +16,49 @@ const SUBSCRIPTION_PLANS = {
   '12': { price: 40, duration: 365 }  // 12 months in days
 };
 
-// Helper to create USDC payment transaction
-async function createPaymentTransaction(walletAddress, amount) {
-  return new Promise((resolve, reject) => {
-    const pythonScript = path.join(__dirname, '../subscription_payment.py');
-    const pythonProcess = spawn('python', [
-      pythonScript,
-      walletAddress,
-      amount.toString()
-    ]);
-    
-    let resultData = '';
-    let errorData = '';
-    
-    pythonProcess.stdout.on('data', (data) => {
-      resultData += data.toString();
-    });
-    
-    pythonProcess.stderr.on('data', (data) => {
-      errorData += data.toString();
-      console.error('Python script stderr:', data.toString());
-    });
-    
-    pythonProcess.on('error', (error) => {
-      reject(new Error(`Failed to start Python process: ${error}`));
-    });
-
-    pythonProcess.on('close', (code) => {
-      if (code === 0) {
-        try {
-          const result = JSON.parse(resultData);
-          if (!result.success) {
-            reject(new Error(result.error || 'Failed to create payment transaction'));
-            return;
-          }
-          resolve(result);
-        } catch (err) {
-          reject(new Error(`Failed to parse payment result: ${err.message}`));
-        }
-      } else {
-        reject(new Error(`Process exited with code ${code}. Stderr: ${errorData}`));
-      }
-    });
-  });
-}
-
-// Helper to verify payment transaction
-async function verifyPayment(txId) {
-  return new Promise((resolve, reject) => {
-    const pythonScript = path.join(__dirname, '../scripts/subscription_payment.py');
-    const pythonProcess = spawn('python', [
-      pythonScript,
-      txId
-    ]);
-
-    let resultData = '';
-
-    pythonProcess.stdout.on('data', (data) => {
-      resultData += data.toString();
-    });
-
-    pythonProcess.stderr.on('data', (data) => {
-      console.error('Payment verification error:', data.toString());
-    });
-
-    pythonProcess.on('close', (code) => {
-      if (code === 0) {
-        try {
-          const result = JSON.parse(resultData);
-          resolve(result);
-        } catch (err) {
-          reject(new Error('Failed to parse verification result'));
-        }
-      } else {
-        reject(new Error(`Verification process exited with code ${code}`));
-      }
-    });
-  });
-}
-
-// Route to initiate subscription
-router.post('/connect-wallet', async (req, res) => {
+// Route to confirm subscription
+router.post('/confirm', async (req, res) => {
   try {
-    const { userId, duration, amount, walletAddress } = req.body;
+    const { userId, duration, txId, walletAddress } = req.body;
     
-    // Validate subscription plan
-    if (!SUBSCRIPTION_PLANS[duration]) {
-      return res.status(400).json({ error: 'Invalid subscription duration' });
-    }
-
-    // Verify amount matches plan price
-    if (amount !== SUBSCRIPTION_PLANS[duration].price) {
-      return res.status(400).json({ error: 'Invalid subscription amount' });
-    }
-
     // Verify user exists
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Create payment transaction
-    const paymentResult = await createPaymentTransaction(walletAddress, amount);
-    
-    if (!paymentResult.success) {
-      throw new Error(paymentResult.error || 'Failed to create payment transaction');
+    // Verify subscription plan
+    if (!SUBSCRIPTION_PLANS[duration]) {
+      return res.status(400).json({ error: 'Invalid subscription duration' });
     }
 
-    // Log the payment result to verify the structure
-    console.log('Payment result:', paymentResult);
+    // Initialize Algorand client
+    const algodClient = new algosdk.Algodv2(ALGOD_TOKEN, ALGOD_ADDRESS);
+
+    // Wait for transaction confirmation
+    const txInfo = await algosdk.waitForConfirmation(algodClient, txId, 4);
     
-    // Verify the required fields exist
-    if (!paymentResult.txnParams || !paymentResult.txnParams.from || !paymentResult.txnParams.to) {
-      throw new Error('Invalid transaction parameters generated');
+    // Verify it's an asset transfer transaction
+    if (!txInfo['asset-transfer-transaction']) {
+      return res.status(400).json({ error: 'Not an asset transfer transaction' });
     }
     
-    // Store pending subscription in the user document
-    await User.findByIdAndUpdate(userId, {
-      'subscription.pending': {
-        plan: duration,
-        walletAddress,
-        amount,
-        createdAt: new Date()
-      }
-    });
-
-    // Return the transaction parameters directly
-    res.json(paymentResult);
-
-  } catch (error) {
-    console.error('Error initiating subscription:', error);
-    res.status(500).json({ error: error.message || 'Failed to initiate subscription' });
-  }
-});
-
-// Route to confirm subscription
-router.post('/confirm', async (req, res) => {
-  try {
-    const { userId, duration, txId, walletAddress } = req.body;
+    const transfer = txInfo['asset-transfer-transaction'];
     
-    // Verify user and pending subscription
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    // Verify it's a USDC transfer to the merchant
+    if (transfer['asset-id'] !== parseInt(USDC_ASSET_ID)) {
+      return res.status(400).json({ error: 'Not a USDC transfer' });
     }
-
-    const pendingSubscription = user.subscription?.pending;
-    if (!pendingSubscription || pendingSubscription.walletAddress !== walletAddress) {
-      return res.status(400).json({ error: 'Invalid or expired subscription request' });
-    }
-
-    // Verify the payment transaction
-    const verificationResult = await verifyPayment(txId);
-    if (!verificationResult.success) {
-      return res.status(400).json({ 
-        error: verificationResult.error || 'Payment verification failed' 
-      });
+    
+    if (transfer['receiver'] !== MERCHANT_ADDRESS) {
+      return res.status(400).json({ error: 'Invalid recipient' });
     }
 
     // Verify payment amount matches subscription plan
+    const amount = transfer['amount'] / 1_000_000; // Convert from microUSDC to USD
     const expectedAmount = SUBSCRIPTION_PLANS[duration].price;
-    if (verificationResult.amount !== expectedAmount) {
-      return res.status(400).json({ 
-        error: 'Payment amount does not match subscription price' 
-      });
+    if (amount !== expectedAmount) {
+      return res.status(400).json({ error: 'Payment amount does not match subscription price' });
     }
 
     // Calculate subscription end date
@@ -194,8 +78,7 @@ router.post('/confirm', async (req, res) => {
         'subscription.startDate': new Date(),
         'subscription.endDate': subscriptionEndDate,
         'subscription.transactionId': txId,
-        'subscription.walletAddress': walletAddress,
-        'subscription.pending': null
+        'subscription.walletAddress': walletAddress
       }
     });
 

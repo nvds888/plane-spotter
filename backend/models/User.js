@@ -31,7 +31,14 @@ const subscriptionSchema = new mongoose.Schema({
   startDate: Date,
   endDate: Date,
   transactionId: String,
-  autoRenew: { type: Boolean, default: false }
+  walletAddress: String,  // Add this to store the user's wallet address
+  autoRenew: { type: Boolean, default: false },
+  pending: {  // Add this to track pending subscriptions
+    plan: String,
+    walletAddress: String,
+    amount: Number,
+    createdAt: Date
+  }
 });
 
 const userSchema = new mongoose.Schema({
