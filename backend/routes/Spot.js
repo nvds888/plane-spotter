@@ -20,26 +20,40 @@ class SpotResetManager {
 
   initializeCronJob() {
     // Run at midnight UTC
-    cron.schedule('0 0 * * *', async () => {
-      try {
-        const now = new Date();
-        // Reset all non-premium users to 4 spots
-        await User.updateMany(
-          { premium: false },
-          { 
-            $set: { 
-              spotsRemaining: 4,
-              lastDailyReset: now
-            }
-          }
-        );
-        console.log('Daily spot reset completed at:', now);
-      } catch (error) {
-        console.error('Error in daily spot reset:', error);
+    // Run at midnight UTC
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const now = new Date();
+    
+    // Reset non-premium users to 4 spots
+    await User.updateMany(
+      { premium: false },
+      { 
+        $set: { 
+          spotsRemaining: 4,
+          lastDailyReset: now
+        }
       }
-    }, {
-      timezone: 'UTC'
-    });
+    );
+    
+    // Reset premium users to 8 spots
+    await User.updateMany(
+      { premium: true },
+      { 
+        $set: { 
+          spotsRemaining: 8,
+          lastDailyReset: now
+        }
+      }
+    );
+    
+    console.log('Daily spot reset completed at:', now);
+  } catch (error) {
+    console.error('Error in daily spot reset:', error);
+  }
+}, {
+  timezone: 'UTC'
+});
   }
 }
 
